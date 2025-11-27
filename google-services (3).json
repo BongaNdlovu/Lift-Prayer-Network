@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "628602476853",
+    "firebase_url": "https://end-of-time-94cd3-default-rtdb.firebaseio.com",
+    "project_id": "end-of-time-94cd3",
+    "storage_bucket": "end-of-time-94cd3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628602476853:android:18499e2e916155ce11147c",
+        "android_client_info": {
+          "package_name": "Lift.Prayer.App"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "628602476853-8rckdqn3ig23u7auqneohvm6jrggts6d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArjsoQnRxcLbQogLpp8dk0DeXzRUImkn4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "628602476853-8rckdqn3ig23u7auqneohvm6jrggts6d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

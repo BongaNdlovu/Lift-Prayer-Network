@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /requests/{requestId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+    }
+
+    match /testimonies/{testimonyId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == request.resource.data.ownerUid;
+    }
+
+    match /prayers/{prayerId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.actorUid == request.auth.uid;
+    }
+
+    match /userPrayedFor/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /reports/{reportId} {
+      allow create: if true;
+      allow read: if false; // keep reports private
+    }
+
+    match /stats/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /users/{uid}/pushTokens/{token} {
+      allow write, read: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
