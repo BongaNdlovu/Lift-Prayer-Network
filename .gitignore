@@ -6,6 +6,9 @@ dist
 build
 tmp
 .env
+.env.*
+client_secret_*.json
+*.p12
 *.log
 *.keystore
 *.jks
