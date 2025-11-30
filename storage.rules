@@ -1,0 +1,52 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Profile pictures - users can only upload/modify their own
+    // Files are stored as profile-pictures/{userId}.jpg
+    // We use a folder structure to properly match user ownership
+    match /profile-pictures/{userId}/{fileName} {
+      // Anyone can view profile pictures (they're public)
+      allow read: if true;
+      
+      // Only the owner can upload their picture
+      allow write: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Also allow direct file uploads without subfolder (for backward compatibility)
+    // This matches files like profile-pictures/userId.jpg
+    match /profile-pictures/{fileName} {
+      // Anyone can view profile pictures (they're public)
+      allow read: if true;
+      
+      // Allow authenticated users to upload - we validate ownership in the app
+      allow write: if isSignedIn()
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Group images (if you add group avatars later)
+    match /group-images/{groupId} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Request/Testimony attachments (future feature)
+    match /attachments/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() 
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

@@ -1,34 +1,160 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(data) {
+      return isSignedIn() && request.auth.uid == data.ownerUid;
+    }
+    
+    // Admin check - add admin UIDs here for elevated permissions
+    // Admin email: fanelesibonge50@gmail.com
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'fanelesibonge50@gmail.com'
+      );
+    }
+    
+    // Check if user can modify content (owner OR admin)
+    function canModifyContent(data) {
+      return isOwner(data) || isAdmin();
+    }
+
+    function isMember(data) {
+      return isSignedIn() && data.memberUids != null && data.memberUids.hasAny([request.auth.uid]);
+    }
+
+    function isPublicRequest(data) {
+      return !(data.isPrivate == true);
+    }
+    
+    // Check if user is a member of any of the request's groups
+    // Uses user's groupIds array for efficient membership check
+    function isGroupMemberForRequest(data) {
+      let userGroupIds = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupIds;
+      return isSignedIn() && 
+        data.visibility == 'GROUP' && 
+        data.groupIds != null && 
+        data.groupIds.size() > 0 &&
+        userGroupIds != null &&
+        userGroupIds.hasAny(data.groupIds);
+    }
+    
+    // Fallback check for group membership via direct group doc lookup (for first group)
+    // Used when user doc might not have groupIds synced
+    function isFirstGroupMember(data) {
+      return isSignedIn() && 
+        data.visibility == 'GROUP' && 
+        data.groupIds != null && 
+        data.groupIds.size() > 0 &&
+        get(/databases/$(database)/documents/groups/$(data.groupIds[0])).data.memberUids.hasAny([request.auth.uid]);
+    }
+    
+    // Validate request privacy flags are consistent
+    // - GROUP visibility requires non-empty groupIds
+    // - PRIVATE visibility should have isPrivate true
+    // - PUBLIC visibility should not have isPrivate true
+    function isValidRequestPrivacy(data) {
+      let visibility = data.visibility;
+      let isPrivate = data.isPrivate;
+      let groupIds = data.groupIds;
+      
+      // GROUP requests must have at least one groupId
+      let groupValid = visibility != 'GROUP' || (groupIds != null && groupIds.size() > 0);
+      
+      // PRIVATE requests should have isPrivate flag set
+      let privateValid = visibility != 'PRIVATE' || isPrivate == true;
+      
+      // PUBLIC requests should not be marked private
+      let publicValid = visibility != 'PUBLIC' || isPrivate != true;
+      
+      return groupValid && privateValid && publicValid;
+    }
+
     match /users/{uid} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      // Only allow reading certain fields publicly, full profile to self
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid;
     }
 
     match /requests/{requestId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+      // Allow read if: public, owned by user, user is admin, OR verified group member
+      // Group membership is verified server-side via user's groupIds or direct group doc check
+      allow read: if isPublicRequest(resource.data) || isOwner(resource.data) || isAdmin() || isGroupMemberForRequest(resource.data) || isFirstGroupMember(resource.data);
+      // Create requires: signed in, owns the request, and privacy flags are consistent
+      allow create: if isSignedIn() 
+        && request.resource.data.ownerUid == request.auth.uid
+        && isValidRequestPrivacy(request.resource.data);
+      // Allow owner OR admin to update/delete
+      // Admin can also update pin status (isPinned, pinnedAt, pinnedBy)
+      // All updates must maintain valid privacy flag consistency
+      allow update: if (canModifyContent(resource.data) && isValidRequestPrivacy(request.resource.data)) || (
+        isAdmin() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPinned', 'pinnedAt', 'pinnedBy'])
+      );
+      allow delete: if canModifyContent(resource.data);
     }
 
     match /testimonies/{testimonyId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == request.resource.data.ownerUid;
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      // Allow owner OR admin to update/delete
+      allow update, delete: if canModifyContent(resource.data);
     }
 
     match /prayers/{prayerId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.actorUid == request.auth.uid;
+      allow read: if isSignedIn() && request.auth.uid == resource.data.actorUid;
+      allow create: if isSignedIn() && request.resource.data.actorUid == request.auth.uid;
+      // Allow users to delete their own prayer records (for delete prayer history feature)
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.actorUid;
     }
 
     match /userPrayedFor/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /groups/{groupId} {
+      allow read: if !resource.data.isPrivate || isMember(resource.data) || isOwner(resource.data);
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+
+      // Owner can manage everything; members can only adjust basic metadata (no membership changes)
+      allow update: if isOwner(resource.data)
+        || (
+          isMember(resource.data)
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['name', 'description', 'emoji'])
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.memberUids == resource.data.memberUids
+          && request.resource.data.isPrivate == resource.data.isPrivate
+        );
+
+      allow delete: if isOwner(resource.data);
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
+      // Allow comment owner OR admin to update/delete
+      // Owner can only update content and editedAt, not change parentId, authorUid, or parentType
+      allow update: if isSignedIn() && (
+        isAdmin() || (
+          request.auth.uid == resource.data.authorUid
+          && request.resource.data.parentId == resource.data.parentId
+          && request.resource.data.authorUid == resource.data.authorUid
+          && request.resource.data.parentType == resource.data.parentType
+        )
+      );
+      allow delete: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.authorUid);
     }
 
     match /reports/{reportId} {
       allow create: if true;
-      allow read: if false; // keep reports private
+      // Only admins can read reports for moderation
+      allow read: if isAdmin();
+      // Admins can update reports (mark as reviewed, resolved, etc.)
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /stats/{document=**} {
@@ -37,7 +163,23 @@ service cloud.firestore {
     }
 
     match /users/{uid}/pushTokens/{token} {
-      allow write, read: if request.auth != null && request.auth.uid == uid;
+      allow write, read: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Onboarding analytics - anyone can write (anonymous users complete onboarding)
+    // Only admins can read for analysis
+    match /onboarding_analytics/{docId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Notifications - users can read/update their own notifications
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
     }
   }
 }

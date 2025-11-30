@@ -4,27 +4,99 @@ type TimeLike = Timestamp | FieldValue | Date | null;
 
 export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'RESOLVED' | 'PENDING';
 
+export type PrayerCategory =
+  | 'health'
+  | 'family'
+  | 'work'
+  | 'finances'
+  | 'relationships'
+  | 'spiritual'
+  | 'guidance'
+  | 'protection'
+  | 'gratitude'
+  | 'other';
+
+export const PRAYER_CATEGORIES: { id: PrayerCategory; label: string; emoji: string }[] = [
+  { id: 'health', label: 'Health', emoji: '🩺' },
+  { id: 'family', label: 'Family', emoji: '👨‍👩‍👧‍👦' },
+  { id: 'work', label: 'Work', emoji: '💼' },
+  { id: 'finances', label: 'Finances', emoji: '💰' },
+  { id: 'relationships', label: 'Relationships', emoji: '🤝' },
+  { id: 'spiritual', label: 'Spiritual', emoji: '🙏' },
+  { id: 'guidance', label: 'Guidance', emoji: '🧭' },
+  { id: 'protection', label: 'Protection', emoji: '🛡️' },
+  { id: 'gratitude', label: 'Gratitude', emoji: '🙌' },
+  { id: 'other', label: 'Other', emoji: '📝' },
+];
+
 export type LiftRequest = {
   id: string;
   ownerUid: string;
   userDisplayName: string;
-  location: string;
+  userEmail?: string;
+  userPhotoURL?: string | null;
   content: string;
   severity: Severity;
   prayers: number;
   status: 'PENDING' | 'ACTIVE' | 'RESOLVED';
+  category?: PrayerCategory;
+  isUrgent?: boolean;
+  isPrivate?: boolean;
+  isAnonymous?: boolean;
+  groupIds?: string[];
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'GROUP';
+  location?: string;
   createdAt?: TimeLike;
+  commentCount?: number;
+  // Pinned feature - only admin can pin
+  isPinned?: boolean;
+  pinnedAt?: TimeLike;
+  pinnedBy?: string;
 };
 
 export type Testimony = {
   id: string;
   ownerUid: string;
   userDisplayName: string;
-  location: string;
+  userEmail?: string;
+  userPhotoURL?: string | null;
   content: string;
   severity: 'RESOLVED';
   likes: number;
+  linkedRequestId?: string;
+  location?: string;
   createdAt?: TimeLike;
+  commentCount?: number;
+};
+
+export type Comment = {
+  id: string;
+  parentId: string;
+  parentType: 'REQUEST' | 'TESTIMONY';
+  authorUid: string;
+  authorName: string;
+  content: string;
+  createdAt?: TimeLike;
+};
+
+export type PrayerGroup = {
+  id: string;
+  name: string;
+  description?: string;
+  emoji?: string;
+  ownerUid: string;
+  memberUids: string[];
+  isPrivate: boolean;
+  createdAt?: TimeLike;
+};
+
+export type PrayerReminder = {
+  id: string;
+  userId: string;
+  time: string;
+  days: number[];
+  enabled: boolean;
+  message?: string;
 };
 
 export type FeedItem =
@@ -58,15 +130,24 @@ export type UserProfile = {
   timeZone?: string;
   createdAt?: TimeLike;
   lastActiveAt?: TimeLike;
+  lastPrayedAt?: TimeLike;
   roles?: string[];
   stats?: {
     prayerCount: number;
     testimonyCount?: number;
+    requestCount?: number;
     streakDays?: number;
+    streakLastDate?: string;
+    longestStreak?: number;
+    prayersThisWeek?: number;
+    prayersThisMonth?: number;
   };
   settings?: {
     notifications?: boolean;
     notificationsCritical?: boolean;
     shareProfile?: boolean;
+    reminderTime?: string;
+    reminderDays?: number[];
   };
+  groupIds?: string[];
 };

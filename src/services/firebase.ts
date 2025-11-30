@@ -1,6 +1,15 @@
 import { FirebaseApp, FirebaseOptions, getApp, getApps, initializeApp } from 'firebase/app';
-import { Auth, getAuth } from 'firebase/auth';
+import { 
+  Auth, 
+  getAuth, 
+  initializeAuth, 
+  getReactNativePersistence,
+  browserLocalPersistence,
+} from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
+import { FirebaseStorage, getStorage } from 'firebase/storage';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -28,11 +37,37 @@ if (!firebaseEnabled) {
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
 if (firebaseEnabled) {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  
+  // Initialize auth with proper persistence
+  try {
+    if (Platform.OS === 'web') {
+      // Web uses browser local persistence
+      auth = initializeAuth(app, {
+        persistence: browserLocalPersistence,
+      });
+    } else {
+      // React Native - use AsyncStorage for persistent auth
+      // This keeps users logged in even after closing the app
+      auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage),
+      });
+    }
+  } catch (error: any) {
+    // Auth may already be initialized
+    if (error.code === 'auth/already-initialized') {
+      auth = getAuth(app);
+    } else {
+      console.warn('[Firebase] Auth initialization error:', error);
+      auth = getAuth(app);
+    }
+  }
+  
   db = getFirestore(app);
+  storage = getStorage(app);
 }
 
-export { app, auth, db };
+export { app, auth, db, storage };

@@ -7,8 +7,14 @@ build
 tmp
 .env
 .env.*
+google-services.json
+google-services*.json
 client_secret_*.json
 *.p12
 *.log
 *.keystore
 *.jks
+
+# Generated native code (EAS Build regenerates these automatically)
+android/
+ios/

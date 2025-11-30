@@ -8,32 +8,45 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/hooks/useAuth';
 import { BootScreen } from './src/screens/BootScreen';
 import { setupNotificationHandler } from './src/services/notifications';
+import { useAppFonts } from './src/hooks/useFonts';
 
 enableScreens();
 
 export default function App() {
   const [booting, setBooting] = useState(true);
+  const { fontsLoaded } = useAppFonts();
 
   useEffect(() => {
-    const timer = setTimeout(() => setBooting(false), 1600);
-    return () => clearTimeout(timer);
-  }, []);
+    // Wait for fonts to load before hiding boot screen
+    if (fontsLoaded) {
+      const timer = setTimeout(() => setBooting(false), 1600);
+      return () => clearTimeout(timer);
+    }
+  }, [fontsLoaded]);
 
   useEffect(() => {
     setupNotificationHandler();
   }, []);
 
+  // Show boot screen while fonts are loading
+  if (!fontsLoaded || booting) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <BootScreen />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style={booting ? 'light' : 'dark'} />
-        {booting ? (
-          <BootScreen />
-        ) : (
-          <AuthProvider>
-            <AppNavigator />
-          </AuthProvider>
-        )}
+        <StatusBar style="dark" />
+        <AuthProvider>
+          <AppNavigator />
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
