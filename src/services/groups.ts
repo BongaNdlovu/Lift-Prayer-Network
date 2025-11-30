@@ -213,7 +213,7 @@ export const deleteGroup = async (groupId: string, ownerUid: string): Promise<bo
 
 export const updateGroup = async (
   groupId: string,
-  updates: Partial<Pick<PrayerGroup, 'name' | 'description' | 'emoji' | 'isPrivate'>>
+  updates: Partial<Pick<PrayerGroup, 'name' | 'description' | 'emoji' | 'isPrivate' | 'photoURL'>>
 ): Promise<boolean> => {
   if (!firebaseEnabled || !db) return false;
 

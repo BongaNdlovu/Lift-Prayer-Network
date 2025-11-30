@@ -28,10 +28,13 @@ import { HelpScreen } from '../screens/HelpScreen';
 import { MyPrayersScreen } from '../screens/MyPrayersScreen';
 import DonationScreen from '../screens/DonationScreen';
 import { OnboardingScreen, checkOnboardingComplete } from '../screens/OnboardingScreen';
+import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
+import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import { useAuth } from '../hooks/useAuth';
 import { MainTabParamList, RootStackParamList } from './types';
 import { palette } from '../theme/colors';
 import { startOfflineSyncListener } from '../services/offlineSync';
+import { validateAndRepairCache } from '../services/offlineCache';
 
 const HAS_EVER_SIGNED_IN_KEY = '@lift_has_ever_signed_in';
 
@@ -74,6 +77,9 @@ export const AppNavigator: React.FC = () => {
   useEffect(() => {
     const checkInitialState = async () => {
       try {
+        // Validate and repair any corrupted cache data first
+        await validateAndRepairCache();
+        
         const [onboardingComplete, signedInBefore] = await Promise.all([
           checkOnboardingComplete(),
           AsyncStorage.getItem(HAS_EVER_SIGNED_IN_KEY),
@@ -196,6 +202,16 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="Donation"
               component={DonationScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PrivacyPolicy"
+              component={PrivacyPolicyScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="TermsOfService"
+              component={TermsOfServiceScreen}
               options={{ headerShown: false }}
             />
           </>

@@ -84,6 +84,7 @@ export type PrayerGroup = {
   name: string;
   description?: string;
   emoji?: string;
+  photoURL?: string | null;
   ownerUid: string;
   memberUids: string[];
   isPrivate: boolean;

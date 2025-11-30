@@ -201,6 +201,8 @@ export const clearAllCache = async (): Promise<void> => {
       CACHE_KEYS.REQUESTS,
       CACHE_KEYS.TESTIMONIES,
       CACHE_KEYS.LAST_SYNC,
+      CACHE_KEYS.PENDING_PRAYERS,
+      CACHE_KEYS.PENDING_REQUESTS,
     ]);
   } catch (error) {
     console.error('[OfflineCache] Error clearing cache:', error);
@@ -240,6 +242,39 @@ export const getCacheStats = async (): Promise<{
       pendingRequests: 0,
       lastSync: null,
     };
+  }
+};
+
+// Validate and repair corrupted cache data
+export const validateAndRepairCache = async (): Promise<boolean> => {
+  try {
+    // Try to read each cache key and clear if corrupted
+    const keysToCheck = [
+      CACHE_KEYS.REQUESTS,
+      CACHE_KEYS.TESTIMONIES,
+      CACHE_KEYS.PENDING_PRAYERS,
+      CACHE_KEYS.PENDING_REQUESTS,
+    ];
+
+    for (const key of keysToCheck) {
+      try {
+        const data = await AsyncStorage.getItem(key);
+        if (data) {
+          // Try to parse - if it fails, the data is corrupted
+          JSON.parse(data);
+        }
+      } catch (parseError) {
+        console.warn(`[OfflineCache] Corrupted data in ${key}, clearing...`);
+        await AsyncStorage.removeItem(key);
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[OfflineCache] Error validating cache:', error);
+    // If validation fails completely, clear all cache
+    await clearAllCache();
+    return false;
   }
 };
 

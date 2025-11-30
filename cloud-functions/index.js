@@ -1,10 +1,112 @@
-const { onDocumentCreated, onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const Filter = require('bad-words');
 
 admin.initializeApp();
 const db = admin.firestore();
 const filter = new Filter();
+
+// ============================================================================
+// Rate Limiting Configuration
+// ============================================================================
+const RATE_LIMITS = {
+  prayers: { maxPerHour: 100, maxPerDay: 500 },
+  requests: { maxPerHour: 10, maxPerDay: 30 },
+  testimonies: { maxPerHour: 10, maxPerDay: 20 },
+  comments: { maxPerHour: 50, maxPerDay: 200 },
+  notifications: { maxPerMinute: 10 },
+};
+
+/**
+ * Check if user has exceeded rate limit
+ * @param {string} userId - User ID
+ * @param {string} action - Action type (prayers, requests, etc.)
+ * @param {string} timeWindow - 'hour' or 'day'
+ * @returns {Promise<{allowed: boolean, count: number, limit: number}>}
+ */
+async function checkRateLimit(userId, action, timeWindow = 'hour') {
+  if (!userId || !RATE_LIMITS[action]) {
+    return { allowed: true, count: 0, limit: 999 };
+  }
+
+  const now = new Date();
+  let startTime;
+  let limit;
+
+  if (timeWindow === 'minute') {
+    startTime = new Date(now.getTime() - 60 * 1000);
+    limit = RATE_LIMITS[action].maxPerMinute || 60;
+  } else if (timeWindow === 'hour') {
+    startTime = new Date(now.getTime() - 60 * 60 * 1000);
+    limit = RATE_LIMITS[action].maxPerHour || 100;
+  } else {
+    startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    limit = RATE_LIMITS[action].maxPerDay || 500;
+  }
+
+  try {
+    const rateLimitRef = db.collection('rateLimits').doc(`${userId}_${action}`);
+    const doc = await rateLimitRef.get();
+
+    if (!doc.exists) {
+      // First action, create record
+      await rateLimitRef.set({
+        count: 1,
+        windowStart: admin.firestore.FieldValue.serverTimestamp(),
+        lastAction: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { allowed: true, count: 1, limit };
+    }
+
+    const data = doc.data();
+    const windowStart = data.windowStart?.toDate() || new Date(0);
+
+    if (windowStart < startTime) {
+      // Window expired, reset
+      await rateLimitRef.set({
+        count: 1,
+        windowStart: admin.firestore.FieldValue.serverTimestamp(),
+        lastAction: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { allowed: true, count: 1, limit };
+    }
+
+    const currentCount = data.count || 0;
+    if (currentCount >= limit) {
+      return { allowed: false, count: currentCount, limit };
+    }
+
+    // Increment count
+    await rateLimitRef.update({
+      count: admin.firestore.FieldValue.increment(1),
+      lastAction: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { allowed: true, count: currentCount + 1, limit };
+  } catch (error) {
+    console.error('Rate limit check failed:', error);
+    // Fail open - allow the action if rate limiting fails
+    return { allowed: true, count: 0, limit };
+  }
+}
+
+/**
+ * Log rate limit violation for monitoring
+ */
+async function logRateLimitViolation(userId, action, count, limit) {
+  try {
+    await db.collection('rateLimitViolations').add({
+      userId,
+      action,
+      count,
+      limit,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.warn(`Rate limit exceeded: ${userId} - ${action} (${count}/${limit})`);
+  } catch (error) {
+    console.error('Failed to log rate limit violation:', error);
+  }
+}
 
 // Helper function to send push notification via Expo
 async function sendExpoPushNotification(expoPushTokens, title, body, data = {}) {
@@ -67,6 +169,14 @@ exports.onPrayerCreated = onDocumentCreated('prayers/{prayerId}', async (event) 
   const data = snap.data();
   const { actorUid, targetRequestId, targetOwnerUid, targetSummary, actorDisplayName, isSelfPrayer } = data;
   
+  // Rate limit check for notifications
+  const rateCheck = await checkRateLimit(targetOwnerUid, 'notifications', 'minute');
+  if (!rateCheck.allowed) {
+    console.log(`Rate limit exceeded for notifications to ${targetOwnerUid}`);
+    await logRateLimitViolation(targetOwnerUid, 'notifications', rateCheck.count, rateCheck.limit);
+    return;
+  }
+  
   // Skip notification for self-prayers (handled client-side)
   if (isSelfPrayer) {
     console.log('Skipping notification for self-prayer');
@@ -99,6 +209,19 @@ exports.onPrayerCreated = onDocumentCreated('prayers/{prayerId}', async (event) 
     } catch (err) {
       console.error('Error sending prayer notification:', err);
     }
+  }
+
+  // Increment global prayer count
+  try {
+    await db.doc('stats/global').set(
+      {
+        totalPrayers: admin.firestore.FieldValue.increment(1),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.error('Error updating global prayer stats:', err);
   }
 });
 
@@ -197,26 +320,39 @@ exports.onRequestCreated = onDocumentCreated('requests/{requestId}', async (even
       console.error('Error sending critical alert:', err);
     }
   }
+
+  // Increment global request count
+  try {
+    await db.doc('stats/global').set(
+      {
+        totalRequests: admin.firestore.FieldValue.increment(1),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.error('Error updating global stats:', err);
+  }
 });
 
-// When a request is updated - track stats
-exports.onRequestWrite = onDocumentWritten('requests/{requestId}', async (event) => {
-  const snapshot = await db.collection('requests').get();
-  let totalPrayers = 0;
-  let totalRequests = 0;
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    totalRequests += 1;
-    totalPrayers += data.prayers || 0;
-  });
-  await db.doc('stats/global').set(
-    {
-      totalPrayers,
-      totalRequests,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
+// When a request is deleted - decrement stats
+exports.onRequestDeleted = onDocumentDeleted('requests/{requestId}', async (event) => {
+  const deletedData = event.data.data();
+  const prayerCount = deletedData?.prayers || 0;
+
+  try {
+    await db.doc('stats/global').set(
+      {
+        totalRequests: admin.firestore.FieldValue.increment(-1),
+        totalPrayers: admin.firestore.FieldValue.increment(-prayerCount),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    console.log('Decremented stats for deleted request');
+  } catch (err) {
+    console.error('Error updating stats on delete:', err);
+  }
 });
 
 // When a testimony is created - notify those who prayed
@@ -272,7 +408,7 @@ exports.onTestimonyCreated = onDocumentCreated('testimonies/{testimonyId}', asyn
 exports.onCommentCreated = onDocumentCreated('comments/{commentId}', async (event) => {
   const snap = event.data;
   const data = snap.data();
-  const { authorUid, authorDisplayName, parentId, parentType, content } = data;
+  const { authorUid, authorName, parentId, parentType, content } = data;
   
   try {
     // Get the parent document (request or testimony)
@@ -295,7 +431,7 @@ exports.onCommentCreated = onDocumentCreated('comments/{commentId}', async (even
       const tokens = await getUserPushTokens(ownerId);
       
       if (tokens.length > 0) {
-        const commenterName = authorDisplayName || 'Someone';
+        const commenterName = authorName || 'Someone';
         const contentPreview = (content || '').slice(0, 60);
         
         await sendExpoPushNotification(

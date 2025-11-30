@@ -9,10 +9,14 @@ import { AuthProvider } from './src/hooks/useAuth';
 import { BootScreen } from './src/screens/BootScreen';
 import { setupNotificationHandler } from './src/services/notifications';
 import { useAppFonts } from './src/hooks/useFonts';
+import { initSentry, withErrorBoundary } from './src/services/sentry';
 
 enableScreens();
 
-export default function App() {
+// Initialize Sentry for crash reporting
+initSentry();
+
+function App() {
   const [booting, setBooting] = useState(true);
   const { fontsLoaded } = useAppFonts();
 
@@ -51,3 +55,6 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
+// Wrap with Sentry error boundary for crash reporting
+export default withErrorBoundary(App);

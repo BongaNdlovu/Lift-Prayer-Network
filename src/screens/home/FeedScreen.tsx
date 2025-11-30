@@ -285,7 +285,7 @@ export const FeedScreen: React.FC = () => {
               onPress={() => setMode(m)}
             >
               <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
-                {m === 'REQUEST' ? 'Transmission' : 'Verification'}
+                {m === 'REQUEST' ? 'Prayer Requests' : 'Answered Prayers'}
               </Text>
             </TouchableOpacity>
           ))}

@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
+import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInviteCode } from '../services/groups';
@@ -52,6 +53,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   // Edit group state
   const [editName, setEditName] = useState(groupName);
   const [editDesc, setEditDesc] = useState('');
+  const [editPhotoURL, setEditPhotoURL] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   
   // Post prayer state
@@ -72,6 +74,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         setGroup(groupData);
         setEditName(groupData.name);
         setEditDesc(groupData.description || '');
+        setEditPhotoURL(groupData.photoURL || null);
       }
     };
     loadGroup();
@@ -117,6 +120,50 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
+  const pickGroupImage = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your photos to change the group image.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        // For now, store as base64 data URL (in production, upload to Firebase Storage)
+        const asset = result.assets[0];
+        if (asset.base64) {
+          const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
+          setEditPhotoURL(dataUrl);
+        } else if (asset.uri) {
+          setEditPhotoURL(asset.uri);
+        }
+        
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }
+    } catch (err) {
+      console.warn('Error picking image:', err);
+      Alert.alert('Error', 'Could not select image. Please try again.');
+    }
+  };
+
+  const removeGroupImage = () => {
+    setEditPhotoURL(null);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
   const handleEditGroup = async () => {
     if (!editName.trim()) {
       Alert.alert('Error', 'Group name is required');
@@ -128,6 +175,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       await updateGroup(groupId, {
         name: editName.trim(),
         description: editDesc.trim(),
+        photoURL: editPhotoURL,
       });
       
       if (Platform.OS !== 'web') {
@@ -135,7 +183,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       }
       
       setShowEditModal(false);
-      setGroup(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim() } : null);
+      setGroup(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), photoURL: editPhotoURL } : null);
       Alert.alert('Success', 'Group updated!');
     } catch (err) {
       Alert.alert('Error', 'Could not update group');
@@ -362,9 +410,13 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       {/* Group Info Card */}
       <View style={styles.infoCard}>
         <View style={styles.infoHeader}>
-          <View style={styles.groupIcon}>
-            <Text style={styles.groupIconText}>{groupEmoji || group?.emoji || '🙏'}</Text>
-          </View>
+          {group?.photoURL ? (
+            <Image source={{ uri: group.photoURL }} style={styles.groupIconImage} />
+          ) : (
+            <View style={styles.groupIcon}>
+              <Text style={styles.groupIconText}>{groupEmoji || group?.emoji || '🙏'}</Text>
+            </View>
+          )}
           <View style={styles.groupTitleContainer}>
             <Text style={styles.groupTitle}>{group?.name || groupName}</Text>
             <Text style={styles.memberCount}>
@@ -501,6 +553,32 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               <TouchableOpacity onPress={() => setShowEditModal(false)}>
                 <Ionicons name="close" size={24} color={palette.muted} />
               </TouchableOpacity>
+            </View>
+
+            {/* Group Photo Picker */}
+            <Text style={styles.inputLabel}>Group Photo</Text>
+            <View style={styles.photoPickerContainer}>
+              {editPhotoURL ? (
+                <Image source={{ uri: editPhotoURL }} style={styles.photoPreview} />
+              ) : (
+                <View style={styles.photoPlaceholder}>
+                  <Ionicons name="camera" size={32} color={palette.muted} />
+                </View>
+              )}
+              <View style={styles.photoButtons}>
+                <TouchableOpacity style={styles.photoButton} onPress={pickGroupImage}>
+                  <Ionicons name="image-outline" size={18} color={palette.accentDark} />
+                  <Text style={styles.photoButtonText}>
+                    {editPhotoURL ? 'Change Photo' : 'Add Photo'}
+                  </Text>
+                </TouchableOpacity>
+                {editPhotoURL && (
+                  <TouchableOpacity style={styles.photoButtonRemove} onPress={removeGroupImage}>
+                    <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                    <Text style={styles.photoButtonRemoveText}>Remove</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
 
             <Text style={styles.inputLabel}>Group Name</Text>
@@ -653,6 +731,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
+  },
+  groupIconImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginRight: spacing.md,
+    backgroundColor: '#f1f5f9',
   },
   groupIconText: {
     fontSize: 28,
@@ -956,6 +1041,64 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: palette.accent,
     fontWeight: '600',
+  },
+  // Photo picker styles
+  photoPickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  photoPreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f1f5f9',
+  },
+  photoPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: palette.border,
+    borderStyle: 'dashed',
+  },
+  photoButtons: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  photoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: '#fef3c7',
+    borderRadius: radius.md,
+  },
+  photoButtonText: {
+    fontWeight: '700',
+    fontSize: 14,
+    color: palette.accentDark,
+  },
+  photoButtonRemove: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: '#fef2f2',
+    borderRadius: radius.md,
+  },
+  photoButtonRemoveText: {
+    fontWeight: '700',
+    fontSize: 14,
+    color: '#dc2626',
   },
 });
 

@@ -197,7 +197,6 @@ export const CalendarScreen: React.FC = () => {
     setNewHour(now.getHours());
     setNewMinute(now.getMinutes());
     setNewReminderMinutes(15);
-    setShowTimePicker(false);
     setShowReminderPicker(false);
     setShowAddModal(true);
   };
@@ -219,7 +218,6 @@ export const CalendarScreen: React.FC = () => {
       setNewMinute(now.getMinutes());
     }
     setNewReminderMinutes(event.reminderMinutesBefore);
-    setShowTimePicker(false);
     setShowReminderPicker(false);
     setShowAddModal(true);
   };

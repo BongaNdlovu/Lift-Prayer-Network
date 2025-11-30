@@ -26,8 +26,9 @@ service firebase.storage {
       // Anyone can view profile pictures (they're public)
       allow read: if true;
       
-      // Allow authenticated users to upload - we validate ownership in the app
+      // Only allow users to upload their own profile picture (file name must start with UID)
       allow write: if isSignedIn()
+        && fileName.matches(request.auth.uid + '.*')
         && request.resource.size < 2 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }

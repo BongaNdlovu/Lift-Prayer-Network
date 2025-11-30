@@ -234,13 +234,17 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const handleFlag = async () => {
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to report content.');
+      return;
+    }
     if (!flagText.trim()) {
       Alert.alert('Add context', 'Please add a brief reason.');
       return;
     }
     setBusyAction(true);
     try {
-      await flagContent(user?.uid, id, type, flagText.trim());
+      await flagContent(user.uid, id, type, flagText.trim());
       setFlagText('');
       Alert.alert('Flag submitted', 'Thank you for keeping the space healthy.');
     } catch (err: any) {

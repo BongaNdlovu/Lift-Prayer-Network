@@ -75,7 +75,7 @@ service cloud.firestore {
 
     match /users/{uid} {
       // Only allow reading certain fields publicly, full profile to self
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && request.auth.uid == uid;
       allow write: if isSignedIn() && request.auth.uid == uid;
     }
 
@@ -87,21 +87,23 @@ service cloud.firestore {
       allow create: if isSignedIn() 
         && request.resource.data.ownerUid == request.auth.uid
         && isValidRequestPrivacy(request.resource.data);
-      // Allow owner OR admin to update/delete
-      // Admin can also update pin status (isPinned, pinnedAt, pinnedBy)
-      // All updates must maintain valid privacy flag consistency
-      allow update: if (canModifyContent(resource.data) && isValidRequestPrivacy(request.resource.data)) || (
-        isAdmin() && 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPinned', 'pinnedAt', 'pinnedBy'])
+      // Allow owner OR admin to update - simplified check
+      // Owner can update their own content, admin can update anything including pins
+      allow update: if isSignedIn() && (
+        resource.data.ownerUid == request.auth.uid || 
+        isAdmin()
       );
-      allow delete: if canModifyContent(resource.data);
+      // Allow owner OR admin to delete - simplified check
+      allow delete: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
     }
 
     match /testimonies/{testimonyId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
-      // Allow owner OR admin to update/delete
-      allow update, delete: if canModifyContent(resource.data);
+      // Allow owner OR admin to update - simplified check
+      allow update: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      // Allow owner OR admin to delete - simplified check
+      allow delete: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
     }
 
     match /prayers/{prayerId} {
@@ -149,7 +151,8 @@ service cloud.firestore {
     }
 
     match /reports/{reportId} {
-      allow create: if true;
+      // Require authentication and matching actor
+      allow create: if isSignedIn() && request.resource.data.actorUid == request.auth.uid;
       // Only admins can read reports for moderation
       allow read: if isAdmin();
       // Admins can update reports (mark as reviewed, resolved, etc.)

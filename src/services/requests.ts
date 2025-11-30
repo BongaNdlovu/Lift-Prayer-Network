@@ -47,14 +47,18 @@ export const deleteTestimony = async (id: string) => {
 };
 
 export const flagContent = async (
-  actorUid: string | undefined,
+  actorUid: string,
   targetId: string,
   targetType: 'REQUEST' | 'TESTIMONY',
   reason: string,
-) => {
+): Promise<void> => {
   if (!firebaseEnabled || !db) return;
+
+  if (!actorUid) {
+    throw new Error('Authentication required to report content');
+  }
   await addDoc(collection(db, 'reports'), {
-    actorUid: actorUid || 'anonymous',
+    actorUid,
     targetId,
     targetType,
     reason,

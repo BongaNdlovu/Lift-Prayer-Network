@@ -68,7 +68,7 @@ export const MyPrayersScreen: React.FC = () => {
         
         // Load testimonies
         const testimoniesQuery = query(
-          collection(db, 'testimonies'),
+          collection(db!, 'testimonies'),
           where('ownerUid', '==', user.uid),
           orderBy('createdAt', 'desc')
         );

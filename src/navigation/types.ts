@@ -33,6 +33,8 @@ export type RootStackParamList = {
   Help: undefined;
   MyPrayers: undefined;
   Donation: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
 };
 
 export type MainTabParamList = {

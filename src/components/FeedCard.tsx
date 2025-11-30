@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform, TouchableOpacity, Alert, M
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { palette, radius, spacing } from '../theme/colors';
+import { palette, radius, spacing, shadows } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
 import { reportContent, blockUser, REPORT_REASONS, ReportReason } from '../services/moderation';
 import { getVerifiedBadge, BADGE_STYLES, canEditContent, canDeleteContent, hasAdminPermission } from '../config/admins';
@@ -289,24 +289,24 @@ export const FeedCard: React.FC<Props> = ({
     : ['#ffffff', '#fef3c7'];
 
   return (
-    <Pressable onPress={() => onPress?.(item)}>
-      {isPinned && (
-        <View style={styles.pinnedBadge}>
-          <Ionicons name="pin" size={10} color="#fff" />
-          <Text style={styles.pinnedBadgeText}>PINNED</Text>
-        </View>
-      )}
-      {isUrgent && !isPinned && (
-        <View style={styles.urgentBadge}>
-          <Text style={styles.urgentBadgeText}>🚨 URGENT</Text>
-        </View>
-      )}
+    <Pressable onPress={() => onPress?.(item)} style={isPinned && styles.pinnedCardWrapper}>
       <LinearGradient
         colors={isPinned ? ['#fef3c7', '#fde68a'] : cardColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.card, isUrgent && styles.cardUrgent, isPinned && styles.cardPinned]}
       >
+        {isPinned && (
+          <View style={styles.pinnedBadge}>
+            <Ionicons name="pin" size={10} color="#fff" />
+            <Text style={styles.pinnedBadgeText}>PINNED</Text>
+          </View>
+        )}
+        {isUrgent && !isPinned && (
+          <View style={styles.urgentBadge}>
+            <Text style={styles.urgentBadgeText}>🚨 URGENT</Text>
+          </View>
+        )}
         <View style={styles.header}>
           <View style={styles.userInfo}>
             {userPhotoURL ? (
@@ -531,13 +531,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     marginVertical: spacing.xs,
-    shadowColor: palette.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadows.sm,
     borderWidth: 1,
     borderColor: palette.border,
+    backgroundColor: '#fff', // Fallback
   },
   cardUrgent: {
     borderColor: '#fca5a5',
@@ -551,29 +548,27 @@ const styles = StyleSheet.create({
     shadowColor: '#f59e0b',
     shadowOpacity: 0.2,
   },
+  pinnedCardWrapper: {
+    marginTop: 4,
+  },
   pinnedBadge: {
-    position: 'absolute',
-    top: -8,
-    left: 12,
     backgroundColor: '#f59e0b',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    zIndex: 10,
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 10,
+    ...shadows.sm,
     shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 3,
   },
   pinnedBadgeText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   header: {
     flexDirection: 'row',
@@ -619,7 +614,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: palette.text,
     flexShrink: 1,
@@ -627,53 +622,50 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     flexWrap: 'wrap',
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 8,
   },
   verifiedBadgeText: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   meta: {
-    fontSize: 11,
+    fontSize: 12,
     color: palette.muted,
-    marginTop: 1,
+    marginTop: 2,
   },
   statusBadge: {
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: 6,
     paddingVertical: 3,
-    borderRadius: radius.sm,
+    borderRadius: 6,
     alignItems: 'center',
     flexShrink: 0,
   },
   statusPending: {
     backgroundColor: '#fef2f2',
-    borderWidth: 1,
-    borderColor: '#fecaca',
+    // Removed border for subtlety
   },
   statusActive: {
-    backgroundColor: '#fef3c7',
-    borderWidth: 1,
-    borderColor: '#fde68a',
+    backgroundColor: '#fffbeb', // Lighter amber
+    // Removed border
   },
   statusResolved: {
-    backgroundColor: '#dcfce7',
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
+    backgroundColor: '#f0fdf4', // Lighter green
+    // Removed border
   },
   statusText: {
     fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 0.4,
+    fontWeight: '600', // Reduced from 700
+    letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
   statusTextPending: {
@@ -686,48 +678,47 @@ const styles = StyleSheet.create({
     color: '#16a34a',
   },
   content: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 22,
     color: '#1f2937',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   footer: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   footerInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
   commentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
     backgroundColor: '#f8fafc',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   commentCount: {
-    fontSize: 10,
+    fontSize: 11,
     color: palette.muted,
     fontWeight: '600',
   },
   prayButtonWrapper: {
     borderRadius: radius.md,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
+    ...shadows.glow,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    gap: 4,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
     backgroundColor: palette.accent,
-    minHeight: 32,
+    minHeight: 36,
   },
   amenButton: {
     backgroundColor: '#facc15',

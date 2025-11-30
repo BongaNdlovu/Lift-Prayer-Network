@@ -284,6 +284,31 @@ export const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Legal Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Legal</Text>
+          
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={() => (navigation as any).navigate('PrivacyPolicy')}
+          >
+            <Ionicons name="document-text-outline" size={22} color={palette.text} />
+            <Text style={styles.menuLabel}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={() => (navigation as any).navigate('TermsOfService')}
+          >
+            <Ionicons name="reader-outline" size={22} color={palette.text} />
+            <Text style={styles.menuLabel}>Terms of Service</Text>
+            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          </TouchableOpacity>
+        </View>
+
         {/* Data & Privacy Info */}
         <View style={styles.infoSection}>
           <Ionicons name="shield-checkmark-outline" size={24} color={palette.accent} />

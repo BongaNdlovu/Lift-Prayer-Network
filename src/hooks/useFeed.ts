@@ -78,6 +78,10 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
   const [refreshKey, setRefreshKey] = useState(0);
   const isMounted = useRef(true);
   const lastFetchTime = useRef<number>(0);
+  
+  // Track viewerUid changes to re-filter when user signs in
+  const viewerUidRef = useRef(viewerUid);
+  viewerUidRef.current = viewerUid;
 
   // Sort function to put pinned items first
   const sortWithPinnedFirst = useCallback((list: FeedItem[]) => {
@@ -231,6 +235,14 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
       isMounted.current = false;
     };
   }, []);
+
+  // Re-fetch when viewerUid changes (user signs in/out)
+  useEffect(() => {
+    if (viewerUid !== undefined) {
+      // User state changed, trigger a refresh to re-apply privacy filter
+      setRefreshKey(prev => prev + 1);
+    }
+  }, [viewerUid]);
 
   useEffect(() => {
     let unsub: Unsubscribe | null = null;

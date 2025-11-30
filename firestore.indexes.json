@@ -12,6 +12,14 @@
       "collectionGroup": "prayers",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "actorUid", "order": "ASCENDING" },
+        { "fieldPath": "prayedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "prayers",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "targetRequestId", "order": "ASCENDING" },
         { "fieldPath": "prayedAt", "order": "DESCENDING" }
       ]

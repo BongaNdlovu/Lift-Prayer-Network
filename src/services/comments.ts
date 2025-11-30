@@ -95,13 +95,20 @@ export const subscribeToComments = (
     limit(100)
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const comments = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data(),
-    })) as Comment[];
-    callback(comments);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const comments = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as Comment[];
+      callback(comments);
+    },
+    (error) => {
+      console.warn('Error in comments subscription:', error);
+      callback([]);
+    }
+  );
 };
 
 export const deleteComment = async (
