@@ -17,12 +17,41 @@ import {
   reauthenticateWithCredential,
   AuthError,
 } from 'firebase/auth';
+import { collection, getDocs, deleteDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, firebaseEnabled } from '../services/firebase';
+import { auth, firebaseEnabled, db } from '../services/firebase';
 import { ensureUserProfile, syncOnboardingData, type OnboardingAnswers } from '../services/userProfile';
-import { clearAllCache } from '../services/offlineCache';
+import { clearAllCache, getCacheStats } from '../services/offlineCache';
+import { cleanupUserData } from '../services/userCleanup';
 
 const ONBOARDING_ANSWERS_KEY = '@lift_onboarding_answers';
+
+export const checkPendingData = async (): Promise<{
+  hasPending: boolean;
+  pendingPrayers: number;
+  pendingRequests: number;
+}> => {
+  const stats = await getCacheStats();
+  return {
+    hasPending: stats.pendingPrayers > 0 || stats.pendingRequests > 0,
+    pendingPrayers: stats.pendingPrayers,
+    pendingRequests: stats.pendingRequests,
+  };
+};
+
+const cleanupPushTokens = async (uid: string): Promise<void> => {
+  if (!db) return;
+
+  try {
+    const tokensRef = collection(db, `users/${uid}/pushTokens`);
+    const snapshot = await getDocs(tokensRef);
+    const deletions = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
+    await Promise.all(deletions);
+    console.log(`[Auth] Deleted ${snapshot.size} push tokens`);
+  } catch (err) {
+    console.warn('[Auth] Could not cleanup push tokens:', err);
+  }
+};
 
 // Firebase error code to user-friendly message mapping
 const getAuthErrorMessage = (error: AuthError): string => {
@@ -51,7 +80,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (displayName: string, email: string, password: string) => Promise<UserCredential>;
   signInGuest: () => Promise<UserCredential>;
-  signOut: () => Promise<void>;
+  signOut: (force?: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   resendVerification: () => Promise<void>;
   linkGuestToEmail: (displayName: string, email: string, password: string) => Promise<UserCredential>;
@@ -193,11 +222,27 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }
   }, []);
 
-  const signOut = useCallback(async (): Promise<void> => {
+  const signOut = useCallback(async (force: boolean = false): Promise<void> => {
     if (!auth) return;
+
+    const currentUser = auth.currentUser;
 
     try {
       console.log('[Auth] Signing out');
+
+      if (!force) {
+        const pending = await checkPendingData();
+        if (pending.hasPending) {
+          const error: any = new Error('PENDING_DATA');
+          error.pendingPrayers = pending.pendingPrayers;
+          error.pendingRequests = pending.pendingRequests;
+          throw error;
+        }
+      }
+      
+      if (currentUser) {
+        await cleanupPushTokens(currentUser.uid);
+      }
       
       // Clear cached feed data to prevent privacy leaks
       // This ensures private/group content isn't visible after logout
@@ -206,9 +251,12 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       
       await firebaseSignOut(auth);
       console.log('[Auth] Sign out successful');
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Auth] Sign out error:', error);
-      throw new Error('Failed to sign out. Please try again.');
+      if (error?.message === 'PENDING_DATA') {
+        throw error;
+      }
+      throw new Error(error?.message || 'Failed to sign out. Please try again.');
     }
   }, []);
 
@@ -303,6 +351,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       if (password && currentUser.email) {
         const credential = EmailAuthProvider.credential(currentUser.email, password);
         await reauthenticateWithCredential(currentUser, credential);
+      }
+
+      if (currentUser.uid) {
+        await cleanupUserData(currentUser.uid);
       }
 
       await deleteUser(currentUser);

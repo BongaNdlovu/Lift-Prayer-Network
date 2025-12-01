@@ -27,7 +27,7 @@ import { useAuth } from '../hooks/useAuth';
 import { FeedCard } from '../components/FeedCard';
 import { SkeletonCard } from '../components/SkeletonCard';
 import { palette, radius, spacing } from '../theme/colors';
-import type { FeedItem, LiftRequest, Testimony } from '../types';
+import type { FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 
 type FilterType = 'all' | 'requests' | 'testimonies';

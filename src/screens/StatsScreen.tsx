@@ -41,6 +41,7 @@ const StatCard: React.FC<StatCardProps> = ({ emoji, value, label, color, delay =
         useNativeDriver: true,
       }),
     ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

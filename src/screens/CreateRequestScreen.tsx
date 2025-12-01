@@ -24,6 +24,7 @@ import { queuePendingRequest } from '../services/offlineCache';
 import { palette, radius, spacing } from '../theme/colors';
 import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
+import { InlineError } from '../components/InlineError';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateRequest'>;
@@ -37,10 +38,12 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const offline = netInfo.isConnected === false;
 
   const handleSubmit = async () => {
+    setErrorMessage(null);
     if (!content.trim()) {
       Alert.alert('Empty Request', 'Please share what you need prayer for.');
       return;
@@ -116,15 +119,18 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
     setSubmitting(true);
 
     try {
+      const requestDisplayName = isAnonymous ? 'Anonymous' : (user.displayName || 'Anonymous');
+
       if (offline) {
         // Queue for later sync
         await queuePendingRequest({
           content: sanitizedContent,
           ownerUid: user.uid,
-          displayName: user.displayName || 'Anonymous',
+          displayName: requestDisplayName,
           category: selectedCategory,
           isUrgent,
           isPrivate,
+          isAnonymous,
         });
         
         if (Platform.OS !== 'web') {
@@ -138,7 +144,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
         );
       } else {
         // Submit immediately with sanitized content
-        await submitFeedItem('REQUEST', sanitizedContent, user.uid, isAnonymous ? 'Anonymous' : (user.displayName || 'Anonymous'), {
+        await submitFeedItem('REQUEST', sanitizedContent, user.uid, requestDisplayName, {
           category: selectedCategory,
           isUrgent,
           isPrivate,
@@ -158,6 +164,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
         );
       }
     } catch (error: any) {
+      setErrorMessage(error.message || 'Could not submit your request. Please try again.');
       Alert.alert('Error', error.message || 'Could not submit your request. Please try again.');
     } finally {
       setSubmitting(false);
@@ -180,6 +187,9 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            {errorMessage && (
+              <InlineError message={errorMessage} onDismiss={() => setErrorMessage(null)} />
+            )}
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -193,7 +203,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
             {offline && (
               <View style={styles.offlineBanner}>
                 <Ionicons name="cloud-offline" size={18} color="#b91c1c" />
-                <Text style={styles.offlineText}>You're offline. Request will be saved locally.</Text>
+                <Text style={styles.offlineText}>You&apos;re offline. Request will be saved locally.</Text>
               </View>
             )}
 
@@ -301,7 +311,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
                   <Text style={styles.optionEmoji}>🎭</Text>
                   <View>
                     <Text style={styles.optionTitle}>Post Anonymously</Text>
-                    <Text style={styles.optionHint}>Your name won't be shown to others</Text>
+                    <Text style={styles.optionHint}>Your name won&apos;t be shown to others</Text>
                   </View>
                 </View>
                 <Switch
@@ -363,7 +373,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Encouragement */}
             <Text style={styles.encouragement}>
-              "Therefore I tell you, whatever you ask for in prayer, believe that you have received it, and it will be yours." — Mark 11:24
+              &quot;Therefore I tell you, whatever you ask for in prayer, believe that you have received it, and it will be yours.&quot; — Mark 11:24
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>

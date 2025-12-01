@@ -178,7 +178,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.celebrationBanner}>
               <Text style={styles.celebrationEmoji}>🙌</Text>
               <View style={styles.celebrationContent}>
-                <Text style={styles.celebrationTitle}>Celebrate God's Faithfulness!</Text>
+                <Text style={styles.celebrationTitle}>Celebrate God&apos;s Faithfulness!</Text>
                 <Text style={styles.celebrationText}>
                   Share how God answered your prayer and encourage others in their faith journey.
                 </Text>
@@ -291,7 +291,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Encouragement */}
             <Text style={styles.encouragement}>
-              "Come and hear, all you who fear God; let me tell you what he has done for me." — Psalm 66:16
+              &quot;Come and hear, all you who fear God; let me tell you what he has done for me.&quot; — Psalm 66:16
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>

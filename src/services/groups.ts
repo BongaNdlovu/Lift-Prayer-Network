@@ -14,11 +14,16 @@ import {
   arrayRemove,
   onSnapshot,
   Unsubscribe,
-  documentId,
 } from 'firebase/firestore';
-import { db, firebaseEnabled } from './firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, firebaseEnabled, storage } from './firebase';
 import type { PrayerGroup } from '../types';
 import { checkAndUnlockAchievements } from './achievements';
+import { classifyError, type AppError } from '../types/errors';
+
+export type GroupResult<T> = 
+  | { success: true; data: T }
+  | { success: false; error: AppError };
 
 type GroupMember = {
   uid: string;
@@ -68,9 +73,10 @@ export const createGroup = async (
     }
 
     return groupRef.id;
-  } catch (err: any) {
-    console.error('[Groups] Error creating group:', err.code, err.message);
-    throw err; // Re-throw to let the UI handle it
+  } catch (err) {
+    const appError = classifyError(err, { defaultMessage: 'Could not create group. Please try again.' });
+    console.error('[Groups] Error creating group:', appError.message);
+    throw appError;
   }
 };
 
@@ -89,7 +95,8 @@ export const getUserGroups = async (userId: string): Promise<PrayerGroup[]> => {
       ...docSnap.data(),
     })) as PrayerGroup[];
   } catch (err) {
-    console.warn('Error fetching groups:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error fetching groups:', appError.message);
     return [];
   }
 };
@@ -141,7 +148,8 @@ export const getGroup = async (groupId: string): Promise<PrayerGroup | null> => 
     if (!docSnap.exists()) return null;
     return { id: docSnap.id, ...docSnap.data() } as PrayerGroup;
   } catch (err) {
-    console.warn('Error fetching group:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error fetching group:', appError.message);
     return null;
   }
 };
@@ -162,7 +170,8 @@ export const joinGroup = async (groupId: string, userId: string): Promise<boolea
 
     return true;
   } catch (err) {
-    console.warn('Error joining group:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error joining group:', appError.message);
     return false;
   }
 };
@@ -183,7 +192,8 @@ export const leaveGroup = async (groupId: string, userId: string): Promise<boole
 
     return true;
   } catch (err) {
-    console.warn('Error leaving group:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error leaving group:', appError.message);
     return false;
   }
 };
@@ -206,7 +216,8 @@ export const deleteGroup = async (groupId: string, ownerUid: string): Promise<bo
     await deleteDoc(doc(db, 'groups', groupId));
     return true;
   } catch (err) {
-    console.warn('Error deleting group:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error deleting group:', appError.message);
     return false;
   }
 };
@@ -222,7 +233,8 @@ export const updateGroup = async (
     await updateDoc(groupRef, updates);
     return true;
   } catch (err) {
-    console.warn('Error updating group:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error updating group:', appError.message);
     return false;
   }
 };
@@ -247,8 +259,40 @@ export const findGroupByInviteCode = async (code: string): Promise<PrayerGroup |
     }
     return null;
   } catch (err) {
-    console.warn('Error finding group:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error finding group:', appError.message);
     return null;
+  }
+};
+
+export const uploadGroupPhoto = async (
+  groupId: string,
+  imageUri: string,
+): Promise<string> => {
+  if (!storage) {
+    throw new Error('Storage not initialized');
+  }
+
+  const response = await fetch(imageUri);
+  const blob = await response.blob();
+
+  const storageRef = ref(storage, `group-images/${groupId}/photo.jpg`);
+  await uploadBytes(storageRef, blob, {
+    contentType: 'image/jpeg',
+  });
+
+  return getDownloadURL(storageRef);
+};
+
+export const deleteGroupPhoto = async (groupId: string): Promise<void> => {
+  if (!storage) return;
+
+  try {
+    const storageRef = ref(storage, `group-images/${groupId}/photo.jpg`);
+    await deleteObject(storageRef);
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Could not delete group photo:', appError.message);
   }
 };
 
@@ -280,7 +324,7 @@ export const getGroupMembers = async (groupId: string): Promise<GroupMember[]> =
             displayName: 'Unknown User',
           });
         }
-      } catch (err) {
+      } catch {
         members.push({
           uid,
           displayName: 'Unknown User',
@@ -295,7 +339,8 @@ export const getGroupMembers = async (groupId: string): Promise<GroupMember[]> =
       return a.displayName.localeCompare(b.displayName);
     });
   } catch (err) {
-    console.warn('Error fetching group members:', err);
+    const appError = classifyError(err);
+    console.warn('[Groups] Error fetching group members:', appError.message);
     return [];
   }
 };

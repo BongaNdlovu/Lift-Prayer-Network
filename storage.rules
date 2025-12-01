@@ -34,7 +34,7 @@ service firebase.storage {
     }
 
     // Group images (if you add group avatars later)
-    match /group-images/{groupId} {
+    match /group-images/{groupId}/{fileName} {
       allow read: if true;
       allow write: if isSignedIn()
         && request.resource.size < 2 * 1024 * 1024

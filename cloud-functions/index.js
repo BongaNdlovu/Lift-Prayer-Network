@@ -1,4 +1,5 @@
 const { onDocumentCreated, onDocumentDeleted } = require('firebase-functions/v2/firestore');
+// const { onUserDeleted } = require('firebase-functions/v2/identity'); // Requires Identity extension - enable in Firebase Console first
 const admin = require('firebase-admin');
 const Filter = require('bad-words');
 
@@ -190,7 +191,7 @@ exports.onPrayerCreated = onDocumentCreated('prayers/{prayerId}', async (event) 
       const ownerDoc = await db.doc(`users/${targetOwnerUid}`).get();
       const ownerData = ownerDoc.data();
       
-      if (ownerData?.settings?.notifications !== false) {
+      if (ownerData?.settings?.notifications !== false && ownerData?.settings?.notificationsPrayers !== false) {
         const tokens = await getUserPushTokens(targetOwnerUid);
         
         if (tokens.length > 0) {
@@ -260,7 +261,7 @@ exports.onRequestCreated = onDocumentCreated('requests/{requestId}', async (even
           const memberData = memberDoc.data();
           
           // Check if member has notifications enabled
-          if (memberData?.settings?.notifications !== false) {
+          if (memberData?.settings?.notifications !== false && memberData?.settings?.notificationsGroups !== false) {
             const tokens = await getUserPushTokens(memberId);
             
             if (tokens.length > 0) {
@@ -383,7 +384,7 @@ exports.onTestimonyCreated = onDocumentCreated('testimonies/{testimonyId}', asyn
         const userDoc = await db.doc(`users/${userId}`).get();
         const userData = userDoc.data();
         
-        if (userData?.settings?.notifications !== false) {
+        if (userData?.settings?.notifications !== false && userData?.settings?.notificationsTestimonies !== false) {
           const tokens = await getUserPushTokens(userId);
           
           if (tokens.length > 0) {
@@ -427,7 +428,7 @@ exports.onCommentCreated = onDocumentCreated('comments/{commentId}', async (even
     const ownerDoc = await db.doc(`users/${ownerId}`).get();
     const ownerData = ownerDoc.data();
     
-    if (ownerData?.settings?.notifications !== false) {
+    if (ownerData?.settings?.notifications !== false && ownerData?.settings?.notificationsComments !== false) {
       const tokens = await getUserPushTokens(ownerId);
       
       if (tokens.length > 0) {
@@ -473,3 +474,154 @@ exports.onPushTokenCreated = onDocumentCreated('users/{uid}/pushTokens/{token}',
     }
   }
 });
+
+// ============================================================================
+// USER DELETION CLEANUP (DISABLED - Requires Identity Extension)
+// ============================================================================
+// 
+// STATUS: COMMENTED OUT - Requires Firebase Identity Platform
+// 
+// To enable this function:
+// 1. Go to Firebase Console > Authentication > Settings
+// 2. Click "Upgrade" to enable Identity Platform (may incur costs)
+// 3. Once enabled, uncomment the import at the top of this file:
+//    const { onUserDeleted } = require('firebase-functions/v2/identity');
+// 4. Uncomment the function below
+// 5. Deploy: firebase deploy --only functions
+//
+// What this function does:
+// - Deletes user's prayer records
+// - Anonymizes their requests and testimonies (preserves content)
+// - Removes them from all groups
+// - Deletes their comments, reports, notifications, and push tokens
+// - Deletes their user document
+//
+// Alternative: Manual cleanup via Admin SDK or scheduled function
+// ============================================================================
+/*
+exports.onUserDeleted = onUserDeleted(async (event) => {
+  const uid = event?.data?.uid || event.uid;
+  if (!uid) {
+    console.warn('onUserDeleted fired without uid');
+    return;
+  }
+
+  console.log(`Cleaning up data for deleted user: ${uid}`);
+
+  const writeOps = [];
+
+  // Helper to chunk commits to stay under Firestore limits
+  const commitWrites = async (ops) => {
+    let batch = db.batch();
+    let count = 0;
+    const commits = [];
+
+    for (const op of ops) {
+      if (count >= 450) {
+        commits.push(batch.commit());
+        batch = db.batch();
+        count = 0;
+      }
+
+      if (op.type === 'delete') {
+        batch.delete(op.ref);
+      } else if (op.type === 'update') {
+        batch.update(op.ref, op.data);
+      }
+      count += 1;
+    }
+
+    if (count > 0) {
+      commits.push(batch.commit());
+    }
+
+    await Promise.all(commits);
+  };
+
+  try {
+    // 1. Delete prayers by the user
+    const prayers = await db.collection('prayers')
+      .where('actorUid', '==', uid)
+      .get();
+    prayers.forEach((doc) => writeOps.push({ type: 'delete', ref: doc.ref }));
+
+    // 2. Anonymize requests
+    const requests = await db.collection('requests')
+      .where('ownerUid', '==', uid)
+      .get();
+    requests.forEach((doc) => writeOps.push({
+      type: 'update',
+      ref: doc.ref,
+      data: {
+        ownerUid: 'deleted_user',
+        userDisplayName: 'Deleted User',
+        userEmail: null,
+        userPhotoURL: null,
+      },
+    }));
+
+    // 3. Anonymize testimonies
+    const testimonies = await db.collection('testimonies')
+      .where('ownerUid', '==', uid)
+      .get();
+    testimonies.forEach((doc) => writeOps.push({
+      type: 'update',
+      ref: doc.ref,
+      data: {
+        ownerUid: 'deleted_user',
+        userDisplayName: 'Deleted User',
+        userEmail: null,
+        userPhotoURL: null,
+      },
+    }));
+
+    // 4. Delete comments authored by user
+    const comments = await db.collection('comments')
+      .where('authorUid', '==', uid)
+      .get();
+    comments.forEach((doc) => writeOps.push({ type: 'delete', ref: doc.ref }));
+
+    // 5. Delete reports filed by the user
+    const reports = await db.collection('reports')
+      .where('actorUid', '==', uid)
+      .get();
+    reports.forEach((doc) => writeOps.push({ type: 'delete', ref: doc.ref }));
+
+    // 6. Remove from groups
+    const groups = await db.collection('groups')
+      .where('memberUids', 'array-contains', uid)
+      .get();
+    groups.forEach((doc) => {
+      const memberUids = (doc.data().memberUids || []).filter((id) => id !== uid);
+      writeOps.push({
+        type: 'update',
+        ref: doc.ref,
+        data: { memberUids },
+      });
+    });
+
+    // 7. Delete user document
+    writeOps.push({ type: 'delete', ref: db.doc(`users/${uid}`) });
+
+    // 8. Delete push tokens
+    const tokens = await db.collection(`users/${uid}/pushTokens`).get();
+    tokens.forEach((doc) => writeOps.push({ type: 'delete', ref: doc.ref }));
+
+    // 9. Delete notifications for user
+    const notifications = await db.collection('notifications')
+      .where('recipientUid', '==', uid)
+      .get();
+    notifications.forEach((doc) => writeOps.push({ type: 'delete', ref: doc.ref }));
+
+    await commitWrites(writeOps);
+    console.log(`Successfully cleaned up data for user: ${uid} (operations: ${writeOps.length})`);
+  } catch (error) {
+    console.error(`Error cleaning up user data for ${uid}:`, error);
+    await db.collection('deletionErrors').add({
+      uid,
+      error: error.message,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+});
+*/

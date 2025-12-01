@@ -30,6 +30,10 @@ import DonationScreen from '../screens/DonationScreen';
 import { OnboardingScreen, checkOnboardingComplete } from '../screens/OnboardingScreen';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
+import { ReportsScreen } from '../screens/admin/ReportsScreen';
+import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
+import { PinnedRequestsScreen } from '../screens/admin/PinnedRequestsScreen';
+import { GlobalStatsScreen } from '../screens/admin/GlobalStatsScreen';
 import { useAuth } from '../hooks/useAuth';
 import { MainTabParamList, RootStackParamList } from './types';
 import { palette } from '../theme/colors';
@@ -173,6 +177,26 @@ export const AppNavigator: React.FC = () => {
               name="Settings"
               component={SettingsScreen}
               options={{ headerShown: true, title: 'Settings' }}
+            />
+            <Stack.Screen
+              name="AdminDashboard"
+              component={AdminDashboardScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="AdminReports"
+              component={ReportsScreen}
+              options={{ headerShown: true, title: 'Reports' }}
+            />
+            <Stack.Screen
+              name="AdminPinnedRequests"
+              component={PinnedRequestsScreen}
+              options={{ headerShown: true, title: 'Pinned Requests' }}
+            />
+            <Stack.Screen
+              name="AdminGlobalStats"
+              component={GlobalStatsScreen}
+              options={{ headerShown: true, title: 'Global Stats' }}
             />
             <Stack.Screen
               name="People"

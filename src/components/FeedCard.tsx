@@ -124,7 +124,7 @@ export const FeedCard: React.FC<Props> = ({
       setShowReportModal(false);
       setSelectedReason(null);
       Alert.alert('Reported', 'Thank you for helping keep our community safe.');
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Could not submit report. Please try again.');
     } finally {
       setReporting(false);
@@ -246,7 +246,7 @@ export const FeedCard: React.FC<Props> = ({
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch (err) {
+      } catch {
         // Haptics not available on this device - ignore silently
       }
     }
@@ -399,7 +399,7 @@ export const FeedCard: React.FC<Props> = ({
                       if (Platform.OS !== 'web') {
                         try {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        } catch (err) {
+                        } catch {
                           // Haptics not available
                         }
                       }
@@ -443,7 +443,7 @@ export const FeedCard: React.FC<Props> = ({
                       if (Platform.OS !== 'web') {
                         try {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        } catch (err) {
+                        } catch {
                           // Haptics not available
                         }
                       }

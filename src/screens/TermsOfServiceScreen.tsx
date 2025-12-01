@@ -100,7 +100,7 @@ export const TermsOfServiceScreen: React.FC = () => {
 
         <Section title="8. Disclaimer of Warranties">
           <Paragraph>
-            Lift is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free service. We are not responsible for the accuracy of user-generated content.
+            Lift is provided &quot;as is&quot; without warranties of any kind. We do not guarantee uninterrupted or error-free service. We are not responsible for the accuracy of user-generated content.
           </Paragraph>
         </Section>
 

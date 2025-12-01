@@ -1,11 +1,18 @@
 import * as Sentry from '@sentry/react-native';
 
-// Sentry DSN for Lift Prayer Network
-const SENTRY_DSN = 'https://65d0f726b7bd84fb1707b38e8162a46d@o4510454341828608.ingest.us.sentry.io/4510454361686016';
+// Sentry DSN from environment variable
+// Set EXPO_PUBLIC_SENTRY_DSN in your .env file
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || '';
 
 // Initialize Sentry for crash reporting and performance monitoring
 // Note: Using runtime-only mode without native plugin to avoid build issues
 export const initSentry = () => {
+  // Skip initialization if no DSN configured
+  if (!SENTRY_DSN) {
+    console.log('[Sentry] No DSN configured, skipping initialization');
+    return;
+  }
+
   try {
     Sentry.init({
       dsn: SENTRY_DSN,

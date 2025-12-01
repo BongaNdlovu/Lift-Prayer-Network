@@ -36,7 +36,7 @@ export const GroupsScreen: React.FC = () => {
   const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [groups, setGroups] = useState<PrayerGroup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -143,7 +143,7 @@ export const GroupsScreen: React.FC = () => {
       } else {
         Alert.alert('Error', 'Could not join group');
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Could not join group');
     } finally {
       setJoining(false);
@@ -156,7 +156,7 @@ export const GroupsScreen: React.FC = () => {
       await Share.share({
         message: `Join my prayer group "${group.name}" on Lift!\n\nInvite code: ${code}`,
       });
-    } catch (err) {
+    } catch {
       // User cancelled
     }
   };

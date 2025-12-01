@@ -100,7 +100,7 @@ export const HistoryScreen: React.FC = () => {
               </View>
               <Text style={styles.emptyTitle}>No prayers yet</Text>
               <Text style={styles.emptySubtitle}>
-                When you pray for someone's request,{'\n'}it will appear here
+                When you pray for someone&apos;s request,{'\n'}it will appear here
               </Text>
             </View>
           }

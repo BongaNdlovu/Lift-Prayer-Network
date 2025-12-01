@@ -26,27 +26,23 @@ import type { RootStackParamList } from '../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'NotificationsSettings'>;
 
 type NotificationSettings = {
-  // Push notifications
-  pushEnabled: boolean;
-  criticalAlerts: boolean;
-  // Prayer-related
-  prayerReceived: boolean; // When someone prays for your request
-  prayerAnswered: boolean; // When a testimony is linked
-  newGroupPrayers: boolean; // New prayers in your groups
-  // Community
-  newTestimonies: boolean; // When new testimonies are shared
-  // Reminders
+  enabled: boolean;
+  prayers: boolean;
+  comments: boolean;
+  testimonies: boolean;
+  critical: boolean;
+  groups: boolean;
   dailyReminder: boolean;
   reminderTime: string; // HH:MM format
 };
 
 const DEFAULT_SETTINGS: NotificationSettings = {
-  pushEnabled: false,
-  criticalAlerts: false,
-  prayerReceived: true,
-  prayerAnswered: true,
-  newGroupPrayers: true,
-  newTestimonies: true,
+  enabled: false,
+  prayers: true,
+  comments: true,
+  testimonies: true,
+  critical: false,
+  groups: true,
   dailyReminder: false,
   reminderTime: '09:00',
 };
@@ -54,7 +50,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<string>('unknown');
 
   // Load current settings
@@ -75,12 +71,12 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
           const data = snap.data();
           const userSettings = data.settings || {};
           setSettings({
-            pushEnabled: userSettings.notifications ?? false,
-            criticalAlerts: userSettings.notificationsCritical ?? false,
-            prayerReceived: userSettings.prayerReceived ?? true,
-            prayerAnswered: userSettings.prayerAnswered ?? true,
-            newGroupPrayers: userSettings.newGroupPrayers ?? true,
-            newTestimonies: userSettings.newTestimonies ?? true,
+            enabled: userSettings.notifications ?? false,
+            prayers: userSettings.notificationsPrayers ?? true,
+            comments: userSettings.notificationsComments ?? true,
+            testimonies: userSettings.notificationsTestimonies ?? true,
+            critical: userSettings.notificationsCritical ?? false,
+            groups: userSettings.notificationsGroups ?? true,
             dailyReminder: userSettings.dailyReminder ?? false,
             reminderTime: userSettings.reminderTime ?? '09:00',
           });
@@ -102,7 +98,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
 
       if (registration.status === 'granted' && user && registration.expoPushToken) {
         await storePushToken(user.uid, registration.expoPushToken, registration.devicePushToken);
-        await updateSetting('pushEnabled', true);
+        await updateSetting('enabled', true);
         
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -137,12 +133,12 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
 
     // Map to Firestore field names
     const fieldMap: Record<string, string> = {
-      pushEnabled: 'notifications',
-      criticalAlerts: 'notificationsCritical',
-      prayerReceived: 'prayerReceived',
-      prayerAnswered: 'prayerAnswered',
-      newGroupPrayers: 'newGroupPrayers',
-      newTestimonies: 'newTestimonies',
+      enabled: 'notifications',
+      prayers: 'notificationsPrayers',
+      comments: 'notificationsComments',
+      testimonies: 'notificationsTestimonies',
+      critical: 'notificationsCritical',
+      groups: 'notificationsGroups',
       dailyReminder: 'dailyReminder',
       reminderTime: 'reminderTime',
     };
@@ -161,7 +157,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
     const currentValue = settings[key];
     
     // Special handling for push notifications
-    if (key === 'pushEnabled' && !currentValue) {
+    if (key === 'enabled' && !currentValue) {
       if (permissionStatus !== 'granted') {
         requestPermission();
         return;
@@ -221,8 +217,8 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               iconColor="#3b82f6"
               title="Enable Notifications"
               subtitle="Receive push notifications"
-              value={settings.pushEnabled && permissionStatus === 'granted'}
-              onToggle={() => handleToggle('pushEnabled')}
+              value={settings.enabled && permissionStatus === 'granted'}
+              onToggle={() => handleToggle('enabled')}
               disabled={permissionStatus !== 'granted'}
             />
             
@@ -233,26 +229,26 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               iconColor="#ef4444"
               title="Critical Prayer Alerts"
               subtitle="Urgent prayer requests from the community"
-              value={settings.criticalAlerts}
-              onToggle={() => handleToggle('criticalAlerts')}
-              disabled={!settings.pushEnabled || permissionStatus !== 'granted'}
+              value={settings.critical}
+              onToggle={() => handleToggle('critical')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
             />
           </View>
         </View>
 
         {/* Prayer Notifications Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Prayer Activity</Text>
+          <Text style={styles.sectionTitle}>Prayer & Content Activity</Text>
           
           <View style={styles.settingCard}>
             <SettingRow
               icon="heart"
               iconColor="#ec4899"
-              title="Someone Prayed for You"
+              title="Prayers on Your Requests"
               subtitle="When someone prays for your request"
-              value={settings.prayerReceived}
-              onToggle={() => handleToggle('prayerReceived')}
-              disabled={!settings.pushEnabled || permissionStatus !== 'granted'}
+              value={settings.prayers}
+              onToggle={() => handleToggle('prayers')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
             />
             
             <View style={styles.divider} />
@@ -260,11 +256,11 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
             <SettingRow
               icon="checkmark-circle"
               iconColor="#22c55e"
-              title="Prayer Answered"
-              subtitle="When your prayer is marked as answered"
-              value={settings.prayerAnswered}
-              onToggle={() => handleToggle('prayerAnswered')}
-              disabled={!settings.pushEnabled || permissionStatus !== 'granted'}
+              title="Linked Testimonies"
+              subtitle="When your request is marked answered"
+              value={settings.testimonies}
+              onToggle={() => handleToggle('testimonies')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
             />
             
             <View style={styles.divider} />
@@ -272,28 +268,28 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
             <SettingRow
               icon="people"
               iconColor="#8b5cf6"
-              title="Group Prayers"
-              subtitle="New prayer requests in your groups"
-              value={settings.newGroupPrayers}
-              onToggle={() => handleToggle('newGroupPrayers')}
-              disabled={!settings.pushEnabled || permissionStatus !== 'granted'}
+              title="Comments on Your Content"
+              subtitle="When someone comments on your requests or testimonies"
+              value={settings.comments}
+              onToggle={() => handleToggle('comments')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
             />
           </View>
         </View>
 
-        {/* Community Section */}
+        {/* Group Activity Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Community</Text>
+          <Text style={styles.sectionTitle}>Group Activity</Text>
           
           <View style={styles.settingCard}>
             <SettingRow
-              icon="sparkles"
-              iconColor="#f59e0b"
-              title="New Testimonies"
-              subtitle="Answered prayers from the community"
-              value={settings.newTestimonies}
-              onToggle={() => handleToggle('newTestimonies')}
-              disabled={!settings.pushEnabled || permissionStatus !== 'granted'}
+              icon="people"
+              iconColor="#0ea5e9"
+              title="Group Updates"
+              subtitle="New prayer requests in your groups"
+              value={settings.groups}
+              onToggle={() => handleToggle('groups')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
             />
           </View>
         </View>

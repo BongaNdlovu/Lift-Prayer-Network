@@ -59,11 +59,11 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <Text style={styles.successTitle}>Check Your Email</Text>
             <Text style={styles.successText}>
-              We've sent password reset instructions to:
+              We&apos;ve sent password reset instructions to:
             </Text>
             <Text style={styles.emailText}>{email.trim()}</Text>
             <Text style={styles.successHint}>
-              Don't forget to check your spam folder if you don't see the email.
+              Don&apos;t forget to check your spam folder if you don&apos;t see the email.
             </Text>
             <TouchableOpacity
               style={[styles.button, styles.primaryButton]}
@@ -75,7 +75,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.resendButton}
               onPress={() => setEmailSent(false)}
             >
-              <Text style={styles.resendText}>Didn't receive it? Try again</Text>
+              <Text style={styles.resendText}>Didn&apos;t receive it? Try again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -108,7 +108,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.title}>Forgot Password?</Text>
             <Text style={styles.subtitle}>
-              Enter your email address and we'll send you instructions to reset your password.
+              Enter your email address and we&apos;ll send you instructions to reset your password.
             </Text>
 
             {/* Email Input */}

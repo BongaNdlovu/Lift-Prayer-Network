@@ -41,7 +41,7 @@ const DAYS = [
 export const RemindersScreen: React.FC = () => {
   const navigation = useNavigation();
   const [reminders, setReminders] = useState<PrayerReminder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingReminder, setEditingReminder] = useState<PrayerReminder | null>(null);
   const [hour, setHour] = useState(8);
@@ -116,7 +116,7 @@ export const RemindersScreen: React.FC = () => {
       }
 
       setShowModal(false);
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Could not save reminder');
     }
   };

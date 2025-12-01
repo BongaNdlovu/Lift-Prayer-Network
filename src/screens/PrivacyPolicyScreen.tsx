@@ -2,7 +2,7 @@ import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { palette, spacing, radius } from '../theme/colors';
+import { palette, spacing } from '../theme/colors';
 
 const LAST_UPDATED = 'November 30, 2025';
 const CONTACT_EMAIL = 'support@liftprayer.app';
@@ -42,7 +42,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <Text style={styles.lastUpdated}>Last Updated: {LAST_UPDATED}</Text>
 
         <Paragraph>
-          Lift ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
+          Lift (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
         </Paragraph>
 
         <Section title="1. Information We Collect">
@@ -107,7 +107,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
 
         <Section title="8. Changes to This Policy">
           <Paragraph>
-            We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy in the app and updating the "Last Updated" date.
+            We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy in the app and updating the &quot;Last Updated&quot; date.
           </Paragraph>
         </Section>
 

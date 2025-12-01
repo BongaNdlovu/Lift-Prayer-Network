@@ -8,7 +8,12 @@
 // Forbidden words and patterns for content moderation
 const FORBIDDEN_PATTERNS = [
   // Profanity patterns (basic list - extend as needed)
-  /\b(f+u+c+k+|sh+i+t+|a+s+s+|b+i+t+c+h+|d+a+m+n+|h+e+l+l+)\b/gi,
+  /\bf+u+c+k+\w*/gi,
+  /\bsh+i+t+\w*/gi,
+  /\bb+i+t+c+h+\w*/gi,
+  /\bd+a+m+n+\w*/gi,
+  /\bh+e+l+l+\w*/gi,
+  /\bass\b/gi,
   // Hate speech indicators
   /\b(hate|kill|die|murder)\s+(all|every|those)\b/gi,
   // Spam patterns

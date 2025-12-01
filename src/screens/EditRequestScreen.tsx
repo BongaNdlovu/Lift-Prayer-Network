@@ -170,10 +170,6 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
     );
   };
 
-  const getCategoryEmoji = (categoryId: PrayerCategory): string => {
-    return PRAYER_CATEGORIES.find(c => c.id === categoryId)?.emoji || '📝';
-  };
-
   if (!canEdit) {
     return (
       <SafeAreaView style={styles.loadingContainer}>

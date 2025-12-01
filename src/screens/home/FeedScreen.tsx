@@ -39,7 +39,7 @@ export const FeedScreen: React.FC = () => {
     return () => unsubscribe();
   }, [user?.uid]);
   
-  const { items, loading, refresh } = useFeed(mode, user?.uid, userGroupIds);
+  const { items, loading, error, errorType, isOffline, refresh } = useFeed(mode, user?.uid, userGroupIds);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -136,7 +136,7 @@ export const FeedScreen: React.FC = () => {
         if (Platform.OS !== 'web') {
           try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } catch (e) {}
+          } catch { /* ignore */ }
         }
         
         // If self-prayer, send a local notification as confirmation
@@ -195,7 +195,7 @@ export const FeedScreen: React.FC = () => {
         if (Platform.OS !== 'web') {
           try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } catch (e) {}
+          } catch { /* ignore */ }
         }
         Alert.alert(
           shouldPin ? '📌 Pinned' : '📌 Unpinned',
@@ -339,11 +339,56 @@ export const FeedScreen: React.FC = () => {
           </ScrollView>
         )}
 
+        {/* Error/Offline Banner */}
+        {(error || isOffline) && !loading && (
+          <View style={[
+            styles.errorBanner,
+            errorType === 'permission' && styles.errorBannerPermission
+          ]}>
+            <Ionicons 
+              name={isOffline ? "cloud-offline" : errorType === 'permission' ? "lock-closed" : "warning"} 
+              size={18} 
+              color={errorType === 'permission' ? "#dc2626" : "#b45309"} 
+            />
+            <Text style={[
+              styles.errorBannerText,
+              errorType === 'permission' && styles.errorBannerTextPermission
+            ]}>
+              {isOffline 
+                ? "You're offline. Showing cached data." 
+                : errorType === 'permission'
+                  ? "Some prayers couldn't be loaded due to privacy settings. Showing available content."
+                  : "Couldn't load latest prayers. Pull to refresh."}
+            </Text>
+            <TouchableOpacity onPress={onRefresh} style={styles.errorRetryButton}>
+              <Ionicons name="refresh" size={16} color={errorType === 'permission' ? "#dc2626" : "#b45309"} />
+            </TouchableOpacity>
+          </View>
+        )}
+
           {loading ? (
             <View style={styles.loading}>
               {[...Array(4)].map((_, idx) => (
                 <SkeletonCard key={idx} />
               ))}
+            </View>
+          ) : filteredItems.length === 0 && !error ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>{mode === 'REQUEST' ? '🙏' : '✨'}</Text>
+              <Text style={styles.emptyTitle}>
+                {searchQuery || selectedCategory !== 'all' 
+                  ? 'No matching prayers found'
+                  : mode === 'REQUEST' 
+                    ? 'No prayer requests yet' 
+                    : 'No testimonies yet'}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery || selectedCategory !== 'all'
+                  ? 'Try adjusting your filters'
+                  : mode === 'REQUEST'
+                    ? 'Be the first to share a prayer request!'
+                    : 'Share how God has answered your prayers!'}
+              </Text>
             </View>
           ) : (
             <FlatList
@@ -590,6 +635,57 @@ const styles = StyleSheet.create({
   },
   loading: {
     marginTop: spacing.md,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef3c7',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    gap: spacing.sm,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#b45309',
+    fontWeight: '600',
+  },
+  errorBannerPermission: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
+  },
+  errorBannerTextPermission: {
+    color: '#dc2626',
+  },
+  errorRetryButton: {
+    padding: spacing.xs,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: spacing.xl,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: palette.text,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: palette.muted,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   offlineBanner: {
     backgroundColor: '#fee2e2',

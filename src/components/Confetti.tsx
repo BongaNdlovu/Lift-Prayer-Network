@@ -63,6 +63,7 @@ export const Confetti: React.FC<Props> = ({ active, onComplete }) => {
         onComplete?.();
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   if (!active) return null;

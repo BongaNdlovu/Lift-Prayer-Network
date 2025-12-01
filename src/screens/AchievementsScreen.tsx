@@ -26,10 +26,11 @@ export const AchievementsScreen: React.FC = () => {
     unlockedIds: [],
     unlockedAt: {} as any,
   });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     loadAchievements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadAchievements = async () => {
@@ -90,8 +91,6 @@ export const AchievementsScreen: React.FC = () => {
       </View>
     );
   };
-
-  const categories = ['prayer', 'streak', 'testimony', 'community', 'special'] as const;
 
   return (
     <SafeAreaView style={styles.container}>

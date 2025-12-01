@@ -29,7 +29,8 @@ import { db, firebaseEnabled, storage } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
 import { updateUserSettings, updateUserProfile } from '../services/userProfile';
 import { RootStackParamList } from '../navigation/types';
-import { getVerifiedBadge, BADGE_STYLES } from '../config/admins';
+import { getVerifiedBadge, BADGE_STYLES, hasAdminPermission } from '../config/admins';
+import { validateDisplayName, validateEmail } from '../utils/security';
 
 export const ProfileScreen: React.FC = () => {
   const { user, signOut, resendVerification, linkGuestToEmail } = useAuth();
@@ -49,6 +50,7 @@ export const ProfileScreen: React.FC = () => {
   // Profile picture state
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const isAdminUser = hasAdminPermission(user?.email);
 
   useEffect(() => {
     setupNotificationHandler();
@@ -172,7 +174,7 @@ export const ProfileScreen: React.FC = () => {
               await updateUserProfile(user.uid, { photoURL: null });
               setProfileImage(null);
               Alert.alert('Removed', 'Profile picture removed.');
-            } catch (err) {
+            } catch {
               Alert.alert('Error', 'Could not remove profile picture.');
             } finally {
               setUploadingImage(false);
@@ -224,6 +226,12 @@ export const ProfileScreen: React.FC = () => {
 
   const handleSaveProfile = async () => {
     if (!user || !editName.trim()) return;
+    const nameValidation = validateDisplayName(editName);
+    if (!nameValidation.isValid) {
+      Alert.alert('Invalid Name', nameValidation.error || 'Please choose a different display name.');
+      return;
+    }
+    const sanitizedName = nameValidation.sanitized || editName.trim();
     
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -232,10 +240,10 @@ export const ProfileScreen: React.FC = () => {
     setSaving(true);
     try {
       // Update Firebase Auth profile
-      await updateProfile(user, { displayName: editName.trim() });
+      await updateProfile(user, { displayName: sanitizedName });
       
       // Update Firestore user profile
-      await updateUserProfile(user.uid, { displayName: editName.trim() });
+      await updateUserProfile(user.uid, { displayName: sanitizedName });
       
       setShowEditModal(false);
       Alert.alert('Success', 'Profile updated!');
@@ -243,6 +251,25 @@ export const ProfileScreen: React.FC = () => {
       Alert.alert('Error', err.message || 'Could not update profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (err: any) {
+      if (err?.message === 'PENDING_DATA') {
+        Alert.alert(
+          'Unsynced Data',
+          `You have ${err.pendingPrayers ?? 0} prayers and ${err.pendingRequests ?? 0} requests that haven't been synced. Sign out anyway?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign Out', style: 'destructive', onPress: () => signOut(true) },
+          ]
+        );
+      } else {
+        Alert.alert('Error', err?.message || 'Could not sign out');
+      }
     }
   };
 
@@ -377,9 +404,21 @@ export const ProfileScreen: React.FC = () => {
                 Alert.alert('Missing info', 'Email and password required.');
                 return;
               }
+              const nameValidation = validateDisplayName(upgradeName);
+              if (!nameValidation.isValid) {
+                Alert.alert('Invalid Name', nameValidation.error || 'Please choose a different display name.');
+                return;
+              }
+              const emailValidation = validateEmail(upgradeEmail);
+              if (!emailValidation.isValid) {
+                Alert.alert('Invalid Email', emailValidation.error || 'Please enter a valid email address.');
+                return;
+              }
               setBusyUpgrade(true);
               try {
-                await linkGuestToEmail(upgradeName, upgradeEmail, upgradePassword);
+                const sanitizedName = nameValidation.sanitized || upgradeName.trim();
+                const sanitizedEmail = emailValidation.sanitized || upgradeEmail.trim();
+                await linkGuestToEmail(sanitizedName, sanitizedEmail, upgradePassword);
                 Alert.alert('Upgraded', 'Account linked. Please verify your email.');
               } catch (err: any) {
                 Alert.alert('Upgrade failed', err.message ?? 'Try again.');
@@ -543,6 +582,25 @@ export const ProfileScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={20} color={palette.muted} />
           </TouchableOpacity>
 
+          {isAdminUser && (
+            <>
+              <View style={styles.menuDivider} />
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => navigation.navigate('AdminReports')}
+              >
+                <View style={[styles.menuIcon, { backgroundColor: '#e0f2fe' }]}>
+                  <Ionicons name="shield-checkmark" size={20} color="#2563eb" />
+                </View>
+                <View style={styles.menuContent}>
+                  <Text style={styles.menuTitle}>Moderation Reports</Text>
+                  <Text style={styles.menuSubtitle}>Review community flags</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+              </TouchableOpacity>
+            </>
+          )}
+
           <View style={styles.menuDivider} />
 
           <TouchableOpacity
@@ -576,7 +634,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {user && (
-        <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={20} color="#dc2626" />
           <Text style={styles.signOutText}>Sign out</Text>
         </TouchableOpacity>

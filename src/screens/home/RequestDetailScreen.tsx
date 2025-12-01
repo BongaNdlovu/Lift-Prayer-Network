@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  FlatList,
-  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -31,6 +29,9 @@ import {
 import { logPrayer } from '../../services/prayers';
 import { addComment, subscribeToComments, deleteComment, updateComment } from '../../services/comments';
 import { formatRelativeTime } from '../../components/FeedCard';
+import { InlineError } from '../../components/InlineError';
+import { ErrorState } from '../../components/ErrorState';
+import { useOptimisticMutation } from '../../hooks/useOptimisticMutation';
 import { canEditContent, canDeleteContent, hasAdminPermission, getVerifiedBadge, BADGE_STYLES } from '../../config/admins';
 import type { FeedItem, Comment } from '../../types';
 
@@ -57,9 +58,9 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [busyAction, setBusyAction] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   const isOwner = useMemo(() => user && item && user.uid === (item as any).ownerUid, [user, item]);
   const canEdit = useMemo(() => item && user && canEditContent((item as any).ownerUid, user.uid, user.email), [item, user]);
@@ -76,21 +77,41 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     return () => unsub();
   }, [id, type]);
 
+  const { mutate: submitComment, loading: submittingComment } = useOptimisticMutation<
+    { content: string },
+    void,
+    void
+  >({
+    mutation: async ({ content }) => {
+      if (!user) {
+        throw new Error('Sign in required to post a comment.');
+      }
+      await addComment(id, type, user.uid, user.displayName || 'Anonymous', content);
+    },
+    onSuccess: () => {
+      setNewComment('');
+      setCommentError(null);
+    },
+    onError: (err) => {
+      setCommentError(err.message || 'Could not post comment.');
+    },
+  });
+
   const handleAddComment = async () => {
-    if (!newComment.trim() || !user) return;
+    const trimmed = newComment.trim();
+    if (!trimmed) return;
+    if (!user) {
+      Alert.alert('Sign in required', 'Sign in to post a comment.');
+      return;
+    }
     
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    
-    setSubmittingComment(true);
     try {
-      await addComment(id, type, user.uid, user.displayName || 'Anonymous', newComment.trim());
-      setNewComment('');
+      await submitComment({ content: trimmed });
     } catch (err: any) {
-      Alert.alert('Error', 'Could not post comment');
-    } finally {
-      setSubmittingComment(false);
+      Alert.alert('Error', err?.message || 'Could not post comment');
     }
   };
 
@@ -113,7 +134,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       } else {
         Alert.alert('Error', 'Could not update comment');
       }
-    } catch (err: any) {
+    } catch {
       Alert.alert('Error', 'Could not update comment');
     }
   };
@@ -142,13 +163,61 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               } else {
                 Alert.alert('Error', 'Could not delete comment');
               }
-            } catch (err: any) {
+            } catch {
               Alert.alert('Error', 'Could not delete comment');
             }
           },
         },
       ]
     );
+  };
+
+  const handleReportComment = (commentId: string) => {
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to report comments.');
+      return;
+    }
+
+    const submitReport = async (reason: string) => {
+      const trimmed = reason.trim();
+      if (!trimmed) return;
+      try {
+        await flagContent(user.uid, commentId, 'COMMENT', trimmed);
+        Alert.alert('Reported', 'Thank you for helping keep our community safe.');
+      } catch (err: any) {
+        Alert.alert('Error', err?.message || 'Could not report this comment right now.');
+      }
+    };
+
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Report Comment',
+        'Why are you reporting this comment?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Submit',
+            onPress: (reason: string | undefined) => {
+              if (reason) {
+                submitReport(reason);
+              }
+            },
+          },
+        ],
+        'plain-text'
+      );
+    } else {
+      Alert.alert(
+        'Report Comment',
+        'Choose a reason to report this comment',
+        [
+          { text: 'Spam or scam', onPress: () => submitReport('Spam or scam') },
+          { text: 'Harassment or abuse', onPress: () => submitReport('Harassment or abuse') },
+          { text: 'Inappropriate content', onPress: () => submitReport('Inappropriate content') },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
   };
 
   useEffect(() => {
@@ -274,7 +343,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         if (Platform.OS !== 'web') {
           try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } catch (e) {}
+          } catch { /* ignore haptics errors */ }
         }
         Alert.alert('Logged', 'Prayer recorded. 🙏');
         
@@ -310,9 +379,11 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (loading || !item) {
     return (
-      <SafeAreaView style={styles.loading}>
-        <Text style={styles.muted}>Loading...</Text>
-      </SafeAreaView>
+      <ErrorState
+        title={loading ? 'Loading request...' : 'Unable to load request'}
+        message={!loading ? 'Please go back and try again.' : undefined}
+        onRetry={loading ? undefined : () => navigation.goBack()}
+      />
     );
   }
 
@@ -330,6 +401,9 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>
+        {commentError && (
+          <InlineError message={commentError} onDismiss={() => setCommentError(null)} />
+        )}
         <Text style={styles.kicker}>{type === 'REQUEST' ? 'Transmission' : 'Verification'}</Text>
         <Text style={styles.title}>{item.content.slice(0, 100)}</Text>
         
@@ -495,22 +569,37 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                       ) : (
                         <Text style={styles.commentText}>{comment.content}</Text>
                       )}
-                      {canModifyComment && !isEditing && (
+                      {!isEditing && (canModifyComment || (user && !isOwnComment)) && (
                         <View style={styles.commentActions}>
-                          <TouchableOpacity
-                            style={styles.commentActionBtn}
-                            onPress={() => handleEditComment(comment)}
-                          >
-                            <Ionicons name="pencil-outline" size={14} color={palette.muted} />
-                            <Text style={styles.commentActionText}>Edit</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.commentActionBtn}
-                            onPress={() => handleDeleteComment(comment)}
-                          >
-                            <Ionicons name="trash-outline" size={14} color="#dc2626" />
-                            <Text style={[styles.commentActionText, { color: '#dc2626' }]}>Delete</Text>
-                          </TouchableOpacity>
+                          {canModifyComment && (
+                            <>
+                              <TouchableOpacity
+                                style={styles.commentActionBtn}
+                                onPress={() => handleEditComment(comment)}
+                              >
+                                <Ionicons name="pencil-outline" size={14} color={palette.muted} />
+                                <Text style={styles.commentActionText}>Edit</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={styles.commentActionBtn}
+                                onPress={() => handleDeleteComment(comment)}
+                              >
+                                <Ionicons name="trash-outline" size={14} color="#dc2626" />
+                                <Text style={[styles.commentActionText, { color: '#dc2626' }]}>Delete</Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
+                          {user && !isOwnComment && (
+                            <TouchableOpacity
+                              style={styles.commentActionBtn}
+                              onPress={() => handleReportComment(comment.id)}
+                            >
+                              <Ionicons name="flag-outline" size={14} color="#b45309" />
+                              <Text style={[styles.commentActionText, { color: '#b45309' }]}>
+                                Report
+                              </Text>
+                            </TouchableOpacity>
+                          )}
                           {isAdmin && !isOwnComment && (
                             <View style={styles.adminBadgeSmall}>
                               <Ionicons name="shield-checkmark" size={12} color="#3b82f6" />

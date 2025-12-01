@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Animated,
-  Dimensions,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -18,8 +17,6 @@ import * as Haptics from 'expo-haptics';
 import { palette, radius, spacing } from '../theme/colors';
 
 const SUPPORT_EMAIL = 'fanelesibonge50@gmail.com';
-
-const { width } = Dimensions.get('window');
 
 type HelpSection = {
   id: string;
@@ -240,6 +237,7 @@ const CollapsibleSection: React.FC<{
       duration: 200,
       useNativeDriver: true,
     }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExpanded]);
 
   const rotation = rotateAnim.interpolate({
@@ -315,7 +313,7 @@ export const HelpScreen: React.FC = () => {
           ]
         );
       }
-    } catch (error) {
+    } catch {
       Alert.alert(
         'Contact Support',
         `Please email us at:\n\n${SUPPORT_EMAIL}`,
@@ -450,7 +448,7 @@ export const HelpScreen: React.FC = () => {
           <Ionicons name="chatbubble-ellipses-outline" size={24} color={palette.muted} />
           <Text style={styles.contactTitle}>Still need help?</Text>
           <Text style={styles.contactText}>
-            If you have questions or feedback, we'd love to hear from you. Reach out to our support team.
+            If you have questions or feedback, we&apos;d love to hear from you. Reach out to our support team.
           </Text>
           <TouchableOpacity style={styles.contactButton} onPress={handleContactSupport}>
             <Ionicons name="mail-outline" size={18} color="#fff" />

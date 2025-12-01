@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
 import type { Comment } from '../types';
+import { validateContent } from '../utils/security';
 
 export const addComment = async (
   parentId: string,
@@ -26,13 +27,28 @@ export const addComment = async (
 ): Promise<string | null> => {
   if (!firebaseEnabled || !db) return null;
 
+  const validation = validateContent(content, {
+    minLength: 1,
+    maxLength: 500,
+    checkProfanity: true,
+    checkSuspicious: true,
+    checkMoneySolicitation: true,
+    contentType: 'REQUEST',
+  });
+
+  if (!validation.isValid) {
+    throw new Error(validation.error || 'Invalid comment content');
+  }
+
+  const sanitizedContent = validation.sanitized || content.trim();
+
   try {
     const commentRef = await addDoc(collection(db, 'comments'), {
       parentId,
       parentType,
       authorUid,
       authorName,
-      content,
+      content: sanitizedContent,
       createdAt: serverTimestamp(),
     });
 
@@ -46,7 +62,7 @@ export const addComment = async (
     return commentRef.id;
   } catch (err) {
     console.warn('Error adding comment:', err);
-    return null;
+    throw err;
   }
 };
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  FlatList,
   Modal,
   Platform,
   SafeAreaView,
@@ -22,7 +21,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requestNotificationPermissions } from '../services/reminders';
 
 const EVENTS_KEY = '@lift_prayer_events';
-const NOTIFICATION_IDS_KEY = '@lift_event_notification_ids';
 
 type PrayerEvent = {
   id: string;
@@ -78,7 +76,7 @@ const parseTimeString = (timeStr: string): { hour: number; minute: number } => {
 };
 
 export const CalendarScreen: React.FC = () => {
-  const { user } = useAuth();
+  useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [events, setEvents] = useState<PrayerEvent[]>([]);
@@ -228,7 +226,7 @@ export const CalendarScreen: React.FC = () => {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch (e) {}
+      } catch { /* ignore */ }
     }
 
     const category = CATEGORIES.find((c) => c.id === newCategory);
@@ -667,7 +665,7 @@ export const CalendarScreen: React.FC = () => {
                       setNewHour(preset.hour);
                       setNewMinute(preset.min);
                       if (Platform.OS !== 'web') {
-                        try { Haptics.selectionAsync(); } catch (e) {}
+                        try { Haptics.selectionAsync(); } catch { /* ignore */ }
                       }
                     }}
                   >

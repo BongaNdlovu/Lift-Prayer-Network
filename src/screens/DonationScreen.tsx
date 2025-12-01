@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { palette, radius, spacing, fonts } from '../theme/colors';
+import { palette, radius, spacing } from '../theme/colors';
 
 // Bank Details
 const BANK_DETAILS = {
@@ -34,7 +34,7 @@ const DonationScreen: React.FC = () => {
       if (Platform.OS !== 'web') {
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (e) {}
+        } catch { /* ignore */ }
       }
       
       // Use the Clipboard API
@@ -283,7 +283,7 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
               We are deeply grateful for your support and generosity.
             </Text>
             <Text style={styles.thankYouVerse}>
-              "Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."
+              &quot;Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver.&quot;
             </Text>
             <Text style={styles.verseReference}>— 2 Corinthians 9:7</Text>
           </View>

@@ -10,6 +10,7 @@ import { BootScreen } from './src/screens/BootScreen';
 import { setupNotificationHandler } from './src/services/notifications';
 import { useAppFonts } from './src/hooks/useFonts';
 import { initSentry, withErrorBoundary } from './src/services/sentry';
+import { ToastProvider } from './src/contexts/ToastContext';
 
 enableScreens();
 
@@ -49,7 +50,9 @@ function App() {
       <SafeAreaProvider>
         <StatusBar style="dark" />
         <AuthProvider>
-          <AppNavigator />
+          <ToastProvider>
+            <AppNavigator />
+          </ToastProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

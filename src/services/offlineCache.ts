@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { FeedItem, LiftRequest, Testimony } from '../types';
+import type { LiftRequest, Testimony } from '../types';
+import { getSafeErrorMessage } from '../types/errors';
 
 const CACHE_KEYS = {
   REQUESTS: '@lift_cache_requests',
@@ -27,6 +28,7 @@ export type PendingRequest = {
   content: string;
   ownerUid: string;
   displayName: string;
+  isAnonymous?: boolean;
   category: string;
   isUrgent: boolean;
   isPrivate: boolean;
@@ -39,7 +41,7 @@ export const cacheRequests = async (requests: LiftRequest[]): Promise<void> => {
     await AsyncStorage.setItem(CACHE_KEYS.REQUESTS, JSON.stringify(requests));
     await AsyncStorage.setItem(CACHE_KEYS.LAST_SYNC, Date.now().toString());
   } catch (error) {
-    console.error('[OfflineCache] Error caching requests:', error);
+    console.error('[OfflineCache] Error caching requests:', getSafeErrorMessage(error));
   }
 };
 
@@ -48,7 +50,7 @@ export const cacheTestimonies = async (testimonies: Testimony[]): Promise<void> 
   try {
     await AsyncStorage.setItem(CACHE_KEYS.TESTIMONIES, JSON.stringify(testimonies));
   } catch (error) {
-    console.error('[OfflineCache] Error caching testimonies:', error);
+    console.error('[OfflineCache] Error caching testimonies:', getSafeErrorMessage(error));
   }
 };
 
@@ -60,7 +62,7 @@ export const getCachedRequests = async (): Promise<LiftRequest[]> => {
       return JSON.parse(cached);
     }
   } catch (error) {
-    console.error('[OfflineCache] Error reading cached requests:', error);
+    console.error('[OfflineCache] Error reading cached requests:', getSafeErrorMessage(error));
   }
   return [];
 };
@@ -73,7 +75,7 @@ export const getCachedTestimonies = async (): Promise<Testimony[]> => {
       return JSON.parse(cached);
     }
   } catch (error) {
-    console.error('[OfflineCache] Error reading cached testimonies:', error);
+    console.error('[OfflineCache] Error reading cached testimonies:', getSafeErrorMessage(error));
   }
   return [];
 };
@@ -87,7 +89,7 @@ export const isCacheFresh = async (): Promise<boolean> => {
       return Date.now() - syncTime < CACHE_DURATION;
     }
   } catch (error) {
-    console.error('[OfflineCache] Error checking cache freshness:', error);
+    console.error('[OfflineCache] Error checking cache freshness:', getSafeErrorMessage(error));
   }
   return false;
 };
@@ -107,7 +109,7 @@ export const queuePendingPrayer = async (prayer: Omit<PendingPrayer, 'id' | 'tim
     await AsyncStorage.setItem(CACHE_KEYS.PENDING_PRAYERS, JSON.stringify(prayers));
     console.log('[OfflineCache] Prayer queued for sync');
   } catch (error) {
-    console.error('[OfflineCache] Error queuing prayer:', error);
+    console.error('[OfflineCache] Error queuing prayer:', getSafeErrorMessage(error));
   }
 };
 
@@ -126,7 +128,7 @@ export const queuePendingRequest = async (request: Omit<PendingRequest, 'id' | '
     await AsyncStorage.setItem(CACHE_KEYS.PENDING_REQUESTS, JSON.stringify(requests));
     console.log('[OfflineCache] Request queued for sync');
   } catch (error) {
-    console.error('[OfflineCache] Error queuing request:', error);
+    console.error('[OfflineCache] Error queuing request:', getSafeErrorMessage(error));
   }
 };
 
@@ -138,7 +140,7 @@ export const getPendingPrayers = async (): Promise<PendingPrayer[]> => {
       return JSON.parse(pending);
     }
   } catch (error) {
-    console.error('[OfflineCache] Error reading pending prayers:', error);
+    console.error('[OfflineCache] Error reading pending prayers:', getSafeErrorMessage(error));
   }
   return [];
 };
@@ -151,7 +153,7 @@ export const getPendingRequests = async (): Promise<PendingRequest[]> => {
       return JSON.parse(pending);
     }
   } catch (error) {
-    console.error('[OfflineCache] Error reading pending requests:', error);
+    console.error('[OfflineCache] Error reading pending requests:', getSafeErrorMessage(error));
   }
   return [];
 };
@@ -161,7 +163,7 @@ export const clearPendingPrayers = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(CACHE_KEYS.PENDING_PRAYERS);
   } catch (error) {
-    console.error('[OfflineCache] Error clearing pending prayers:', error);
+    console.error('[OfflineCache] Error clearing pending prayers:', getSafeErrorMessage(error));
   }
 };
 
@@ -170,7 +172,7 @@ export const clearPendingRequests = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(CACHE_KEYS.PENDING_REQUESTS);
   } catch (error) {
-    console.error('[OfflineCache] Error clearing pending requests:', error);
+    console.error('[OfflineCache] Error clearing pending requests:', getSafeErrorMessage(error));
   }
 };
 
@@ -182,7 +184,7 @@ export const setPendingPrayers = async (prayers: PendingPrayer[]): Promise<void>
   try {
     await persistList(CACHE_KEYS.PENDING_PRAYERS, prayers);
   } catch (error) {
-    console.error('[OfflineCache] Error saving pending prayers:', error);
+    console.error('[OfflineCache] Error saving pending prayers:', getSafeErrorMessage(error));
   }
 };
 
@@ -190,7 +192,7 @@ export const setPendingRequests = async (requests: PendingRequest[]): Promise<vo
   try {
     await persistList(CACHE_KEYS.PENDING_REQUESTS, requests);
   } catch (error) {
-    console.error('[OfflineCache] Error saving pending requests:', error);
+    console.error('[OfflineCache] Error saving pending requests:', getSafeErrorMessage(error));
   }
 };
 
@@ -205,7 +207,7 @@ export const clearAllCache = async (): Promise<void> => {
       CACHE_KEYS.PENDING_REQUESTS,
     ]);
   } catch (error) {
-    console.error('[OfflineCache] Error clearing cache:', error);
+    console.error('[OfflineCache] Error clearing cache:', getSafeErrorMessage(error));
   }
 };
 
@@ -234,7 +236,7 @@ export const getCacheStats = async (): Promise<{
       lastSync: lastSync ? new Date(parseInt(lastSync, 10)) : null,
     };
   } catch (error) {
-    console.error('[OfflineCache] Error getting cache stats:', error);
+    console.error('[OfflineCache] Error getting cache stats:', getSafeErrorMessage(error));
     return {
       requestCount: 0,
       testimonyCount: 0,
@@ -263,7 +265,7 @@ export const validateAndRepairCache = async (): Promise<boolean> => {
           // Try to parse - if it fails, the data is corrupted
           JSON.parse(data);
         }
-      } catch (parseError) {
+      } catch {
         console.warn(`[OfflineCache] Corrupted data in ${key}, clearing...`);
         await AsyncStorage.removeItem(key);
       }
@@ -271,7 +273,7 @@ export const validateAndRepairCache = async (): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error('[OfflineCache] Error validating cache:', error);
+    console.error('[OfflineCache] Error validating cache:', getSafeErrorMessage(error));
     // If validation fails completely, clear all cache
     await clearAllCache();
     return false;

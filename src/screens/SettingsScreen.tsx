@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
-  FlatList,
   Modal,
   Platform,
   SafeAreaView,
@@ -25,6 +24,7 @@ import { getBlockedUsers, unblockUser, syncBlockedUsers } from '../services/mode
 import { deletePrayerHistory } from '../services/prayers';
 import { db, firebaseEnabled } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { hasAdminPermission } from '../config/admins';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -37,11 +37,11 @@ export const SettingsScreen: React.FC = () => {
   
   // Privacy settings
   const [shareProfile, setShareProfile] = useState(false);
-  const [showPrayerCount, setShowPrayerCount] = useState(true);
 
   useEffect(() => {
     loadBlockedUsers();
     loadPrivacySettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadBlockedUsers = async () => {
@@ -149,6 +149,25 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (err: any) {
+      if (err?.message === 'PENDING_DATA') {
+        Alert.alert(
+          'Unsynced Data',
+          `You have ${err.pendingPrayers ?? 0} prayers and ${err.pendingRequests ?? 0} requests that haven't been synced. Sign out anyway?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign Out', style: 'destructive', onPress: () => signOut(true) },
+          ]
+        );
+      } else {
+        Alert.alert('Error', err?.message || 'Could not sign out');
+      }
+    }
+  };
+
   const handleDeletePrayerHistory = () => {
     if (!user) return;
 
@@ -243,6 +262,23 @@ export const SettingsScreen: React.FC = () => {
           )}
         </View>
 
+        {/* Admin Section */}
+        {hasAdminPermission(user?.email) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Admin</Text>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('AdminDashboard' as never)}
+            >
+              <Ionicons name="shield-checkmark-outline" size={22} color={palette.text} />
+              <View style={styles.settingText}>
+                <Text style={styles.settingLabel}>Admin Tools</Text>
+                <Text style={styles.settingDesc}>Access reports, pinned requests, and global stats</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Data Management Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Management</Text>
@@ -269,7 +305,7 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           
-          <TouchableOpacity style={styles.menuItem} onPress={signOut}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
             <Ionicons name="log-out-outline" size={22} color={palette.text} />
             <Text style={styles.menuLabel}>Sign Out</Text>
             <Ionicons name="chevron-forward" size={20} color={palette.muted} />

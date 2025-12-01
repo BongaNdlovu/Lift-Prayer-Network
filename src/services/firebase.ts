@@ -1,12 +1,6 @@
 import { FirebaseApp, FirebaseOptions, getApp, getApps, initializeApp } from 'firebase/app';
-import { 
-  Auth, 
-  getAuth, 
-  initializeAuth, 
-  browserLocalPersistence,
-} from 'firebase/auth';
-// @ts-ignore - getReactNativePersistence exists in react-native bundle
-import { getReactNativePersistence } from 'firebase/auth';
+// Type declaration in src/types/firebase-auth.d.ts
+import { Auth, getAuth, initializeAuth, browserLocalPersistence, getReactNativePersistence } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
@@ -57,9 +51,10 @@ if (firebaseEnabled) {
         persistence: getReactNativePersistence(AsyncStorage),
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     // Auth may already be initialized
-    if (error.code === 'auth/already-initialized') {
+    const firebaseError = error as { code?: string };
+    if (firebaseError.code === 'auth/already-initialized') {
       auth = getAuth(app);
     } else {
       console.warn('[Firebase] Auth initialization error:', error);

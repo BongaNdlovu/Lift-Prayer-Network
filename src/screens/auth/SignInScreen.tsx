@@ -204,7 +204,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={isLoading}>
                 <Text style={styles.signUpLink}>Sign Up</Text>
               </TouchableOpacity>

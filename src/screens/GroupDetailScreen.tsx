@@ -21,11 +21,11 @@ import * as Notifications from 'expo-notifications';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
-import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInviteCode } from '../services/groups';
+import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInviteCode, uploadGroupPhoto, deleteGroupPhoto } from '../services/groups';
 import { subscribeToGroupRequests, submitGroupRequest, logPrayer } from '../services/prayers';
 import { palette, radius, spacing } from '../theme/colors';
 import { FeedCard } from '../components/FeedCard';
-import { hasAdminPermission, canEditContent, canDeleteContent, getVerifiedBadge, BADGE_STYLES } from '../config/admins';
+import { hasAdminPermission, getVerifiedBadge, BADGE_STYLES } from '../config/admins';
 import type { PrayerGroup, FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -55,6 +55,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [editDesc, setEditDesc] = useState('');
   const [editPhotoURL, setEditPhotoURL] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [photoNeedsUpload, setPhotoNeedsUpload] = useState(false);
   
   // Post prayer state
   const [newPrayerContent, setNewPrayerContent] = useState('');
@@ -75,6 +76,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         setEditName(groupData.name);
         setEditDesc(groupData.description || '');
         setEditPhotoURL(groupData.photoURL || null);
+        setPhotoNeedsUpload(false);
       }
     };
     loadGroup();
@@ -115,8 +117,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       await Share.share({
         message: `Join my prayer group "${groupName}" on Lift!\n\nInvite code: ${code}`,
       });
-    } catch (err) {
-      // User cancelled
+    } catch (error) {
+      console.error('Error sharing invite:', error);
     }
   };
 
@@ -134,31 +136,28 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
-        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
-        // For now, store as base64 data URL (in production, upload to Firebase Storage)
         const asset = result.assets[0];
-        if (asset.base64) {
-          const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
-          setEditPhotoURL(dataUrl);
-        } else if (asset.uri) {
+        if (asset.uri) {
           setEditPhotoURL(asset.uri);
+          setPhotoNeedsUpload(true);
         }
         
         if (Platform.OS !== 'web') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
       }
-    } catch (err) {
-      console.warn('Error picking image:', err);
+    } catch (error) {
+      console.error('Error picking image:', error);
       Alert.alert('Error', 'Could not select image. Please try again.');
     }
   };
 
   const removeGroupImage = () => {
     setEditPhotoURL(null);
+    setPhotoNeedsUpload(false);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -172,10 +171,20 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
     setSaving(true);
     try {
+      let finalPhotoURL = editPhotoURL;
+
+      if (photoNeedsUpload && editPhotoURL && !editPhotoURL.startsWith('http')) {
+        finalPhotoURL = await uploadGroupPhoto(groupId, editPhotoURL);
+      }
+
+      if (!editPhotoURL && group?.photoURL && group.photoURL.startsWith('http')) {
+        await deleteGroupPhoto(groupId);
+      }
+
       await updateGroup(groupId, {
         name: editName.trim(),
         description: editDesc.trim(),
-        photoURL: editPhotoURL,
+        photoURL: finalPhotoURL,
       });
       
       if (Platform.OS !== 'web') {
@@ -183,9 +192,11 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       }
       
       setShowEditModal(false);
-      setGroup(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), photoURL: editPhotoURL } : null);
+      setGroup(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), photoURL: finalPhotoURL } : null);
+      setPhotoNeedsUpload(false);
       Alert.alert('Success', 'Group updated!');
-    } catch (err) {
+    } catch (error) {
+      console.error('Error editing group:', error);
       Alert.alert('Error', 'Could not update group');
     } finally {
       setSaving(false);
@@ -247,7 +258,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       setNewPrayerContent('');
       setIsUrgent(false);
       Alert.alert('Posted!', 'Your prayer request has been shared with the group. 🙏');
-    } catch (err) {
+    } catch (error) {
+      console.error('Error posting prayer:', error);
       Alert.alert('Error', 'Could not post prayer request');
     } finally {
       setPosting(false);
@@ -285,7 +297,9 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         if (Platform.OS !== 'web') {
           try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          } catch (e) {}
+          } catch (error) {
+            console.error('Error playing haptic feedback:', error);
+          }
         }
         
         // If self-prayer, send a local notification

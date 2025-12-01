@@ -3,6 +3,7 @@ import {
   Animated,
   Dimensions,
   FlatList,
+  Alert,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -18,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, radius, spacing } from '../theme/colors';
 import { recordOnboardingAnalytics, type OnboardingAnswers } from '../services/userProfile';
+import { validateDisplayName } from '../utils/security';
 
 const { width } = Dimensions.get('window');
 
@@ -165,6 +167,17 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       if (currentQuestion.type !== 'text') return;
     }
 
+    if (currentQuestion.id === 'name' && typeof currentAnswer === 'string' && currentAnswer.trim()) {
+      const validation = validateDisplayName(currentAnswer);
+      if (!validation.isValid) {
+        Alert.alert('Invalid Name', validation.error || 'Please enter a different display name.');
+        return;
+      }
+      if (validation.sanitized && validation.sanitized !== currentAnswer) {
+        setAnswers((prev) => ({ ...prev, [currentQuestion.id]: validation.sanitized as string }));
+      }
+    }
+
     if (questionIndex < questions.length - 1) {
       setQuestionIndex(questionIndex + 1);
     } else {
@@ -184,7 +197,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch (err) {
+      } catch {
         // Haptics not available
       }
     }

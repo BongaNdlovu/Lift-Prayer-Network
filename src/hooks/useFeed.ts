@@ -6,6 +6,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  where,
   serverTimestamp,
   addDoc,
   updateDoc,
@@ -70,10 +71,38 @@ const generateMockItem = (mode: Mode): FeedItem => {
   };
 };
 
+export type FeedErrorType = 'network' | 'permission' | 'unknown' | null;
+
+// Helper to classify Firestore errors
+const classifyError = (err: any): FeedErrorType => {
+  const code = err?.code || '';
+  const message = (err?.message || '').toLowerCase();
+  
+  // Permission denied errors
+  if (code === 'permission-denied' || message.includes('permission') || message.includes('unauthorized')) {
+    return 'permission';
+  }
+  
+  // Network/offline errors
+  if (
+    code === 'unavailable' ||
+    code === 'failed-precondition' ||
+    message.includes('network') ||
+    message.includes('offline') ||
+    message.includes('internet') ||
+    message.includes('connection')
+  ) {
+    return 'network';
+  }
+  
+  return 'unknown';
+};
+
 export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[]) => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<FeedErrorType>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const isMounted = useRef(true);
@@ -166,30 +195,123 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
     }
   }, [mode, applyPrivacyFilter]);
 
+  // Build queries that match Firestore security rules
+  // For requests: only fetch public OR user's own OR user's group posts (to avoid permission denied)
+  // For testimonies: fetch all (rules allow public read)
+  const buildFeedQueries = useCallback(() => {
+    if (!db) return [];
+    
+    const col = collection(db, mode === 'REQUEST' ? 'requests' : 'testimonies');
+    
+    if (mode === 'TESTIMONY') {
+      // Testimonies are publicly readable per rules
+      return [query(col, orderBy('createdAt', 'desc'), limit(40))];
+    }
+    
+    // For requests, we need to query only what the user can read per Firestore rules:
+    // - Public requests (visibility == 'PUBLIC' or undefined/null for legacy posts)
+    // - User's own requests (if logged in)
+    // - Group requests where user is a member (if logged in and has groups)
+    // 
+    // We use separate queries and merge results to avoid permission errors
+    const queries = [];
+    
+    // Query 1: Explicitly PUBLIC requests only
+    // This avoids fetching GROUP posts that would fail permission checks
+    queries.push(
+      query(
+        col,
+        where('visibility', '==', 'PUBLIC'),
+        orderBy('createdAt', 'desc'),
+        limit(30)
+      )
+    );
+    
+    // Query 2: Legacy posts without visibility field (treat as public if not private)
+    // These are older posts created before visibility field was added
+    queries.push(
+      query(
+        col,
+        where('isPrivate', '==', false),
+        orderBy('createdAt', 'desc'),
+        limit(20)
+      )
+    );
+    
+    // Query 3: User's own requests (includes private/group)
+    if (viewerUid) {
+      queries.push(
+        query(
+          col,
+          where('ownerUid', '==', viewerUid),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        )
+      );
+    }
+    
+    // Query 4: Group requests for user's groups
+    // Firestore 'array-contains-any' allows checking if any of user's groups match
+    if (viewerUid && userGroupIds && userGroupIds.length > 0) {
+      // Firestore limits array-contains-any to 10 values
+      const groupsToQuery = userGroupIds.slice(0, 10);
+      queries.push(
+        query(
+          col,
+          where('visibility', '==', 'GROUP'),
+          where('groupIds', 'array-contains-any', groupsToQuery),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        )
+      );
+    }
+    
+    return queries;
+  }, [mode, viewerUid, userGroupIds]);
+
   // Manual fetch function for when onSnapshot doesn't update properly
   const manualFetch = useCallback(async () => {
     if (!firebaseEnabled || !db) return false;
 
     try {
-      const col = collection(db, mode === 'REQUEST' ? 'requests' : 'testimonies');
-      const q = query(col, orderBy('createdAt', 'desc'), limit(40));
-      const snapshot = await getDocs(q);
+      const queries = buildFeedQueries();
+      if (queries.length === 0) return false;
       
-      const next = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data() as any;
-        return {
-          ...data,
-          id: docSnap.id,
-          type: mode,
-        } as FeedItem;
+      // Execute all queries in parallel
+      const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+      
+      // Merge results and deduplicate by id
+      const seenIds = new Set<string>();
+      const allDocs: FeedItem[] = [];
+      
+      for (const snapshot of snapshots) {
+        for (const docSnap of snapshot.docs) {
+          if (seenIds.has(docSnap.id)) continue;
+          seenIds.add(docSnap.id);
+          
+          const data = docSnap.data() as any;
+          allDocs.push({
+            ...data,
+            id: docSnap.id,
+            type: mode,
+          } as FeedItem);
+        }
+      }
+      
+      // Sort by createdAt desc and apply privacy filter
+      allDocs.sort((a, b) => {
+        const aTime = (a as any).createdAt?.toDate?.() || (a as any).createdAt || 0;
+        const bTime = (b as any).createdAt?.toDate?.() || (b as any).createdAt || 0;
+        return new Date(bTime).getTime() - new Date(aTime).getTime();
       });
       
-      const filtered = applyPrivacyFilter(next);
+      const filtered = applyPrivacyFilter(allDocs.slice(0, 40));
       
       if (isMounted.current) {
         setItems(filtered);
         setIsOffline(false);
         setError(null);
+        setErrorType(null);
         lastFetchTime.current = Date.now();
       }
 
@@ -203,13 +325,15 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
       return true;
     } catch (err: any) {
       console.warn('[useFeed] Manual fetch error:', err);
+      const errType = classifyError(err);
       if (isMounted.current) {
-        setIsOffline(true);
+        setIsOffline(errType === 'network');
         setError(err.message);
+        setErrorType(errType);
       }
       return false;
     }
-  }, [mode, applyPrivacyFilter]);
+  }, [mode, buildFeedQueries, applyPrivacyFilter]);
 
   // Refresh function to force re-fetch - now does both listener restart AND manual fetch
   const refresh = useCallback(async () => {
@@ -245,7 +369,49 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
   }, [viewerUid]);
 
   useEffect(() => {
-    let unsub: Unsubscribe | null = null;
+    const unsubscribers: Unsubscribe[] = [];
+    
+    // Track results from multiple queries for merging
+    const queryResults = new Map<number, FeedItem[]>();
+    let hasReceivedData = false;
+
+    // Merge results from all queries, deduplicate, sort, and update state
+    const mergeAndUpdateResults = () => {
+      if (!isMounted.current) return;
+      
+      const seenIds = new Set<string>();
+      const allDocs: FeedItem[] = [];
+      
+      for (const docs of queryResults.values()) {
+        for (const doc of docs) {
+          if (seenIds.has(doc.id)) continue;
+          seenIds.add(doc.id);
+          allDocs.push(doc);
+        }
+      }
+      
+      // Sort by createdAt desc
+      allDocs.sort((a, b) => {
+        const aTime = (a as any).createdAt?.toDate?.() || (a as any).createdAt || 0;
+        const bTime = (b as any).createdAt?.toDate?.() || (b as any).createdAt || 0;
+        return new Date(bTime).getTime() - new Date(aTime).getTime();
+      });
+      
+      const filtered = applyPrivacyFilter(allDocs.slice(0, 40));
+      setItems(filtered);
+      setLoading(false);
+      setIsOffline(false);
+      setError(null);
+      setErrorType(null);
+      lastFetchTime.current = Date.now();
+
+      // Cache the data for offline use
+      if (mode === 'REQUEST') {
+        cacheRequests(filtered as LiftRequest[]);
+      } else {
+        cacheTestimonies(filtered as Testimony[]);
+      }
+    };
 
     // Load cached data immediately
     loadCachedData();
@@ -256,58 +422,56 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
       return undefined;
     }
 
-    const col = collection(db, mode === 'REQUEST' ? 'requests' : 'testimonies');
-    const q = query(col, orderBy('createdAt', 'desc'), limit(40));
+    const queries = buildFeedQueries();
     
-    // Set up real-time listener
-    unsub = onSnapshot(
-      q,
-      (snapshot) => {
-        if (!isMounted.current) return;
-        
-        const next = snapshot.docs.map((docSnap) => {
-          const data = docSnap.data() as any;
-          return {
-            ...data,
-            id: docSnap.id,
-            type: mode,
-          } as FeedItem;
-        });
-        const filtered = applyPrivacyFilter(next);
-        setItems(filtered);
-        setLoading(false);
-        setIsOffline(false);
-        setError(null);
-        lastFetchTime.current = Date.now();
+    // Set up real-time listeners for each query
+    queries.forEach((q, index) => {
+      const unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          if (!isMounted.current) return;
+          
+          const docs = snapshot.docs.map((docSnap) => {
+            const data = docSnap.data() as any;
+            return {
+              ...data,
+              id: docSnap.id,
+              type: mode,
+            } as FeedItem;
+          });
+          
+          queryResults.set(index, docs);
+          hasReceivedData = true;
+          mergeAndUpdateResults();
+        },
+        (err) => {
+          console.warn(`Feed listener ${index} error:`, err);
+          const errType = classifyError(err);
+          // Only set error state if no query has succeeded yet
+          if (!hasReceivedData && isMounted.current) {
+            setError(err.message);
+            setErrorType(errType);
+            setLoading(false);
+            setIsOffline(errType === 'network');
+          }
+          // Data will be served from cache loaded earlier
+        },
+      );
+      unsubscribers.push(unsub);
+    });
 
-        // Cache the data for offline use
-        if (mode === 'REQUEST') {
-          cacheRequests(filtered as LiftRequest[]);
-        } else {
-          cacheTestimonies(filtered as Testimony[]);
-        }
-      },
-      (err) => {
-        console.warn('Feed listener error', err);
-        if (isMounted.current) {
-          setError(err.message);
-          setLoading(false);
-          setIsOffline(true);
-        }
-        // Data will be served from cache loaded earlier
-      },
-    );
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [mode, loadCachedData, refreshKey, applyPrivacyFilter, buildFeedQueries]);
 
-    return () => unsub?.();
-  }, [mode, loadCachedData, refreshKey, applyPrivacyFilter]);
-
-  return { items, loading, error, isOffline, refresh };
+  return { items, loading, error, errorType, isOffline, refresh };
 };
 
 export const submitFeedItem = async (
   mode: Mode,
   content: string,
-  ownerUid: string | undefined,
+  ownerUid: string,
   displayName: string | undefined,
   options?: {
     category?: string;
@@ -321,14 +485,18 @@ export const submitFeedItem = async (
     isAnonymous?: boolean; // For anonymous prayer requests
   }
 ) => {
+  if (!ownerUid) {
+    throw new Error('Authentication required to create content');
+  }
   if (!firebaseEnabled || !db) return;
   const col = collection(db, mode === 'REQUEST' ? 'requests' : 'testimonies');
   
   const baseDoc: any = {
-    ownerUid: ownerUid || 'anonymous',
-    userDisplayName: displayName || 'Anonymous',
-    userEmail: options?.userEmail || null,
-    userPhotoURL: options?.userPhotoURL || null,
+    ownerUid,
+    userDisplayName: options?.isAnonymous ? 'Anonymous' : (displayName || 'Anonymous'),
+    userEmail: options?.isAnonymous ? null : (options?.userEmail || null),
+    userPhotoURL: options?.isAnonymous ? null : (options?.userPhotoURL || null),
+    isAnonymous: options?.isAnonymous || false,
     content,
     severity: mode === 'REQUEST' ? 'PENDING' : 'RESOLVED',
     status: mode === 'REQUEST' ? 'PENDING' : 'RESOLVED',
@@ -363,13 +531,11 @@ export const submitFeedItem = async (
   const docRef = await addDoc(col, baseDoc);
 
   // Update user stats and achievements
-  if (ownerUid) {
-    if (mode === 'REQUEST') {
-      await incrementUserRequestCount(ownerUid);
-    } else {
-      const testimonyCount = await incrementUserTestimonyCount(ownerUid);
-      await checkAndUnlockAchievements(ownerUid, { testimonyCount });
-    }
+  if (mode === 'REQUEST') {
+    await incrementUserRequestCount(ownerUid);
+  } else {
+    const testimonyCount = await incrementUserTestimonyCount(ownerUid);
+    await checkAndUnlockAchievements(ownerUid, { testimonyCount });
   }
 
   return docRef.id;

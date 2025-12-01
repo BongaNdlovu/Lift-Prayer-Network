@@ -29,6 +29,15 @@ export const PRAYER_CATEGORIES: { id: PrayerCategory; label: string; emoji: stri
   { id: 'other', label: 'Other', emoji: '📝' },
 ];
 
+export type NotificationSettings = {
+  enabled: boolean;
+  prayers: boolean;
+  comments: boolean;
+  testimonies: boolean;
+  critical: boolean;
+  groups: boolean;
+};
+
 export type LiftRequest = {
   id: string;
   ownerUid: string;
@@ -146,9 +155,14 @@ export type UserProfile = {
   settings?: {
     notifications?: boolean;
     notificationsCritical?: boolean;
+    notificationsPrayers?: boolean;
+    notificationsComments?: boolean;
+    notificationsTestimonies?: boolean;
+    notificationsGroups?: boolean;
     shareProfile?: boolean;
     reminderTime?: string;
     reminderDays?: number[];
+    notificationSettings?: NotificationSettings;
   };
   groupIds?: string[];
 };

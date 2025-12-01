@@ -28,7 +28,15 @@ const defaultProfile = (user: User): UserProfile => ({
   lastActiveAt: serverTimestamp(),
   roles: ['user'],
   stats: { prayerCount: 0, testimonyCount: 0, streakDays: 0 },
-  settings: { notifications: true, notificationsCritical: false, shareProfile: false },
+  settings: { 
+    notifications: true, 
+    notificationsCritical: false, 
+    notificationsPrayers: true,
+    notificationsComments: true,
+    notificationsTestimonies: true,
+    notificationsGroups: true,
+    shareProfile: false 
+  },
 });
 
 export const ensureUserProfile = async (

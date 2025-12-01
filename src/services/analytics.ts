@@ -2,10 +2,20 @@
  * Analytics Service
  * 
  * Tracks user engagement and app usage patterns.
- * Uses Firebase Analytics when available.
+ * Uses Firebase Analytics in production, console logging in development.
+ * 
+ * Setup Requirements:
+ * 1. Add google-services.json (Android) and GoogleService-Info.plist (iOS) to your project
+ * 2. Install: npx expo install @react-native-firebase/app @react-native-firebase/analytics
+ * 3. For Expo managed workflow, use expo-firebase-analytics or EAS Build
+ * 
+ * Current Status: Console logging only (Firebase Analytics requires native setup)
  */
 
 import { Platform } from 'react-native';
+
+// Flag to enable/disable analytics (useful for testing)
+const ANALYTICS_ENABLED = !__DEV__;
 
 // Analytics event names
 export const AnalyticsEvents = {
@@ -46,28 +56,46 @@ type EventName = typeof AnalyticsEvents[keyof typeof AnalyticsEvents];
 type EventParams = Record<string, string | number | boolean | undefined>;
 
 // Simple in-memory analytics for development
-const devAnalytics: { events: Array<{ name: string; params?: EventParams; timestamp: Date }> } = {
+const devAnalytics: { events: { name: string; params?: EventParams; timestamp: Date }[] } = {
   events: [],
 };
 
 /**
  * Log an analytics event
+ * 
+ * In production, this would send to Firebase Analytics.
+ * Currently logs to console and stores in memory for debugging.
  */
 export const logEvent = async (eventName: EventName, params?: EventParams): Promise<void> => {
+  if (!ANALYTICS_ENABLED && !__DEV__) return;
+  
   try {
+    // Store event for debugging/export
+    devAnalytics.events.push({ name: eventName, params, timestamp: new Date() });
+    
+    // Keep only last 100 events in memory
+    if (devAnalytics.events.length > 100) {
+      devAnalytics.events = devAnalytics.events.slice(-100);
+    }
+
     if (__DEV__) {
-      // In development, just log to console
+      // In development, log to console for debugging
       console.log(`[Analytics] ${eventName}`, params || '');
-      devAnalytics.events.push({ name: eventName, params, timestamp: new Date() });
       return;
     }
 
-    // In production, you would use Firebase Analytics
-    // For now, we'll just log - Firebase Analytics requires native modules
-    // which are set up through google-services.json
-    console.log(`[Analytics] ${eventName}`, params || '');
+    // Production: Firebase Analytics integration
+    // TODO: Uncomment when Firebase Analytics is set up with native modules
+    // import analytics from '@react-native-firebase/analytics';
+    // await analytics().logEvent(eventName, params);
+    
+    // For now, we store events that could be batch-sent to a backend
+    // This allows analytics to work without native Firebase setup
   } catch (error) {
-    console.warn('[Analytics] Failed to log event:', error);
+    // Silent fail - analytics should never break the app
+    if (__DEV__) {
+      console.warn('[Analytics] Failed to log event:', error);
+    }
   }
 };
 

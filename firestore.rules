@@ -17,17 +17,17 @@ service cloud.firestore {
       );
     }
     
-    // Check if user can modify content (owner OR admin)
-    function canModifyContent(data) {
-      return isOwner(data) || isAdmin();
-    }
-
     function isMember(data) {
       return isSignedIn() && data.memberUids != null && data.memberUids.hasAny([request.auth.uid]);
     }
 
+    // Check if request is public - must check both legacy isPrivate flag AND visibility field
+    // A request is public if:
+    // - visibility is explicitly 'PUBLIC', OR
+    // - visibility is not set AND isPrivate is not true (legacy posts)
     function isPublicRequest(data) {
-      return !(data.isPrivate == true);
+      return data.visibility == 'PUBLIC' || 
+        (data.visibility == null && !(data.isPrivate == true));
     }
     
     // Check if user is a member of any of the request's groups
@@ -157,7 +157,8 @@ service cloud.firestore {
       allow read: if isAdmin();
       // Admins can update reports (mark as reviewed, resolved, etc.)
       allow update: if isAdmin();
-      allow delete: if isAdmin();
+      // Allow admins to delete any report and reporters to delete their own
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.actorUid == request.auth.uid);
     }
 
     match /stats/{document=**} {

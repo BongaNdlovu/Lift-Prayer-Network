@@ -35,6 +35,10 @@ export type RootStackParamList = {
   Donation: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
+  AdminReports: undefined;
+  AdminDashboard: undefined;
+  AdminPinnedRequests: undefined;
+  AdminGlobalStats: undefined;
 };
 
 export type MainTabParamList = {
