@@ -197,6 +197,50 @@ const helpSections: HelpSection[] = [
     ],
   },
   {
+    id: 'devotions',
+    icon: 'book-outline',
+    iconColor: '#8b5cf6',
+    iconBg: '#ede9fe',
+    title: 'Daily Devotions',
+    content: [
+      {
+        title: 'Reading Devotions',
+        description: 'Tap "Daily Devotion" at the top of the Feed to access daily devotional content. Each devotion includes a Bible verse, message, reflection, and prayer.',
+        tip: 'Start your day with the daily devotion to center your heart before praying for others.',
+      },
+      {
+        title: 'Devotion Content',
+        description: 'Each devotion features a Scripture passage, a thoughtful message, reflection questions to ponder, and a closing prayer.',
+      },
+      {
+        title: 'Previous Devotions',
+        description: 'Scroll down on the Devotions page to browse previous devotions. Great for catching up or revisiting meaningful messages.',
+      },
+    ],
+  },
+  {
+    id: 'announcements',
+    icon: 'megaphone-outline',
+    iconColor: '#dc2626',
+    iconBg: '#fef2f2',
+    title: 'Announcements',
+    content: [
+      {
+        title: 'Viewing Announcements',
+        description: 'Tap "Announcements" at the top of the Feed to see important updates from the app administrators.',
+      },
+      {
+        title: 'Priority Levels',
+        description: 'Announcements are color-coded by priority: Normal (blue), Important (orange), and Urgent (red). Pay attention to urgent announcements!',
+      },
+      {
+        title: 'Staying Informed',
+        description: 'Check announcements regularly for community updates, new features, events, and important notices.',
+        tip: 'Announcements are managed by app administrators to keep the community informed.',
+      },
+    ],
+  },
+  {
     id: 'privacy',
     icon: 'shield-checkmark-outline',
     iconColor: '#64748b',
@@ -217,9 +261,39 @@ const helpSections: HelpSection[] = [
         description: 'If someone is bothering you, you can block them from Settings. Blocked users can\'t see your requests or interact with you.',
       },
       {
+        title: 'Email Verification',
+        description: 'Verify your email to get a verified badge on your profile. This helps build trust in the community and unlocks all posting features.',
+        tip: 'Check your inbox for a verification email after signing up.',
+      },
+      {
         title: 'Data & Account',
         description: 'You can delete your prayer history, delete your account, or manage blocked users from Settings. We respect your privacy and your right to your information.',
-        tip: 'Data export feature coming soon!',
+      },
+    ],
+  },
+  {
+    id: 'community',
+    icon: 'heart-outline',
+    iconColor: '#ec4899',
+    iconBg: '#fce7f3',
+    title: 'Community Guidelines',
+    content: [
+      {
+        title: 'Be Respectful',
+        description: 'Treat everyone with kindness and respect. This is a faith community built on love and support.',
+        tip: 'If you see inappropriate content, use the Report option to notify moderators.',
+      },
+      {
+        title: 'Authentic Requests',
+        description: 'Share genuine prayer needs. Avoid spam, solicitation, or content that doesn\'t align with the app\'s purpose.',
+      },
+      {
+        title: 'Moderation',
+        description: 'Our moderators help keep the community safe. They can remove inappropriate content and restrict users who violate guidelines.',
+      },
+      {
+        title: 'Reporting Issues',
+        description: 'If you see something concerning, tap the three dots on any post and select "Report". Our team will review it promptly.',
       },
     ],
   },

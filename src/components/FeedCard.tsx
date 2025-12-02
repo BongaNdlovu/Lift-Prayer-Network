@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, TouchableOpacity, Alert, Modal, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Platform, TouchableOpacity, Alert, Modal, Image, Animated, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
+import { GlassView } from './GlassView';
 import { palette, radius, spacing, shadows } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
-import { reportContent, blockUser, banUser, REPORT_REASONS, ReportReason } from '../services/moderation';
-import { getVerifiedBadge, BADGE_STYLES, canEditContent, canDeleteContent, hasAdminPermission } from '../config/admins';
+import { reportContent, blockUser, banUser, blockUserFromPosting, REPORT_REASONS, ReportReason } from '../services/moderation';
+import { getVerifiedBadge, BADGE_STYLES, canEditContent, canDeleteContent, hasAdminPermission, hasModeratorPermission } from '../config/admins';
 import { deletePrayerRequest, deleteTestimony } from '../services/prayers';
 
 // Relative time formatting
@@ -101,11 +101,61 @@ export const FeedCard: React.FC<Props> = ({
   const [activeReaction, setActiveReaction] = useState<ReactionType | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [isPraying, setIsPraying] = useState(false);
+  
+  // Animation refs for pray button
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  // Praying animation effect
+  useEffect(() => {
+    if (isPraying) {
+      // Start pulse and glow animation
+      Animated.loop(
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(pulseAnim, {
+              toValue: 1.15,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.sequence([
+            Animated.timing(glowAnim, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowAnim, {
+              toValue: 0.3,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      ).start();
+      
+      // Stop after 1.5 seconds
+      const timer = setTimeout(() => {
+        setIsPraying(false);
+        pulseAnim.setValue(1);
+        glowAnim.setValue(0);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPraying, pulseAnim, glowAnim]);
 
   // Permission checks
   const canEdit = canEditContent(item.ownerUid, currentUserId, currentUserEmail);
   const canDelete = canDeleteContent(item.ownerUid, currentUserId, currentUserEmail);
   const isAdmin = hasAdminPermission(currentUserEmail);
+  const isModerator = hasModeratorPermission(currentUserEmail);
   const isOwner = item.ownerUid === currentUserId;
   
   // Pin status (only for requests)
@@ -147,6 +197,33 @@ export const FeedCard: React.FC<Props> = ({
           onPress: async () => {
             await blockUser(currentUserId, item.ownerUid);
             Alert.alert('Blocked', `${item.userDisplayName} has been blocked.`);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleBlockFromPosting = async () => {
+    if (!isModerator) return;
+    
+    Alert.alert(
+      '🚫 Block User from Posting',
+      `This will prevent "${item.userDisplayName}" from creating new posts. They can still view and pray for others.\n\nAre you sure?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block from Posting',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await blockUserFromPosting(item.ownerUid, 'Blocked by moderator');
+            if (result.success) {
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+              Alert.alert('User Blocked', `${item.userDisplayName} can no longer create posts.`);
+            } else {
+              Alert.alert('Error', result.error || 'Could not block user.');
+            }
           },
         },
       ]
@@ -227,6 +304,39 @@ export const FeedCard: React.FC<Props> = ({
     setShowOptionsModal(true);
   };
 
+  // Check if sharing is allowed for this item
+  const canShare = isRequest && (item as any).isShareable !== false;
+
+  const handleShare = async () => {
+    if (!canShare) {
+      Alert.alert('Sharing Disabled', 'The author has disabled sharing for this prayer request.');
+      return;
+    }
+
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+
+      const authorName = (item as any).isAnonymous ? 'Someone' : item.userDisplayName;
+      const prayerCount = (item as any).prayers ?? 0;
+      const contentPreview = item.content.length > 150 
+        ? item.content.substring(0, 150) + '...' 
+        : item.content;
+
+      const shareMessage = `🙏 Prayer Request from ${authorName}\n\n"${contentPreview}"\n\n${prayerCount} people are praying for this.\n\nJoin us in prayer on Lift! 💛`;
+
+      await Share.share({
+        message: shareMessage,
+        title: 'Share Prayer Request',
+      });
+    } catch (error: any) {
+      if (error.message !== 'User did not share') {
+        Alert.alert('Error', 'Could not share. Please try again.');
+      }
+    }
+  };
+
   // Build options list for the modal
   const getOptionsMenuItems = () => {
     const options: { text: string; onPress: () => void; destructive?: boolean; icon: string }[] = [];
@@ -305,6 +415,19 @@ export const FeedCard: React.FC<Props> = ({
       });
     }
 
+    // Moderator/Admin: Block user from posting
+    if (isModerator && !isOwner) {
+      options.push({
+        text: 'Block from Posting',
+        icon: 'hand-left-outline',
+        destructive: true,
+        onPress: () => {
+          setShowOptionsModal(false);
+          handleBlockFromPosting();
+        },
+      });
+    }
+
     // Admin-only: Ban user from app entirely
     if (isAdmin && !isOwner) {
       options.push({
@@ -318,15 +441,30 @@ export const FeedCard: React.FC<Props> = ({
       });
     }
 
+    // Share option - for shareable requests only
+    if (canShare) {
+      options.unshift({
+        text: 'Share Prayer Request',
+        icon: 'share-outline',
+        onPress: () => {
+          setShowOptionsModal(false);
+          handleShare();
+        },
+      });
+    }
+
     return options;
   };
 
   const handlePrayPress = () => {
-    // Prevent double-taps or if disabled
-    if (disabled) return;
+    // Prevent double-taps or if disabled or already praying
+    if (disabled || isPraying) return;
     
     // Prevent praying on own request
     if (isOwner) return;
+    
+    // Start praying animation
+    setIsPraying(true);
     
     // Haptic feedback (optional - don't crash if unavailable)
     if (Platform.OS !== 'web') {
@@ -365,9 +503,15 @@ export const FeedCard: React.FC<Props> = ({
   // Get the actual status for display
   const displayStatus = isRequest ? (item as LiftRequest).status : 'RESOLVED';
   
-  // Check if user is verified admin
+  // Check if user is verified admin or has email verified
   const verifiedBadge = getVerifiedBadge((item as any).userEmail);
-  const badgeStyle = verifiedBadge ? BADGE_STYLES[verifiedBadge.badgeType] : null;
+  const isEmailVerified = (item as any).isEmailVerified === true;
+  // Use admin badge if exists, otherwise use email verified badge (icon only)
+  const badgeStyle = verifiedBadge 
+    ? BADGE_STYLES[verifiedBadge.badgeType] 
+    : (isEmailVerified ? BADGE_STYLES.emailVerified : null);
+  const badgeLabel = verifiedBadge?.badgeLabel || null; // No label for email verified
+  const showEmailVerifiedTick = !verifiedBadge && isEmailVerified;
   
   // Privacy info
   const visibility = (item as any).visibility || 'PUBLIC';
@@ -391,11 +535,10 @@ export const FeedCard: React.FC<Props> = ({
 
   return (
     <Pressable onPress={() => onPress?.(item)} style={isPinned && styles.pinnedCardWrapper}>
-      <LinearGradient
-        colors={isPinned ? pinnedColors : cardColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <GlassView
+        gradient={isPinned ? pinnedColors : cardColors}
         style={[styles.card, isUrgent && styles.cardUrgent, isPinned && styles.cardPinned]}
+        intensity={isDark ? 30 : 60}
       >
         {isPinned && (
           <View style={styles.pinnedBadge}>
@@ -425,13 +568,18 @@ export const FeedCard: React.FC<Props> = ({
                     <Ionicons name="eye-off" size={10} color="#6b7280" />
                   </View>
                 )}
-                {verifiedBadge && badgeStyle && (
+                {/* Admin/Moderator badge with label */}
+                {badgeStyle && badgeLabel && (
                   <View style={[styles.verifiedBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
-                    <Ionicons name="checkmark-circle" size={10} color={badgeStyle.textColor} />
+                    <Ionicons name={badgeStyle.icon as any} size={10} color={badgeStyle.textColor} />
                     <Text style={[styles.verifiedBadgeText, { color: badgeStyle.textColor }]}>
-                      {verifiedBadge.badgeLabel}
+                      {badgeLabel}
                     </Text>
                   </View>
+                )}
+                {/* Email verified tick - small icon only */}
+                {showEmailVerifiedTick && (
+                  <Ionicons name="checkmark-circle" size={14} color="#16a34a" style={{ marginLeft: 2 }} />
                 )}
               </View>
               {/* Admin-only: Show real identity for anonymous posts */}
@@ -507,13 +655,31 @@ export const FeedCard: React.FC<Props> = ({
                 style={[
                   styles.actionButton, 
                   styles.prayButtonWrapper, 
-                  (disabled || isOwner) && styles.disabled
+                  (disabled || isOwner || isPraying) && styles.disabled,
+                  isPraying && styles.prayingActive,
                 ]}
-                disabled={disabled || isOwner}
+                disabled={disabled || isOwner || isPraying}
                 activeOpacity={0.7}
               >
-                <Text style={styles.prayEmoji}>🙏</Text>
-                <Text style={styles.actionText}>{isOwner ? 'Your Request' : 'Pray'}</Text>
+                {isPraying && (
+                  <Animated.View 
+                    style={[
+                      styles.prayingGlow,
+                      { opacity: glowAnim }
+                    ]} 
+                  />
+                )}
+                <Animated.Text 
+                  style={[
+                    styles.prayEmoji,
+                    isPraying && { transform: [{ scale: pulseAnim }] }
+                  ]}
+                >
+                  🙏
+                </Animated.Text>
+                <Text style={[styles.actionText, isPraying && styles.prayingText]}>
+                  {isOwner ? 'Your Request' : isPraying ? 'Praying...' : 'Pray'}
+                </Text>
                 <Text style={styles.counter}>{item.prayers ?? 0}</Text>
               </TouchableOpacity>
 
@@ -624,9 +790,16 @@ export const FeedCard: React.FC<Props> = ({
               </Text>
             </View>
             <View style={styles.footerSpacer} />
+            {/* Share button - only for shareable requests */}
+            {canShare && (
+              <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+                <Ionicons name="share-outline" size={14} color={palette.muted} />
+                <Text style={styles.shareButtonText}>Share</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      </LinearGradient>
+      </GlassView>
 
       {/* Report Modal */}
       <Modal
@@ -743,9 +916,9 @@ export const FeedCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginVertical: spacing.xs,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    marginVertical: 3,
     ...shadows.sm,
     borderWidth: 1,
     borderColor: palette.border,
@@ -800,9 +973,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -813,15 +986,15 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   avatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
     borderColor: palette.accent,
   },
   avatarText: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#fff',
   },
   userTextInfo: {
@@ -829,8 +1002,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: palette.text,
     flexShrink: 1,
   },
@@ -854,9 +1027,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   meta: {
-    fontSize: 12,
+    fontSize: 11,
     color: palette.muted,
-    marginTop: 2,
+    marginTop: 1,
   },
   statusBadge: {
     paddingHorizontal: 6,
@@ -893,10 +1066,10 @@ const styles = StyleSheet.create({
     color: '#16a34a',
   },
   content: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 20,
     color: '#1f2937',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   footer: {
     gap: spacing.md,
@@ -927,12 +1100,12 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 6,
+    borderRadius: radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 4,
     backgroundColor: palette.accent,
-    minHeight: 36,
+    minHeight: 32,
   },
   amenButton: {
     backgroundColor: '#facc15',
@@ -941,23 +1114,55 @@ const styles = StyleSheet.create({
     backgroundColor: '#d97706',
   },
   prayEmoji: {
-    fontSize: 14,
+    fontSize: 12,
+  },
+  prayingActive: {
+    backgroundColor: '#fde68a',
+    borderWidth: 2,
+    borderColor: '#f59e0b',
+  },
+  prayingGlow: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: radius.md + 4,
+    backgroundColor: '#fde68a',
+  },
+  prayingText: {
+    color: '#92400e',
+    fontWeight: '800',
   },
   amenEmoji: {
-    fontSize: 14,
+    fontSize: 12,
   },
   actionText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
     color: '#1f2937',
   },
   counter: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
     color: '#1f2937',
   },
   footerSpacer: {
     flex: 1,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+  },
+  shareButtonText: {
+    fontSize: 11,
+    color: palette.muted,
+    fontWeight: '500',
   },
   disabled: {
     opacity: 0.5,
@@ -1011,42 +1216,42 @@ const styles = StyleSheet.create({
   reactionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
     flexWrap: 'wrap',
   },
   extraReactions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   reactionButton: {
     flexDirection: 'row',
-    minWidth: 28,
-    height: 28,
-    borderRadius: 14,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#f8fafc',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: palette.border,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
   },
   reactionButtonActive: {
     backgroundColor: '#fef3c7',
     borderColor: palette.accent,
   },
   reactionButtonWithCount: {
-    paddingHorizontal: 8,
-    minWidth: 44,
+    paddingHorizontal: 6,
+    minWidth: 36,
   },
   reactionEmoji: {
-    fontSize: 13,
+    fontSize: 11,
   },
   reactionCount: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '600',
     color: '#6b7280',
-    marginLeft: 3,
+    marginLeft: 2,
   },
   // Report Modal styles
   modalOverlay: {
@@ -1056,35 +1261,35 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: spacing.lg,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: spacing.md,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     color: palette.text,
   },
   modalSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: palette.muted,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   reasonOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    marginBottom: spacing.xs,
     backgroundColor: '#f8fafc',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   reasonOptionSelected: {
     backgroundColor: '#fef3c7',
@@ -1092,12 +1297,12 @@ const styles = StyleSheet.create({
     borderColor: palette.accent,
   },
   reasonEmoji: {
-    fontSize: 20,
+    fontSize: 16,
   },
   reasonLabel: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     color: palette.text,
   },
   reasonLabelSelected: {
@@ -1105,17 +1310,17 @@ const styles = StyleSheet.create({
   },
   reportButton: {
     backgroundColor: '#ef4444',
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   reportButtonDisabled: {
     backgroundColor: '#fca5a5',
   },
   reportButtonText: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#fff',
   },
   // Privacy badge styles
@@ -1171,65 +1376,65 @@ const styles = StyleSheet.create({
   },
   optionsSheet: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 34, // Safe area padding
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 28, // Safe area padding
   },
   optionsHeader: {
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: palette.border,
   },
   optionsHandle: {
-    width: 40,
-    height: 4,
+    width: 32,
+    height: 3,
     backgroundColor: '#d1d5db',
     borderRadius: 2,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   optionsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: palette.text,
   },
   optionsSubtitle: {
-    fontSize: 13,
+    fontSize: 11,
     color: palette.muted,
-    marginTop: 4,
+    marginTop: 2,
   },
   optionsList: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   optionItemDestructive: {
     backgroundColor: '#fef2f2',
   },
   optionText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     color: palette.text,
   },
   optionTextDestructive: {
     color: '#ef4444',
   },
   optionsCancelButton: {
-    marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    paddingVertical: spacing.md,
+    marginHorizontal: spacing.sm,
+    marginTop: spacing.xs,
+    paddingVertical: spacing.sm,
     backgroundColor: '#f1f5f9',
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     alignItems: 'center',
   },
   optionsCancelText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: palette.muted,
   },
 });

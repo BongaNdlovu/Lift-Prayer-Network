@@ -114,7 +114,7 @@ export const StatsScreen: React.FC = () => {
     : `${stats?.streakDays} days strong! 💪`;
 
   return (
-    <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
+    <LinearGradient colors={gradientColors as any} style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={[styles.heading, { color: colors.text }]}>Your Journey</Text>

@@ -6,6 +6,7 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFeed } from '../../hooks/useFeed';
+import { useUnreadNotifications } from '../../hooks/useUnreadNotifications';
 import { logPrayer, logReaction, likeTestimony, pinRequest, unpinRequest } from '../../services/prayers';
 import type { ReactionType } from '../../services/prayers';
 import { useAuth } from '../../hooks/useAuth';
@@ -26,6 +27,7 @@ export const FeedScreen: React.FC = () => {
   const [mode, setMode] = useState<'REQUEST' | 'TESTIMONY'>('REQUEST');
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const { unreadCount } = useUnreadNotifications();
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   
   // Subscribe to user's groups for proper feed filtering
@@ -98,6 +100,19 @@ export const FeedScreen: React.FC = () => {
       urgentCount,
     };
   }, [filteredItems, items]);
+
+  // Get top 3 most prayed requests (only show if we have enough items with prayers)
+  const mostPrayedItems = useMemo(() => {
+    if (mode !== 'REQUEST') return [];
+    
+    const requestsWithPrayers = items
+      .filter((item) => item.type === 'REQUEST' && ((item as any).prayers ?? 0) >= 5)
+      .sort((a, b) => ((b as any).prayers ?? 0) - ((a as any).prayers ?? 0))
+      .slice(0, 3);
+    
+    // Only show if we have at least 2 items with significant prayers
+    return requestsWithPrayers.length >= 2 ? requestsWithPrayers : [];
+  }, [items, mode]);
 
   const offline = netInfo.isConnected === false;
 
@@ -274,6 +289,15 @@ export const FeedScreen: React.FC = () => {
   };
 
   const onRefresh = async () => {
+    // Haptic feedback on pull-to-refresh
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {
+        // Haptics not available
+      }
+    }
+    
     setRefreshing(true);
     
     // Refresh the data
@@ -316,6 +340,13 @@ export const FeedScreen: React.FC = () => {
                 onPress={() => navigation.navigate('NotificationsInbox')}
               >
                 <Ionicons name="notifications-outline" size={22} color={colors.text} />
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
               {/* Search Button */}
               <TouchableOpacity
@@ -347,6 +378,24 @@ export const FeedScreen: React.FC = () => {
             <Text style={styles.statLabel}>Prayers</Text>
             </View>
           </View>
+        </View>
+
+        {/* Quick Access Bar - Devotions & Announcements */}
+        <View style={styles.quickAccessBar}>
+          <TouchableOpacity
+            style={[styles.quickAccessButton, { backgroundColor: colors.accentLight }]}
+            onPress={() => navigation.navigate('Devotions')}
+          >
+            <Ionicons name="book" size={18} color={colors.accent} />
+            <Text style={[styles.quickAccessText, { color: colors.accent }]}>Daily Devotion</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickAccessButton, { backgroundColor: isDark ? '#7f1d1d' : '#fef2f2' }]}
+            onPress={() => navigation.navigate('Announcements')}
+          >
+            <Ionicons name="megaphone" size={18} color="#dc2626" />
+            <Text style={[styles.quickAccessText, { color: '#dc2626' }]}>Announcements</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={[styles.modeSwitch, { backgroundColor: colors.surfaceSecondary }]}>
@@ -464,6 +513,51 @@ export const FeedScreen: React.FC = () => {
                   currentUserEmail={user?.email}
                 />
               )}
+              ListHeaderComponent={
+                mostPrayedItems.length > 0 ? (
+                  <View style={styles.mostPrayedSection}>
+                    <View style={styles.mostPrayedHeader}>
+                      <Text style={styles.mostPrayedEmoji}>🔥</Text>
+                      <Text style={[styles.mostPrayedTitle, { color: colors.text }]}>Most Prayed</Text>
+                    </View>
+                    <ScrollView 
+                      horizontal 
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.mostPrayedScroll}
+                    >
+                      {mostPrayedItems.map((item, index) => (
+                        <TouchableOpacity
+                          key={item.id}
+                          style={[
+                            styles.mostPrayedCard,
+                            { backgroundColor: isDark ? colors.surface : '#fff', borderColor: colors.border }
+                          ]}
+                          onPress={() => handleOpen(item)}
+                          activeOpacity={0.8}
+                        >
+                          <View style={styles.mostPrayedRank}>
+                            <Text style={styles.mostPrayedRankText}>#{index + 1}</Text>
+                          </View>
+                          <Text 
+                            style={[styles.mostPrayedContent, { color: colors.text }]} 
+                            numberOfLines={2}
+                          >
+                            {item.content}
+                          </Text>
+                          <View style={styles.mostPrayedFooter}>
+                            <Text style={styles.mostPrayedPrayers}>
+                              🙏 {(item as any).prayers ?? 0} prayers
+                            </Text>
+                            <Text style={[styles.mostPrayedAuthor, { color: colors.muted }]} numberOfLines={1}>
+                              by {item.userDisplayName}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : null
+              }
               contentContainerStyle={{ paddingBottom: 120 }}
               showsVerticalScrollIndicator={false}
               initialNumToRender={8}
@@ -551,6 +645,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.sm,
+    position: 'relative' as const,
+  },
+  notificationBadge: {
+    position: 'absolute' as const,
+    top: -4,
+    right: -4,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   searchButton: {
     width: 36,
@@ -581,6 +695,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.3,
     marginTop: 1,
+  },
+  quickAccessBar: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  quickAccessButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+    gap: 6,
+  },
+  quickAccessText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   modeSwitch: {
     flexDirection: 'row',
@@ -753,22 +886,88 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 100,
-    right: spacing.lg,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    bottom: 90,
+    right: spacing.md,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#eab308',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   fabTestimony: {
     backgroundColor: '#22c55e',
     shadowColor: '#22c55e',
+  },
+  // Most Prayed Section Styles
+  mostPrayedSection: {
+    marginBottom: spacing.md,
+  },
+  mostPrayedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  mostPrayedEmoji: {
+    fontSize: 16,
+  },
+  mostPrayedTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  mostPrayedScroll: {
+    paddingRight: spacing.lg,
+    gap: spacing.sm,
+  },
+  mostPrayedCard: {
+    width: 160,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  mostPrayedRank: {
+    position: 'absolute',
+    top: -6,
+    left: 8,
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+  },
+  mostPrayedRankText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  mostPrayedContent: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  mostPrayedFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mostPrayedPrayers: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#f59e0b',
+  },
+  mostPrayedAuthor: {
+    fontSize: 9,
+    maxWidth: 60,
   },
 });

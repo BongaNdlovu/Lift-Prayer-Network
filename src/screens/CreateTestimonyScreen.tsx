@@ -24,6 +24,7 @@ import { Confetti } from '../components/Confetti';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
+import { checkUserBlockedFromPosting } from '../services/moderation';
 import type { RootStackParamList } from '../navigation/types';
 import type { PrayerGroup } from '../types';
 
@@ -75,6 +76,19 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
     if (visibility === 'GROUP' && selectedGroupIds.length === 0) {
       Alert.alert('Select Groups', 'Please select at least one group to share with.');
       return;
+    }
+
+    // Security check: Check if user is blocked from posting
+    if (user) {
+      const blockStatus = await checkUserBlockedFromPosting(user.uid);
+      if (blockStatus.isBlocked) {
+        Alert.alert(
+          'Posting Restricted',
+          blockStatus.reason || 'Your posting privileges have been suspended. You can still view and pray for others.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
     }
 
     // Security check: Require email verification for non-anonymous users
@@ -169,6 +183,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
         visibility,
         isPrivate: visibility === 'PRIVATE',
         groupIds: visibility === 'GROUP' ? selectedGroupIds : undefined,
+        isEmailVerified: user.emailVerified || false,
       });
 
       if (Platform.OS !== 'web') {

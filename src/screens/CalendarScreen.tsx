@@ -483,7 +483,7 @@ export const CalendarScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={gradientColors}
+        colors={gradientColors as any}
         style={styles.gradient}
       >
         <ScrollView showsVerticalScrollIndicator={false}>

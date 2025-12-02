@@ -22,6 +22,7 @@ import { palette, radius, spacing } from '../theme/colors';
 import { db, firebaseEnabled } from '../services/firebase';
 import { registerForPushNotifications, storePushToken, sendTestNotification, getPushTokenStatus } from '../services/notifications';
 import { updateUserSettings } from '../services/userProfile';
+import { hasAdminPermission } from '../config/admins';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NotificationsSettings'>;
@@ -54,7 +55,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 
 export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  const { colors } = useTheme();
+  useTheme(); // Theme context for potential future use
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<string>('unknown');
@@ -226,7 +227,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="notifications"
               iconColor="#3b82f6"
               title="Enable Notifications"
-              subtitle="Receive push notifications"
               value={settings.enabled && permissionStatus === 'granted'}
               onToggle={() => handleToggle('enabled')}
               disabled={permissionStatus !== 'granted'}
@@ -238,7 +238,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="alert-circle"
               iconColor="#ef4444"
               title="Critical Prayer Alerts"
-              subtitle="Urgent prayer requests from the community"
               value={settings.critical}
               onToggle={() => handleToggle('critical')}
               disabled={!settings.enabled || permissionStatus !== 'granted'}
@@ -255,7 +254,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="heart"
               iconColor="#ec4899"
               title="Prayers on Your Requests"
-              subtitle="When someone prays for your request"
               value={settings.prayers}
               onToggle={() => handleToggle('prayers')}
               disabled={!settings.enabled || permissionStatus !== 'granted'}
@@ -267,7 +265,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="checkmark-circle"
               iconColor="#22c55e"
               title="Linked Testimonies"
-              subtitle="When your request is marked answered"
               value={settings.testimonies}
               onToggle={() => handleToggle('testimonies')}
               disabled={!settings.enabled || permissionStatus !== 'granted'}
@@ -279,7 +276,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="people"
               iconColor="#8b5cf6"
               title="Comments on Your Content"
-              subtitle="When someone comments on your requests or testimonies"
               value={settings.comments}
               onToggle={() => handleToggle('comments')}
               disabled={!settings.enabled || permissionStatus !== 'granted'}
@@ -296,7 +292,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="people"
               iconColor="#0ea5e9"
               title="Group Updates"
-              subtitle="New prayer requests in your groups"
               value={settings.groups}
               onToggle={() => handleToggle('groups')}
               disabled={!settings.enabled || permissionStatus !== 'granted'}
@@ -313,7 +308,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="trophy"
               iconColor="#f59e0b"
               title="Achievement Unlocked"
-              subtitle="When you earn a new achievement badge"
               value={settings.achievements}
               onToggle={() => handleToggle('achievements')}
               disabled={!settings.enabled || permissionStatus !== 'granted'}
@@ -326,25 +320,13 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
           <Text style={styles.sectionTitle}>Weekly Recap</Text>
           
           <View style={styles.settingCard}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <View style={[styles.iconContainer, { backgroundColor: '#fef9c3' }]}>
-                  <Ionicons name="calendar-outline" size={22} color={colors.text} />
-                </View>
-                <View style={styles.settingText}>
-                  <Text style={[styles.settingLabel, { color: colors.text }]}>Weekly Summary</Text>
-                  <Text style={[styles.settingDesc, { color: colors.muted }]}>
-                    Receive a weekly summary of your prayer activity
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={settings.weeklyRecapEnabled}
-                onValueChange={() => handleToggle('weeklyRecapEnabled')}
-                trackColor={{ false: '#e5e7eb', true: '#fde68a' }}
-                thumbColor={settings.weeklyRecapEnabled ? '#f59e0b' : '#9ca3af'}
-              />
-            </View>
+            <SettingRow
+              icon="calendar-outline"
+              iconColor="#eab308"
+              title="Weekly Summary"
+              value={settings.weeklyRecapEnabled}
+              onToggle={() => handleToggle('weeklyRecapEnabled')}
+            />
           </View>
         </View>
 
@@ -357,7 +339,6 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               icon="alarm"
               iconColor="#0ea5e9"
               title="Daily Prayer Reminder"
-              subtitle="Get a daily reminder to pray"
               value={settings.dailyReminder}
               onToggle={() => handleToggle('dailyReminder')}
             />
@@ -385,7 +366,8 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
           </View>
         </View>
 
-        {/* Debug Section - Test Notifications */}
+        {/* Debug Section - Test Notifications (Admin Only) */}
+        {hasAdminPermission(user?.email) && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Troubleshooting</Text>
           
@@ -441,6 +423,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
             </TouchableOpacity>
           </View>
         </View>
+        )}
 
         {/* Info Card */}
         <View style={styles.infoCard}>
@@ -459,7 +442,6 @@ type SettingRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   title: string;
-  subtitle: string;
   value: boolean;
   onToggle: () => void;
   disabled?: boolean;
@@ -469,7 +451,6 @@ const SettingRow: React.FC<SettingRowProps> = ({
   icon,
   iconColor,
   title,
-  subtitle,
   value,
   onToggle,
   disabled,
@@ -482,7 +463,6 @@ const SettingRow: React.FC<SettingRowProps> = ({
       <Text style={[styles.settingTitle, disabled && styles.settingTitleDisabled]}>
         {title}
       </Text>
-      <Text style={styles.settingSubtitle}>{subtitle}</Text>
     </View>
     <Switch
       value={value}
@@ -604,22 +584,6 @@ const styles = StyleSheet.create({
   },
   settingInfo: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  settingText: {
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: palette.text,
-  },
-  settingDesc: {
-    fontSize: 12,
-    color: palette.muted,
-    marginTop: 2,
   },
   settingTitle: {
     fontSize: 15,

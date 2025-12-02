@@ -1,28 +1,30 @@
 import {
-  useFonts as usePlayfair,
-  PlayfairDisplay_700Bold,
-  PlayfairDisplay_700Bold_Italic,
-} from '@expo-google-fonts/playfair-display';
+  useFonts as useOutfit,
+  Outfit_700Bold,
+  Outfit_600SemiBold,
+} from '@expo-google-fonts/outfit';
 import {
-  useFonts as useNunito,
-  Nunito_400Regular,
-  Nunito_600SemiBold,
-  Nunito_700Bold,
-} from '@expo-google-fonts/nunito';
+  useFonts as useInter,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 export const useAppFonts = () => {
-  const [playfairLoaded] = usePlayfair({
-    PlayfairDisplay_700Bold,
-    PlayfairDisplay_700Bold_Italic,
+  const [outfitLoaded] = useOutfit({
+    Outfit_700Bold,
+    Outfit_600SemiBold,
   });
 
-  const [nunitoLoaded] = useNunito({
-    Nunito_400Regular,
-    Nunito_600SemiBold,
-    Nunito_700Bold,
+  const [interLoaded] = useInter({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
 
-  const fontsLoaded = playfairLoaded && nunitoLoaded;
+  const fontsLoaded = outfitLoaded && interLoaded;
 
   return { fontsLoaded };
 };

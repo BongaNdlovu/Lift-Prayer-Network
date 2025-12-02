@@ -101,7 +101,7 @@ export const AchievementsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient colors={gradientColors} style={styles.gradient}>
+      <LinearGradient colors={gradientColors as any} style={styles.gradient}>
         {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
@@ -149,15 +149,12 @@ export const AchievementsScreen: React.FC = () => {
                       const achievement = ACHIEVEMENTS.find((a) => a.id === id);
                       if (!achievement) return null;
                       return (
-                        <View
-                          key={id}
-                          style={[
-                            styles.recentBadge,
-                            { backgroundColor: achievement.color },
-                          ]}
+                        <LinearGradient
+                          colors={[colors.background, colors.surface]}
+                          style={styles.recentBadge}
                         >
                           <Text style={styles.recentEmoji}>{achievement.emoji}</Text>
-                        </View>
+                        </LinearGradient>
                       );
                     })}
                   </View>

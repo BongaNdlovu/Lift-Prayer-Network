@@ -9,10 +9,14 @@ import {
   RefreshControl,
   Image,
   Platform,
+  Alert,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Swipeable } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
 import {
   collection,
   query,
@@ -22,6 +26,7 @@ import {
   getDocs,
   updateDoc,
   doc,
+  deleteDoc,
   Timestamp,
   writeBatch,
 } from 'firebase/firestore';
@@ -103,7 +108,7 @@ const formatTimeAgo = (timestamp: Timestamp): string => {
 export const NotificationsInboxScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -207,67 +212,152 @@ export const NotificationsInboxScreen: React.FC = () => {
       .slice(0, 2);
   };
 
+  // Delete a single notification
+  const handleDeleteNotification = async (notificationId: string) => {
+    if (!db) return;
+
+    try {
+      await deleteDoc(doc(db, 'notifications', notificationId));
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+      Alert.alert('Error', 'Could not delete notification');
+    }
+  };
+
+  // Delete all notifications
+  const handleDeleteAll = () => {
+    if (notifications.length === 0) return;
+
+    Alert.alert(
+      'Delete All Notifications',
+      'Are you sure you want to delete all notifications? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            if (!db) return;
+            
+            try {
+              const batch = writeBatch(db);
+              notifications.forEach((n) => {
+                batch.delete(doc(db!, 'notifications', n.id));
+              });
+              await batch.commit();
+              setNotifications([]);
+              
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+            } catch (err) {
+              console.error('Error deleting all notifications:', err);
+              Alert.alert('Error', 'Could not delete notifications');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Render swipe action (delete button)
+  const renderRightActions = (
+    _progress: Animated.AnimatedInterpolation<number>,
+    _dragX: Animated.AnimatedInterpolation<number>,
+    notificationId: string
+  ) => {
+    return (
+      <TouchableOpacity
+        style={styles.deleteAction}
+        onPress={() => handleDeleteNotification(notificationId)}
+      >
+        <Ionicons name="trash-outline" size={24} color="#fff" />
+        <Text style={styles.deleteActionText}>Delete</Text>
+      </TouchableOpacity>
+    );
+  };
+
   const renderNotification = ({ item }: { item: Notification }) => {
     const icon = getNotificationIcon(item.type);
     const message = getNotificationMessage(item);
 
     return (
-      <TouchableOpacity
-        style={[styles.notificationCard, !item.read && styles.notificationUnread]}
-        onPress={() => handleNotificationPress(item)}
-        activeOpacity={0.7}
+      <Swipeable
+        renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item.id)}
+        overshootRight={false}
+        friction={2}
       >
-        <View style={styles.notificationLeft}>
-          {item.actorPhotoURL ? (
-            <Image
-              source={{ uri: item.actorPhotoURL }}
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: icon.color + '20' }]}>
-              <Text style={[styles.avatarText, { color: icon.color }]}>
-                {getInitials(item.actorDisplayName)}
-              </Text>
+        <TouchableOpacity
+          style={[
+            styles.notificationCard, 
+            { backgroundColor: colors.surface, borderBottomColor: colors.border },
+            !item.read && { backgroundColor: colors.accentLight }
+          ]}
+          onPress={() => handleNotificationPress(item)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.notificationLeft}>
+            {item.actorPhotoURL ? (
+              <Image
+                source={{ uri: item.actorPhotoURL }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: icon.color + '20' }]}>
+                <Text style={[styles.avatarText, { color: icon.color }]}>
+                  {getInitials(item.actorDisplayName)}
+                </Text>
+              </View>
+            )}
+            <View style={[styles.iconBadge, { backgroundColor: icon.color }]}>
+              <Ionicons name={icon.name} size={10} color="#fff" />
             </View>
-          )}
-          <View style={[styles.iconBadge, { backgroundColor: icon.color }]}>
-            <Ionicons name={icon.name} size={10} color="#fff" />
           </View>
-        </View>
 
-        <View style={styles.notificationContent}>
-          <Text style={styles.notificationText}>
-            <Text style={styles.actorName}>{item.actorDisplayName}</Text>
-            {' '}{message}
-          </Text>
-          {item.targetSummary && (
-            <Text style={styles.targetSummary} numberOfLines={1}>
-              &quot;{item.targetSummary}&quot;
+          <View style={styles.notificationContent}>
+            <Text style={[styles.notificationText, { color: colors.textSecondary }]}>
+              <Text style={[styles.actorName, { color: colors.text }]}>{item.actorDisplayName}</Text>
+              {' '}{message}
             </Text>
-          )}
-          <Text style={styles.timeAgo}>{formatTimeAgo(item.createdAt)}</Text>
-        </View>
+            {item.targetSummary && (
+              <Text style={[styles.targetSummary, { color: colors.muted }]} numberOfLines={1}>
+                &quot;{item.targetSummary}&quot;
+              </Text>
+            )}
+            <Text style={[styles.timeAgo, { color: colors.muted }]}>{formatTimeAgo(item.createdAt)}</Text>
+          </View>
 
-        {!item.read && <View style={styles.unreadDot} />}
-      </TouchableOpacity>
+          {!item.read && <View style={styles.unreadDot} />}
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        {unreadCount > 0 ? (
-          <TouchableOpacity onPress={markAllAsRead} style={styles.markAllButton}>
-            <Text style={styles.markAllText}>Mark all read</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={{ width: 80 }} />
-        )}
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
+        <View style={styles.headerActions}>
+          {unreadCount > 0 && (
+            <TouchableOpacity onPress={markAllAsRead} style={[styles.headerActionButton, { backgroundColor: colors.surfaceSecondary }]}>
+              <Ionicons name="checkmark-done-outline" size={20} color={colors.accentDark} />
+            </TouchableOpacity>
+          )}
+          {notifications.length > 0 && (
+            <TouchableOpacity onPress={handleDeleteAll} style={[styles.headerActionButton, { backgroundColor: colors.surfaceSecondary }]}>
+              <Ionicons name="trash-outline" size={20} color={colors.danger} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {loading ? (
@@ -276,11 +366,11 @@ export const NotificationsInboxScreen: React.FC = () => {
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="notifications-outline" size={48} color={palette.muted} />
+          <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceSecondary }]}>
+            <Ionicons name="notifications-outline" size={48} color={colors.muted} />
           </View>
-          <Text style={styles.emptyTitle}>No notifications yet</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No notifications yet</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
             When someone prays for you or interacts with your posts, you&apos;ll see it here
           </Text>
         </View>
@@ -294,17 +384,28 @@ export const NotificationsInboxScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => {
+                // Haptic feedback on pull-to-refresh
+                if (Platform.OS !== 'web') {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch {
+                    // Haptics not available
+                  }
+                }
                 setRefreshing(true);
                 loadNotifications();
               }}
             />
           }
           ListHeaderComponent={
-            unreadCount > 0 ? (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadBadgeText}>{unreadCount} new</Text>
-              </View>
-            ) : null
+            <View style={styles.listHeader}>
+              {unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>{unreadCount} new</Text>
+                </View>
+              )}
+              <Text style={styles.swipeHint}>Swipe left to delete</Text>
+            </View>
           }
           initialNumToRender={10}
           windowSize={5}
@@ -354,6 +455,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: palette.accentDark,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  headerActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteAction: {
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+  },
+  deleteActionText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -389,13 +516,21 @@ const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
+  listHeader: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  swipeHint: {
+    fontSize: 12,
+    color: palette.muted,
+    fontStyle: 'italic',
+  },
   unreadBadge: {
-    alignSelf: 'center',
     backgroundColor: '#fef3c7',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    marginVertical: spacing.sm,
   },
   unreadBadgeText: {
     fontSize: 12,

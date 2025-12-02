@@ -52,7 +52,7 @@ const TIME_RANGES = [
 export const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -270,24 +270,24 @@ export const SearchScreen: React.FC = () => {
     (filters.timeRange !== 'all' ? 1 : 0);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Search</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Search</Text>
         <View style={{ width: 40 }} />
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={palette.muted} />
+        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.muted} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search prayers, testimonies, people..."
-            placeholderTextColor={palette.muted}
+            placeholderTextColor={colors.muted}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={performSearch}
@@ -297,7 +297,7 @@ export const SearchScreen: React.FC = () => {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={palette.muted} />
+              <Ionicons name="close-circle" size={20} color={colors.muted} />
             </TouchableOpacity>
           )}
         </View>
@@ -308,7 +308,7 @@ export const SearchScreen: React.FC = () => {
           <Ionicons 
             name="options-outline" 
             size={20} 
-            color={activeFilterCount > 0 ? '#fff' : palette.text} 
+            color={activeFilterCount > 0 ? '#fff' : colors.text} 
           />
           {activeFilterCount > 0 && (
             <View style={styles.filterBadge}>
@@ -320,9 +320,9 @@ export const SearchScreen: React.FC = () => {
 
       {/* Filters Panel */}
       {showFilters && (
-        <View style={styles.filtersPanel}>
+        <View style={[styles.filtersPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.filterHeader}>
-            <Text style={styles.filterTitle}>Filters</Text>
+            <Text style={[styles.filterTitle, { color: colors.text }]}>Filters</Text>
             {activeFilterCount > 0 && (
               <TouchableOpacity onPress={clearFilters}>
                 <Text style={styles.clearFilters}>Clear all</Text>
@@ -436,26 +436,26 @@ export const SearchScreen: React.FC = () => {
       {/* Results */}
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={palette.accent} />
-          <Text style={styles.loadingText}>Searching...</Text>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.muted }]}>Searching...</Text>
         </View>
       ) : !hasSearched ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="search" size={48} color={palette.muted} />
+          <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceSecondary }]}>
+            <Ionicons name="search" size={48} color={colors.muted} />
           </View>
-          <Text style={styles.emptyTitle}>Search Prayers</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Search Prayers</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
             Find prayer requests and testimonies by keyword, category, or person
           </Text>
         </View>
       ) : results.length === 0 ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="document-text-outline" size={48} color={palette.muted} />
+          <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceSecondary }]}>
+            <Ionicons name="document-text-outline" size={48} color={colors.muted} />
           </View>
-          <Text style={styles.emptyTitle}>No results found</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No results found</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
             Try different keywords or adjust your filters
           </Text>
         </View>
@@ -487,7 +487,7 @@ export const SearchScreen: React.FC = () => {
           })}
           contentContainerStyle={styles.resultsList}
           ListHeaderComponent={
-            <Text style={styles.resultsCount}>
+            <Text style={[styles.resultsCount, { color: colors.muted }]}>
               {results.length} result{results.length !== 1 ? 's' : ''}
             </Text>
           }

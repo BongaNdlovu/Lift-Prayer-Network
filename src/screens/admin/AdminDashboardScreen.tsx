@@ -3,7 +3,7 @@ import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-na
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
-import { hasAdminPermission } from '../../config/admins';
+import { hasAdminPermission, hasModeratorPermission } from '../../config/admins';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
@@ -15,12 +15,14 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
   const { colors } = useTheme();
 
   const isAdmin = hasAdminPermission(user?.email);
+  const isModerator = hasModeratorPermission(user?.email);
 
-  if (!isAdmin) {
+  // Must be at least a moderator to access
+  if (!isModerator) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
         <Ionicons name="shield" size={40} color={colors.muted} />
-        <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
+        <Text style={[styles.denied, { color: colors.text }]}>Moderator access required</Text>
       </SafeAreaView>
     );
   }
@@ -31,11 +33,14 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Admin Tools</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          {isAdmin ? 'Admin Tools' : 'Moderator Tools'}
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.content}>
+        {/* Reports - Available to Moderators and Admins */}
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => navigation.navigate('AdminReports')}
@@ -50,47 +55,62 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color={colors.muted} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('AdminPinnedRequests')}
-        >
-          <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
-            <Ionicons name="star-outline" size={22} color={colors.accent} />
-          </View>
-          <View style={styles.cardText}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Pinned Requests</Text>
-            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>Manage highlighted requests in the feed</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-        </TouchableOpacity>
+        {/* Admin-only sections below */}
+        {isAdmin && (
+          <>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('AdminPinnedRequests')}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
+                <Ionicons name="star-outline" size={22} color={colors.accent} />
+              </View>
+              <View style={styles.cardText}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Pinned Requests</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>Manage highlighted requests in the feed</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('AdminGlobalStats')}
-        >
-          <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
-            <Ionicons name="stats-chart-outline" size={22} color={colors.accent} />
-          </View>
-          <View style={styles.cardText}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Global Stats</Text>
-            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View overall prayer activity</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('AdminGlobalStats')}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
+                <Ionicons name="stats-chart-outline" size={22} color={colors.accent} />
+              </View>
+              <View style={styles.cardText}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Global Stats</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View overall prayer activity</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('AdminBannedUsers')}
-        >
-          <View style={[styles.iconCircle, { backgroundColor: colors.dangerLight }]}>
-            <Ionicons name="ban-outline" size={22} color={colors.danger} />
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('AdminBannedUsers')}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: colors.dangerLight }]}>
+                <Ionicons name="ban-outline" size={22} color={colors.danger} />
+              </View>
+              <View style={styles.cardText}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Banned Users</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View and unban restricted users</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+            </TouchableOpacity>
+          </>
+        )}
+
+        {/* Show info for moderators about their access */}
+        {!isAdmin && (
+          <View style={[styles.infoCard, { backgroundColor: colors.surfaceSecondary }]}>
+            <Ionicons name="information-circle-outline" size={20} color={colors.muted} />
+            <Text style={[styles.infoText, { color: colors.muted }]}>
+              As a moderator, you can review reports, delete content, and block users from posting. Banning users from the app and pinning requests are admin-only.
+            </Text>
           </View>
-          <View style={styles.cardText}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Banned Users</Text>
-            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View and unban restricted users</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-        </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -168,6 +188,19 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     color: palette.muted,
     fontWeight: '600',
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
 

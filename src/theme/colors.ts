@@ -4,9 +4,11 @@ export const lightPalette = {
   background: '#faf9f7',
   surface: '#ffffff',
   surfaceSecondary: '#f1f5f9',
+  surfaceDeep: '#f5f0e8', // New
   accent: '#eab308',
   accentDark: '#b45309',
   accentLight: '#fef3c7',
+  accentDeep: '#92400e', // New
   text: '#0f172a',
   textSecondary: '#374151',
   muted: '#64748b',
@@ -23,6 +25,7 @@ export const lightPalette = {
   gradientCool: ['#f0f9ff', '#e0f2fe', '#bae6fd'] as const,
   gradientPurple: ['#faf5ff', '#f3e8ff', '#e9d5ff'] as const,
   gradientSuccess: ['#f0fdf4', '#dcfce7', '#bbf7d0'] as const,
+  gradientDeep: ['#faf9f7', '#fef3c7', '#fde68a', '#f59e0b'] as const, // New
   
   // Background gradients for screens
   screenGradient: ['#faf9f7', '#fef3c7', '#fff7ed'] as const,
@@ -35,9 +38,11 @@ export const darkPalette = {
   background: '#0f172a',
   surface: '#1e293b',
   surfaceSecondary: '#334155',
+  surfaceDeep: '#0c1222', // New
   accent: '#fbbf24',
   accentDark: '#f59e0b',
   accentLight: '#422006',
+  accentDeep: '#78350f', // New
   text: '#f8fafc',
   textSecondary: '#e2e8f0',
   muted: '#94a3b8',
@@ -54,6 +59,7 @@ export const darkPalette = {
   gradientCool: ['#0c4a6e', '#075985', '#0369a1'] as const,
   gradientPurple: ['#2e1065', '#3b0764', '#4c1d95'] as const,
   gradientSuccess: ['#052e16', '#064e3b', '#065f46'] as const,
+  gradientDeep: ['#0f172a', '#1e293b', '#422006', '#78350f'] as const, // New
   
   // Background gradients for screens
   screenGradient: ['#0f172a', '#1e293b', '#1e1b4b'] as const,
@@ -65,9 +71,11 @@ export type ThemePalette = {
   background: string;
   surface: string;
   surfaceSecondary: string;
+  surfaceDeep: string; // New
   accent: string;
   accentDark: string;
   accentLight: string;
+  accentDeep: string; // New
   text: string;
   textSecondary: string;
   muted: string;
@@ -77,13 +85,14 @@ export type ThemePalette = {
   success: string;
   successLight: string;
   shadow: string;
-  gradientWarm: readonly [string, string, string];
-  gradientSunrise: readonly [string, string, string];
-  gradientCool: readonly [string, string, string];
-  gradientPurple: readonly [string, string, string];
-  gradientSuccess: readonly [string, string, string];
-  screenGradient: readonly [string, string, string];
-  cardGradient: readonly [string, string];
+  gradientWarm: readonly string[];
+  gradientSunrise: readonly string[];
+  gradientCool: readonly string[];
+  gradientPurple: readonly string[];
+  gradientSuccess: readonly string[];
+  gradientDeep: readonly string[]; // New
+  screenGradient: readonly string[];
+  cardGradient: readonly string[];
 };
 
 // Default export for backward compatibility (will be overridden by ThemeContext)
@@ -95,19 +104,19 @@ export const setPalette = (isDark: boolean) => {
 };
 
 export const spacing = {
-  xs: 6,
-  sm: 10,
-  md: 14,
-  lg: 20,
-  xl: 28,
-  xxl: 40,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
 };
 
 export const radius = {
-  sm: 8,
-  md: 14,
-  lg: 24,
-  xl: 32,
+  sm: 6,
+  md: 10,
+  lg: 16,
+  xl: 24,
   full: 9999,
 };
 
@@ -129,11 +138,11 @@ export const glass = {
 
 // Typography
 export const fonts = {
-  heading: 'PlayfairDisplay_700Bold',
-  headingItalic: 'PlayfairDisplay_700Bold_Italic',
-  body: 'Nunito_400Regular',
-  bodyMedium: 'Nunito_600SemiBold',
-  bodyBold: 'Nunito_700Bold',
+  heading: 'Outfit_700Bold',
+  headingItalic: 'Outfit_700Bold', // Fallback to non-italic for now
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
 };
 
 export const typography = {

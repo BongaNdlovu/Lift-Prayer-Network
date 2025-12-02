@@ -219,5 +219,25 @@ service cloud.firestore {
       allow update: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
     }
+
+    // Announcements - admin-only creation/editing, readable by all signed-in users
+    match /announcements/{announcementId} {
+      // All signed-in users can read announcements
+      allow read: if isSignedIn();
+      // Only admins can create, update, and delete announcements
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Devotions - admin-only creation/editing, readable by all signed-in users
+    match /devotions/{devotionId} {
+      // All signed-in users can read devotions
+      allow read: if isSignedIn();
+      // Only admins can create, update, and delete devotions
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

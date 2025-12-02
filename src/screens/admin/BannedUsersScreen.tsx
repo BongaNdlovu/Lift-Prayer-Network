@@ -9,8 +9,10 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db, firebaseEnabled } from '../../services/firebase';
@@ -143,6 +145,14 @@ export const BannedUsersScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => {
+                // Haptic feedback on pull-to-refresh
+                if (Platform.OS !== 'web') {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch {
+                    // Haptics not available
+                  }
+                }
                 setRefreshing(true);
                 loadBannedUsers();
               }}

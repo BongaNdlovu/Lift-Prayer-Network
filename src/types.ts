@@ -113,6 +113,8 @@ export type PrayerGroup = {
   inviteCode?: string;
   // Pending join requests (for private groups)
   pendingRequests?: string[];
+  // Users blocked from posting in this group
+  blockedFromPosting?: string[];
 };
 
 export type PrayerReminder = {

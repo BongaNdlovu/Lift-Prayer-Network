@@ -25,7 +25,7 @@ import { getBlockedUsers, unblockUser, syncBlockedUsers } from '../services/mode
 import { deletePrayerHistory } from '../services/prayers';
 import { db, firebaseEnabled } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { hasAdminPermission } from '../config/admins';
+import { hasAdminPermission, hasModeratorPermission } from '../config/admins';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { 
   getPendingActionCounts, 
@@ -393,18 +393,26 @@ export const SettingsScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Admin Section */}
-        {hasAdminPermission(user?.email) && (
+        {/* Admin/Moderator Section */}
+        {hasModeratorPermission(user?.email) && (
           <View style={[styles.section, dynamicStyles.section]}>
-            <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Admin</Text>
+            <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>
+              {hasAdminPermission(user?.email) ? 'Admin' : 'Moderator'}
+            </Text>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => navigation.navigate('AdminDashboard' as never)}
             >
               <Ionicons name="shield-checkmark-outline" size={22} color={colors.text} />
               <View style={styles.settingText}>
-                <Text style={[styles.settingLabel, dynamicStyles.settingLabel]}>Admin Tools</Text>
-                <Text style={[styles.settingDesc, dynamicStyles.settingDesc]}>Access reports, pinned requests, and global stats</Text>
+                <Text style={[styles.settingLabel, dynamicStyles.settingLabel]}>
+                  {hasAdminPermission(user?.email) ? 'Admin Tools' : 'Moderator Tools'}
+                </Text>
+                <Text style={[styles.settingDesc, dynamicStyles.settingDesc]}>
+                  {hasAdminPermission(user?.email) 
+                    ? 'Access reports, pinned requests, and global stats' 
+                    : 'Review reports, delete content, and block users'}
+                </Text>
               </View>
             </TouchableOpacity>
           </View>

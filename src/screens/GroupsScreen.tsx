@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -26,7 +25,6 @@ import {
   joinGroup,
   findGroupByInviteCode,
   getInviteCode,
-  getPublicGroups,
 } from '../services/groups';
 import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -53,7 +51,6 @@ export const GroupsScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [groups, setGroups] = useState<PrayerGroup[]>([]);
-  const [publicGroups, setPublicGroups] = useState<PrayerGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -63,7 +60,6 @@ export const GroupsScreen: React.FC = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<GroupNotification[]>([]);
 
   const handleGroupPress = (group: PrayerGroup) => {
@@ -91,17 +87,7 @@ export const GroupsScreen: React.FC = () => {
     return () => unsub();
   }, [user]);
 
-  // Load public groups for discovery
-  useEffect(() => {
-    if (!user) return;
-    
-    const loadPublicGroups = async () => {
-      const publicData = await getPublicGroups(user.uid, 5);
-      setPublicGroups(publicData);
-    };
-    
-    loadPublicGroups();
-  }, [user, groups]); // Re-fetch when user's groups change
+  // Public groups discovery disabled - requires moderation features
 
   // Subscribe to group-related notifications
   useEffect(() => {
@@ -134,7 +120,7 @@ export const GroupsScreen: React.FC = () => {
     if (!db) return;
     try {
       await updateDoc(doc(db, 'notifications', notifId), { read: true });
-      setNotifications(prev => prev.filter(n => n.id !== notifId));
+      setNotifications(prev => prev?.filter(n => n.id !== notifId) || []);
     } catch (err) {
       console.warn('[GroupsScreen] Error dismissing notification:', err);
     }
@@ -232,40 +218,8 @@ export const GroupsScreen: React.FC = () => {
     }
   };
 
-  // Join a public group from discovery
-  const handleJoinPublicGroup = async (group: PrayerGroup) => {
-    if (!user) return;
-
-    setJoiningGroupId(group.id);
-    try {
-      const result = await joinGroup(group.id, user.uid);
-      
-      if (result.success) {
-        if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-        
-        if (result.status === 'joined') {
-          Alert.alert('Joined!', `You've joined ${group.name}`);
-          // Remove from public groups list
-          setPublicGroups(prev => prev.filter(g => g.id !== group.id));
-        } else if (result.status === 'pending') {
-          Alert.alert(
-            'Request Sent',
-            `Your request to join "${group.name}" has been sent. The group owner will review it.`
-          );
-          // Remove from public groups list
-          setPublicGroups(prev => prev.filter(g => g.id !== group.id));
-        }
-      } else {
-        Alert.alert('Error', result.error || 'Could not join group');
-      }
-    } catch {
-      Alert.alert('Error', 'Could not join group');
-    } finally {
-      setJoiningGroupId(null);
-    }
-  };
+  // Public group joining disabled - requires moderation features
+  // const handleJoinPublicGroup = async (group: PrayerGroup) => { ... };
 
   const handleLeaveGroup = (group: PrayerGroup) => {
     if (!user) return;
@@ -303,12 +257,12 @@ export const GroupsScreen: React.FC = () => {
 
   const renderGroup = ({ item }: { item: PrayerGroup }) => (
     <TouchableOpacity 
-      style={styles.groupCard}
+      style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
       onPress={() => handleGroupPress(item)}
       activeOpacity={0.7}
     >
       <View style={styles.groupHeader}>
-        <View style={styles.groupEmoji}>
+        <View style={[styles.groupEmoji, { backgroundColor: colors.accentLight }]}>
           <Text style={styles.groupEmojiText}>{item.emoji || '🙏'}</Text>
         </View>
         <View style={styles.groupInfo}>
@@ -319,7 +273,7 @@ export const GroupsScreen: React.FC = () => {
         </View>
         <View style={styles.groupRightSection}>
           {item.ownerUid === user?.uid && (
-            <View style={styles.ownerBadge}>
+            <View style={[styles.ownerBadge, { backgroundColor: colors.accentLight }]}>
               <Text style={styles.ownerBadgeText}>Owner</Text>
             </View>
           )}
@@ -331,9 +285,9 @@ export const GroupsScreen: React.FC = () => {
         <Text style={[styles.groupDesc, { color: colors.muted }]}>{item.description}</Text>
       )}
 
-      <View style={styles.groupActions}>
+      <View style={[styles.groupActions, { borderTopColor: colors.border }]}>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, { backgroundColor: colors.accentLight }]}
           onPress={(e) => {
             e.stopPropagation();
             handleShareInvite(item);
@@ -344,7 +298,7 @@ export const GroupsScreen: React.FC = () => {
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.actionBtn, styles.leaveBtn]}
+          style={[styles.actionBtn, styles.leaveBtn, { backgroundColor: colors.dangerLight }]}
           onPress={(e) => {
             e.stopPropagation();
             handleLeaveGroup(item);
@@ -365,13 +319,13 @@ export const GroupsScreen: React.FC = () => {
         <Text style={[styles.heading, { color: colors.text }]}>Prayer Groups</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            style={styles.headerBtn}
+            style={[styles.headerBtn, { backgroundColor: colors.surface }]}
             onPress={() => setShowJoinModal(true)}
           >
             <Ionicons name="enter-outline" size={20} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.headerBtn, styles.createBtn]}
+            style={[styles.headerBtn, styles.createBtn, { backgroundColor: colors.accent }]}
             onPress={() => setShowCreateModal(true)}
           >
             <Ionicons name="add" size={22} color={colors.text} />
@@ -413,14 +367,14 @@ export const GroupsScreen: React.FC = () => {
           </Text>
           <View style={styles.emptyActions}>
             <TouchableOpacity
-              style={styles.emptyBtn}
+              style={[styles.emptyBtn, { backgroundColor: colors.accentLight }]}
               onPress={() => setShowCreateModal(true)}
             >
               <Ionicons name="add-circle-outline" size={20} color={colors.accent} />
               <Text style={[styles.emptyBtnText, { color: colors.accent }]}>Create Group</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.emptyBtn}
+              style={[styles.emptyBtn, { backgroundColor: colors.accentLight }]}
               onPress={() => setShowJoinModal(true)}
             >
               <Ionicons name="enter-outline" size={20} color={colors.accent} />
@@ -445,52 +399,6 @@ export const GroupsScreen: React.FC = () => {
             offset: GROUP_ITEM_HEIGHT * index,
             index,
           })}
-          ListFooterComponent={
-            publicGroups.length > 0 ? (
-              <View style={styles.discoverSection}>
-                <View style={styles.discoverHeader}>
-                  <Ionicons name="compass-outline" size={20} color={colors.accent} />
-                  <Text style={[styles.discoverTitle, { color: colors.text }]}>Discover Groups</Text>
-                </View>
-                <Text style={[styles.discoverSubtitle, { color: colors.muted }]}>Public groups you can join</Text>
-                
-                {publicGroups.map((group) => (
-                  <View key={group.id} style={styles.discoverCard}>
-                    <View style={styles.discoverCardHeader}>
-                      <View style={styles.groupEmoji}>
-                        <Text style={styles.groupEmojiText}>{group.emoji || '🙏'}</Text>
-                      </View>
-                      <View style={styles.discoverCardInfo}>
-                        <Text style={[styles.groupName, { color: colors.text }]}>{group.name}</Text>
-                        <Text style={[styles.groupMembers, { color: colors.muted }]}>
-                          {group.memberUids.length} member{group.memberUids.length !== 1 ? 's' : ''}
-                        </Text>
-                      </View>
-                    </View>
-                    {group.description && (
-                      <Text style={[styles.discoverCardDesc, { color: colors.muted }]} numberOfLines={2}>
-                        {group.description}
-                      </Text>
-                    )}
-                    <TouchableOpacity
-                      style={[styles.joinBtn, joiningGroupId === group.id && styles.joinBtnDisabled]}
-                      onPress={() => handleJoinPublicGroup(group)}
-                      disabled={joiningGroupId === group.id}
-                    >
-                      {joiningGroupId === group.id ? (
-                        <ActivityIndicator size="small" color={colors.text} />
-                      ) : (
-                        <>
-                          <Ionicons name="add-circle-outline" size={18} color={colors.text} />
-                          <Text style={[styles.joinBtnText, { color: colors.text }]}>Join Group</Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            ) : null
-          }
         />
       )}
 
@@ -502,7 +410,7 @@ export const GroupsScreen: React.FC = () => {
         onRequestClose={() => setShowCreateModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Create Prayer Group</Text>
               <TouchableOpacity onPress={() => setShowCreateModal(false)}>
@@ -512,7 +420,7 @@ export const GroupsScreen: React.FC = () => {
 
             <Text style={[styles.inputLabel, { color: colors.muted }]}>Group Name</Text>
             <TextInput
-              style={[styles.input, { color: colors.text }]}
+              style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
               placeholder="e.g., Family Prayers"
               placeholderTextColor={colors.muted}
               value={newGroupName}
@@ -522,7 +430,7 @@ export const GroupsScreen: React.FC = () => {
 
             <Text style={[styles.inputLabel, { color: colors.muted }]}>Description (optional)</Text>
             <TextInput
-              style={[styles.input, styles.textArea, { color: colors.text }]}
+              style={[styles.input, styles.textArea, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
               placeholder="What is this group for?"
               placeholderTextColor={colors.muted}
               value={newGroupDesc}
@@ -538,7 +446,8 @@ export const GroupsScreen: React.FC = () => {
                   key={emoji}
                   style={[
                     styles.emojiOption,
-                    newGroupEmoji === emoji && styles.emojiOptionActive,
+                    { backgroundColor: colors.surface },
+                    newGroupEmoji === emoji && [styles.emojiOptionActive, { backgroundColor: colors.accentLight, borderColor: colors.accent }],
                   ]}
                   onPress={() => setNewGroupEmoji(emoji)}
                 >
@@ -548,11 +457,11 @@ export const GroupsScreen: React.FC = () => {
             </View>
 
             <TouchableOpacity
-              style={[styles.createButton, !newGroupName.trim() && styles.buttonDisabled]}
+              style={[styles.createButton, { backgroundColor: colors.accent }, !newGroupName.trim() && styles.buttonDisabled]}
               onPress={handleCreateGroup}
               disabled={!newGroupName.trim() || creating}
             >
-              <Text style={[styles.createButtonText, { color: colors.text }]}>
+              <Text style={[styles.createButtonText, { color: '#fff' }]}>
                 {creating ? 'Creating...' : 'Create Group'}
               </Text>
             </TouchableOpacity>
@@ -568,7 +477,7 @@ export const GroupsScreen: React.FC = () => {
         onRequestClose={() => setShowJoinModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Join Prayer Group</Text>
               <TouchableOpacity onPress={() => setShowJoinModal(false)}>
@@ -578,7 +487,7 @@ export const GroupsScreen: React.FC = () => {
 
             <Text style={[styles.inputLabel, { color: colors.muted }]}>Enter Invite Code</Text>
             <TextInput
-              style={[styles.input, styles.codeInput, { color: colors.text }]}
+              style={[styles.input, styles.codeInput, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
               placeholder="ABCD1234"
               placeholderTextColor={colors.muted}
               value={inviteCode}
@@ -588,11 +497,11 @@ export const GroupsScreen: React.FC = () => {
             />
 
             <TouchableOpacity
-              style={[styles.createButton, !inviteCode.trim() && styles.buttonDisabled]}
+              style={[styles.createButton, { backgroundColor: colors.accent }, !inviteCode.trim() && styles.buttonDisabled]}
               onPress={handleJoinGroup}
               disabled={!inviteCode.trim() || joining}
             >
-              <Text style={[styles.createButtonText, { color: colors.text }]}>
+              <Text style={[styles.createButtonText, { color: '#fff' }]}>
                 {joining ? 'Joining...' : 'Join Group'}
               </Text>
             </TouchableOpacity>

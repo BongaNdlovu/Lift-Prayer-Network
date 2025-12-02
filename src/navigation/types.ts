@@ -44,6 +44,8 @@ export type RootStackParamList = {
   AnsweredPrayers: undefined;
   Search: undefined;
   Stats: undefined;
+  Announcements: undefined;
+  Devotions: undefined;
 };
 
 export type MainTabParamList = {

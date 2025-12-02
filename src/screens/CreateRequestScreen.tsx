@@ -25,6 +25,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
+import { checkUserBlockedFromPosting } from '../services/moderation';
 import { InlineError } from '../components/InlineError';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -39,6 +40,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
   const [isUrgent, setIsUrgent] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isShareable, setIsShareable] = useState(true); // Default to shareable
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -49,6 +51,19 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
     if (!content.trim()) {
       Alert.alert('Empty Request', 'Please share what you need prayer for.');
       return;
+    }
+
+    // Security check: Check if user is blocked from posting
+    if (user) {
+      const blockStatus = await checkUserBlockedFromPosting(user.uid);
+      if (blockStatus.isBlocked) {
+        Alert.alert(
+          'Posting Restricted',
+          blockStatus.reason || 'Your posting privileges have been suspended. You can still view and pray for others.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
     }
 
     // Security check: Require email verification for non-anonymous users
@@ -153,6 +168,8 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
           userEmail: isAnonymous ? undefined : (user.email || undefined),
           userPhotoURL: isAnonymous ? null : (user.photoURL || null),
           isAnonymous,
+          isShareable,
+          isEmailVerified: !isAnonymous && user.emailVerified,
         });
 
         if (Platform.OS !== 'web') {
@@ -308,7 +325,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
               </View>
 
               {/* Anonymous Toggle */}
-              <View style={[styles.optionRow, styles.optionRowLast]}>
+              <View style={styles.optionRow}>
                 <View style={styles.optionInfo}>
                   <Text style={styles.optionEmoji}>🎭</Text>
                   <View>
@@ -326,6 +343,28 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
                   thumbColor={isAnonymous ? '#f59e0b' : '#f4f4f5'}
+                />
+              </View>
+
+              {/* Shareable Toggle */}
+              <View style={[styles.optionRow, styles.optionRowLast]}>
+                <View style={styles.optionInfo}>
+                  <Text style={styles.optionEmoji}>📤</Text>
+                  <View>
+                    <Text style={styles.optionTitle}>Allow Sharing</Text>
+                    <Text style={styles.optionHint}>Let others share your request outside the app</Text>
+                  </View>
+                </View>
+                <Switch
+                  value={isShareable}
+                  onValueChange={(value) => {
+                    setIsShareable(value);
+                    if (Platform.OS !== 'web') {
+                      Haptics.selectionAsync();
+                    }
+                  }}
+                  trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
+                  thumbColor={isShareable ? '#f59e0b' : '#f4f4f5'}
                 />
               </View>
             </View>
@@ -406,8 +445,8 @@ const styles = StyleSheet.create({
     marginLeft: -spacing.sm,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
     color: palette.text,
   },
   placeholder: {
@@ -432,29 +471,29 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: palette.border,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: palette.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   hint: {
-    fontSize: 13,
+    fontSize: 12,
     color: palette.muted,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   textArea: {
-    minHeight: 120,
-    fontSize: 16,
+    minHeight: 100,
+    fontSize: 14,
     color: palette.text,
-    lineHeight: 24,
-    padding: spacing.md,
+    lineHeight: 20,
+    padding: spacing.sm,
     backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     borderWidth: 1,
@@ -469,15 +508,15 @@ const styles = StyleSheet.create({
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    gap: spacing.xs,
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f8fafc',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: palette.border,
     gap: spacing.xs,
@@ -488,11 +527,11 @@ const styles = StyleSheet.create({
     borderColor: palette.accent,
   },
   categoryEmoji: {
-    fontSize: 16,
+    fontSize: 14,
   },
   categoryText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
     color: palette.muted,
   },
   categoryTextActive: {
@@ -502,7 +541,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: palette.border,
   },
@@ -513,111 +552,111 @@ const styles = StyleSheet.create({
   optionInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
+    gap: spacing.sm,
     flex: 1,
   },
   optionEmoji: {
-    fontSize: 24,
+    fontSize: 18,
   },
   optionTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
     color: palette.text,
   },
   optionHint: {
-    fontSize: 12,
+    fontSize: 11,
     color: palette.muted,
-    marginTop: 2,
+    marginTop: 1,
   },
   previewCard: {
     backgroundColor: '#fef3c7',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: '#fcd34d',
   },
   previewLabel: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '600',
     color: '#92400e',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
   },
   previewContent: {
     backgroundColor: '#fff',
-    borderRadius: radius.md,
-    padding: spacing.md,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
   },
   previewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
   previewName: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: palette.text,
   },
   urgentBadge: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '600',
     color: '#dc2626',
     backgroundColor: '#fee2e2',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
   },
   privateBadge: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '600',
     color: '#6b7280',
     backgroundColor: '#f3f4f6',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
   },
   anonymousBadge: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '600',
     color: '#7c3aed',
     backgroundColor: '#ede9fe',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
   },
   previewCategory: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: spacing.sm,
+    gap: 3,
+    marginBottom: spacing.xs,
   },
   previewCategoryEmoji: {
-    fontSize: 14,
+    fontSize: 12,
   },
   previewCategoryText: {
-    fontSize: 12,
+    fontSize: 11,
     color: palette.muted,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   previewText: {
-    fontSize: 14,
+    fontSize: 12,
     color: palette.text,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: palette.accent,
-    borderRadius: radius.md,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-    marginTop: spacing.sm,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    marginTop: spacing.xs,
     shadowColor: '#f59e0b',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -628,16 +667,16 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   submitText: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#1f2937',
   },
   encouragement: {
-    fontSize: 13,
+    fontSize: 11,
     fontStyle: 'italic',
     color: palette.muted,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 16,
   },
 });
 

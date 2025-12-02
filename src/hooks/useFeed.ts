@@ -440,6 +440,8 @@ export const submitFeedItem = async (
     userEmail?: string; // For verified badge display
     userPhotoURL?: string | null; // Profile photo URL
     isAnonymous?: boolean; // For anonymous prayer requests
+    isShareable?: boolean; // Allow sharing outside the app
+    isEmailVerified?: boolean; // User's email verification status
   }
 ) => {
   if (!ownerUid) {
@@ -454,6 +456,7 @@ export const submitFeedItem = async (
     userEmail: options?.isAnonymous ? null : (options?.userEmail || null),
     userPhotoURL: options?.isAnonymous ? null : (options?.userPhotoURL || null),
     isAnonymous: options?.isAnonymous || false,
+    isEmailVerified: options?.isAnonymous ? false : (options?.isEmailVerified || false),
     // Store real info for admin visibility on anonymous posts
     ...(options?.isAnonymous && {
       _realDisplayName: displayName || 'Unknown',
@@ -472,6 +475,7 @@ export const submitFeedItem = async (
     baseDoc.isUrgent = options?.isUrgent || false;
     baseDoc.isPrivate = options?.isPrivate || false;
     baseDoc.isAnonymous = options?.isAnonymous || false;
+    baseDoc.isShareable = options?.isShareable !== false; // Default to true
     baseDoc.visibility = options?.visibility || (options?.isPrivate ? 'PRIVATE' : 'PUBLIC');
     if (options?.groupIds?.length) {
       baseDoc.groupIds = options.groupIds;

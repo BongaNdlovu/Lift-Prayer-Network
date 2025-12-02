@@ -29,6 +29,7 @@ import {
 } from '../../services/requests';
 import { logPrayer } from '../../services/prayers';
 import { addComment, subscribeToComments, deleteComment, updateComment } from '../../services/comments';
+import { checkUserBlockedFromPosting } from '../../services/moderation';
 import { formatRelativeTime } from '../../components/FeedCard';
 import { InlineError } from '../../components/InlineError';
 import { ErrorState } from '../../components/ErrorState';
@@ -71,7 +72,10 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   
   // Get verified badge for the content author
   const authorBadge = useMemo(() => getVerifiedBadge((item as any)?.userEmail), [item]);
+  const isEmailVerified = (item as any)?.isEmailVerified === true;
   const badgeStyle = authorBadge ? BADGE_STYLES[authorBadge.badgeType] : null;
+  const badgeLabel = authorBadge?.badgeLabel || null;
+  const showEmailVerifiedTick = !authorBadge && isEmailVerified;
 
   // Subscribe to comments
   useEffect(() => {
@@ -104,6 +108,16 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!trimmed) return;
     if (!user) {
       Alert.alert('Sign in required', 'Sign in to post a comment.');
+      return;
+    }
+
+    // Check if user is blocked from posting
+    const blockStatus = await checkUserBlockedFromPosting(user.uid);
+    if (blockStatus.isBlocked) {
+      Alert.alert(
+        'Posting Restricted',
+        blockStatus.reason || 'Your posting privileges have been suspended.',
+      );
       return;
     }
     
@@ -412,13 +426,16 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         {/* Author Info with Badge */}
         <View style={styles.authorRow}>
           <Text style={styles.meta}>By {item.userDisplayName}</Text>
-          {authorBadge && badgeStyle && (
+          {badgeStyle && badgeLabel && (
             <View style={[styles.authorBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
-              <Ionicons name="checkmark-circle" size={10} color={badgeStyle.textColor} />
+              <Ionicons name={badgeStyle.icon as any} size={10} color={badgeStyle.textColor} />
               <Text style={[styles.authorBadgeText, { color: badgeStyle.textColor }]}>
-                {authorBadge.badgeLabel}
+                {badgeLabel}
               </Text>
             </View>
+          )}
+          {showEmailVerifiedTick && (
+            <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
           )}
         </View>
         

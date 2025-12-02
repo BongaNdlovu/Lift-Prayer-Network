@@ -6,6 +6,7 @@ import {
   Modal,
   Platform,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -23,7 +24,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInviteCode, uploadGroupPhoto, deleteGroupPhoto, approveJoinRequest, rejectJoinRequest, type GroupMember } from '../services/groups';
+import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInviteCode, uploadGroupPhoto, deleteGroupPhoto, approveJoinRequest, rejectJoinRequest, removeMemberFromGroup, blockUserFromGroupPosting, isUserBlockedFromGroupPosting, type GroupMember } from '../services/groups';
 import { subscribeToGroupRequests, submitGroupRequest, logPrayer, logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { useTheme } from '../contexts/ThemeContext';
@@ -42,7 +43,7 @@ const GROUP_PENDING_ITEM_HEIGHT = 72;
 export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { groupId, groupName, groupEmoji } = route.params;
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
   const [group, setGroup] = useState<PrayerGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [prayers, setPrayers] = useState<LiftRequest[]>([]);
@@ -108,6 +109,15 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }, [groupId]);
 
   const onRefresh = useCallback(async () => {
+    // Haptic feedback on pull-to-refresh
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {
+        // Haptics not available
+      }
+    }
+    
     setRefreshing(true);
     const groupData = await getGroup(groupId);
     if (groupData) {
@@ -339,6 +349,16 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       return;
     }
 
+    // Check if user is blocked from posting in this group
+    const isBlocked = await isUserBlockedFromGroupPosting(groupId, user.uid);
+    if (isBlocked) {
+      Alert.alert(
+        'Posting Restricted',
+        'You have been blocked from posting in this group by the group owner.',
+      );
+      return;
+    }
+
     setPosting(true);
     try {
       await submitGroupRequest(
@@ -480,14 +500,69 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     );
   };
 
+  const handleRemoveMember = (member: GroupMember) => {
+    if (!user || !group) return;
+    
+    Alert.alert(
+      'Remove Member',
+      `Remove "${member.displayName}" from this group?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await removeMemberFromGroup(group.id, member.uid, user.uid);
+            if (result.success) {
+              if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Alert.alert('Removed', `${member.displayName} has been removed from the group.`);
+              // Refresh members
+              const updatedMembers = await getGroupMembers(group.id);
+              setMembers(updatedMembers);
+            } else {
+              Alert.alert('Error', result.error || 'Could not remove member.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleBlockMemberFromPosting = (member: GroupMember) => {
+    if (!user || !group) return;
+    
+    Alert.alert(
+      'Block from Posting',
+      `Block "${member.displayName}" from posting in this group? They can still view content.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await blockUserFromGroupPosting(group.id, member.uid, user.uid);
+            if (result.success) {
+              if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Alert.alert('Blocked', `${member.displayName} can no longer post in this group.`);
+            } else {
+              Alert.alert('Error', result.error || 'Could not block member.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderMember = ({ item }: { item: GroupMember }) => {
     const isGroupOwner = item.uid === group?.ownerUid;
+    const isSelf = item.uid === user?.uid;
     const verifiedBadge = getVerifiedBadge(item.email, item.uid);
     const badgeStyle = verifiedBadge ? BADGE_STYLES[verifiedBadge.badgeType] : null;
     const hasProfilePicture = item.photoURL && item.photoURL.trim() !== '';
+    const showAdminActions = isOwner && !isGroupOwner && !isSelf;
 
     return (
-      <View style={styles.memberItem}>
+      <View style={[styles.memberItem, { backgroundColor: colors.surface }]}>
         {/* Profile Picture or Avatar */}
         {hasProfilePicture ? (
           <Image 
@@ -504,7 +579,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         
         <View style={styles.memberInfo}>
           <View style={styles.memberNameRow}>
-            <Text style={styles.memberName}>{item.displayName || 'Unknown'}</Text>
+            <Text style={[styles.memberName, { color: colors.text }]}>{item.displayName || 'Unknown'}</Text>
             
             {/* Verified Badge (App Creator, Admin, etc.) */}
             {verifiedBadge && badgeStyle && (
@@ -530,11 +605,31 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
             )}
             {item.email && (
-              <Text style={styles.memberEmail} numberOfLines={1}>
+              <Text style={[styles.memberEmail, { color: colors.muted }]} numberOfLines={1}>
                 {item.email}
               </Text>
             )}
           </View>
+
+          {/* Admin Actions for Group Owner */}
+          {showAdminActions && (
+            <View style={styles.memberActions}>
+              <TouchableOpacity 
+                style={[styles.memberActionBtn, { backgroundColor: colors.dangerLight }]}
+                onPress={() => handleBlockMemberFromPosting(item)}
+              >
+                <Ionicons name="hand-left-outline" size={14} color={colors.danger} />
+                <Text style={[styles.memberActionText, { color: colors.danger }]}>Block Posting</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.memberActionBtn, { backgroundColor: colors.dangerLight }]}
+                onPress={() => handleRemoveMember(item)}
+              >
+                <Ionicons name="person-remove-outline" size={14} color={colors.danger} />
+                <Text style={[styles.memberActionText, { color: colors.danger }]}>Remove</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -552,30 +647,30 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const ListHeader = () => (
     <View style={styles.headerContainer}>
       {/* Group Info Card */}
-      <View style={styles.infoCard}>
+      <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.infoHeader}>
           {group?.photoURL ? (
             <Image source={{ uri: group.photoURL }} style={styles.groupIconImage} />
           ) : (
-            <View style={styles.groupIcon}>
+            <View style={[styles.groupIcon, { backgroundColor: colors.accentLight }]}>
               <Text style={styles.groupIconText}>{groupEmoji || group?.emoji || '🙏'}</Text>
             </View>
           )}
           <View style={styles.groupTitleContainer}>
-            <Text style={styles.groupTitle}>{group?.name || groupName}</Text>
-            <Text style={styles.memberCount}>
+            <Text style={[styles.groupTitle, { color: colors.text }]}>{group?.name || groupName}</Text>
+            <Text style={[styles.memberCount, { color: colors.muted }]}>
               {members.length} member{members.length !== 1 ? 's' : ''}
             </Text>
           </View>
           {canManageGroup && (
-            <TouchableOpacity style={styles.editIconButton} onPress={() => setShowEditModal(true)}>
-              <Ionicons name="pencil" size={18} color={palette.accentDark} />
+            <TouchableOpacity style={[styles.editIconButton, { backgroundColor: colors.accentLight }]} onPress={() => setShowEditModal(true)}>
+              <Ionicons name="pencil" size={18} color={colors.accent} />
             </TouchableOpacity>
           )}
         </View>
         
         {group?.description && (
-          <Text style={styles.groupDescription}>{group.description}</Text>
+          <Text style={[styles.groupDescription, { color: colors.muted }]}>{group.description}</Text>
         )}
 
         {/* Pending Requests Banner (for owners of private groups) */}
@@ -598,37 +693,37 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
 
         {/* Action Buttons */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => setShowMembersModal(true)}>
-            <Ionicons name="people" size={18} color={palette.accentDark} />
-            <Text style={styles.actionButtonText}>Members</Text>
+        <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accentLight }]} onPress={() => setShowMembersModal(true)}>
+            <Ionicons name="people" size={18} color={colors.accent} />
+            <Text style={[styles.actionButtonText, { color: colors.accent }]}>Members</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionButton} onPress={handleShareInvite}>
-            <Ionicons name="share-outline" size={18} color={palette.accentDark} />
-            <Text style={styles.actionButtonText}>Invite</Text>
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accentLight }]} onPress={handleShareInvite}>
+            <Ionicons name="share-outline" size={18} color={colors.accent} />
+            <Text style={[styles.actionButtonText, { color: colors.accent }]}>Invite</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.actionButton, styles.leaveButton]} 
+            style={[styles.actionButton, styles.leaveButton, { backgroundColor: colors.dangerLight }]} 
             onPress={handleLeaveGroup}
           >
-            <Ionicons name="exit-outline" size={18} color="#dc2626" />
-            <Text style={styles.leaveButtonText}>{isOwner ? 'Delete' : 'Leave'}</Text>
+            <Ionicons name="exit-outline" size={18} color={colors.danger} />
+            <Text style={[styles.leaveButtonText, { color: colors.danger }]}>{isOwner ? 'Delete' : 'Leave'}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Post Prayer Button */}
-      <TouchableOpacity style={styles.postButton} onPress={() => setShowPostModal(true)}>
+      <TouchableOpacity style={[styles.postButton, { backgroundColor: colors.accent }]} onPress={() => setShowPostModal(true)}>
         <Ionicons name="add-circle" size={24} color="#fff" />
         <Text style={styles.postButtonText}>Share Prayer Request</Text>
       </TouchableOpacity>
 
       {/* Section Header */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Group Prayers</Text>
-        <Text style={styles.sectionCount}>{prayers.length} request{prayers.length !== 1 ? 's' : ''}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Group Prayers</Text>
+        <Text style={[styles.sectionCount, { color: colors.muted }]}>{prayers.length} request{prayers.length !== 1 ? 's' : ''}</Text>
       </View>
     </View>
   );
@@ -636,8 +731,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const ListEmpty = () => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyEmoji}>🙏</Text>
-      <Text style={styles.emptyTitle}>No prayers yet</Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>No prayers yet</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
         Be the first to share a prayer request with this group
       </Text>
     </View>
@@ -645,20 +740,20 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={palette.accent} />
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{group?.name || groupName}</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>{group?.name || groupName}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -693,11 +788,11 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         onRequestClose={() => setShowMembersModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Group Members</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Group Members</Text>
               <TouchableOpacity onPress={() => setShowMembersModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
             
@@ -730,114 +825,83 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         onRequestClose={() => setShowEditModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Group</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Group</Text>
               <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
 
-            {/* Group Photo Picker */}
-            <Text style={styles.inputLabel}>Group Photo</Text>
-            <View style={styles.photoPickerContainer}>
-              {editPhotoURL ? (
-                <Image source={{ uri: editPhotoURL }} style={styles.photoPreview} />
-              ) : (
-                <View style={styles.photoPlaceholder}>
-                  <Ionicons name="camera" size={32} color={palette.muted} />
-                </View>
-              )}
-              <View style={styles.photoButtons}>
-                <TouchableOpacity style={styles.photoButton} onPress={pickGroupImage}>
-                  <Ionicons name="image-outline" size={18} color={palette.accentDark} />
-                  <Text style={styles.photoButtonText}>
-                    {editPhotoURL ? 'Change Photo' : 'Add Photo'}
-                  </Text>
-                </TouchableOpacity>
-                {editPhotoURL && (
-                  <TouchableOpacity style={styles.photoButtonRemove} onPress={removeGroupImage}>
-                    <Ionicons name="trash-outline" size={18} color="#dc2626" />
-                    <Text style={styles.photoButtonRemoveText}>Remove</Text>
-                  </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Group Photo Picker */}
+              <Text style={[styles.inputLabel, { color: colors.muted }]}>Group Photo</Text>
+              <View style={styles.photoPickerContainer}>
+                {editPhotoURL ? (
+                  <Image source={{ uri: editPhotoURL }} style={styles.photoPreview} />
+                ) : (
+                  <View style={[styles.photoPlaceholder, { borderColor: colors.border }]}>
+                    <Ionicons name="camera" size={32} color={colors.muted} />
+                  </View>
                 )}
+                <View style={styles.photoButtons}>
+                  <TouchableOpacity style={[styles.photoButton, { backgroundColor: colors.accentLight }]} onPress={pickGroupImage}>
+                    <Ionicons name="image-outline" size={18} color={colors.accent} />
+                    <Text style={[styles.photoButtonText, { color: colors.accent }]}>
+                      {editPhotoURL ? 'Change Photo' : 'Add Photo'}
+                    </Text>
+                  </TouchableOpacity>
+                  {editPhotoURL && (
+                    <TouchableOpacity style={styles.photoButtonRemove} onPress={removeGroupImage}>
+                      <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                      <Text style={styles.photoButtonRemoveText}>Remove</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-            </View>
 
-            <Text style={styles.inputLabel}>Group Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Group name"
-              placeholderTextColor={palette.muted}
-              value={editName}
-              onChangeText={setEditName}
-              maxLength={50}
-            />
+              <Text style={[styles.inputLabel, { color: colors.muted }]}>Group Name</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+                placeholder="Group name"
+                placeholderTextColor={colors.muted}
+                value={editName}
+                onChangeText={setEditName}
+                maxLength={50}
+              />
 
-            <Text style={styles.inputLabel}>Description</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="What is this group for?"
-              placeholderTextColor={palette.muted}
-              value={editDesc}
-              onChangeText={setEditDesc}
-              multiline
-              maxLength={200}
-            />
+              <Text style={[styles.inputLabel, { color: colors.muted }]}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+                placeholder="What is this group for?"
+                placeholderTextColor={colors.muted}
+                value={editDesc}
+                onChangeText={setEditDesc}
+                multiline
+                maxLength={200}
+              />
 
-            {/* Privacy Toggle */}
-            <Text style={styles.inputLabel}>Group Privacy</Text>
-            <View style={styles.privacyToggleContainer}>
-              <TouchableOpacity
-                style={[styles.privacyOption, !editIsPrivate && styles.privacyOptionActive]}
-                onPress={() => {
-                  setEditIsPrivate(false);
-                  if (Platform.OS !== 'web') Haptics.selectionAsync();
-                }}
-              >
-                <Ionicons 
-                  name="globe-outline" 
-                  size={20} 
-                  color={!editIsPrivate ? palette.accentDark : palette.muted} 
-                />
-                <View style={styles.privacyOptionContent}>
-                  <Text style={[styles.privacyOptionTitle, !editIsPrivate && styles.privacyOptionTitleActive]}>
-                    Public
+              {/* Privacy Info - Public groups disabled for now */}
+              <View style={[styles.privacyInfoBox, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+                <Ionicons name="lock-closed" size={20} color={colors.accent} />
+                <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                  <Text style={[styles.privacyInfoTitle, { color: colors.text }]}>Private Group</Text>
+                  <Text style={[styles.privacyInfoDesc, { color: colors.muted }]}>
+                    Members join via invite code or owner approval
                   </Text>
-                  <Text style={styles.privacyOptionDesc}>Anyone can join</Text>
                 </View>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.privacyOption, editIsPrivate && styles.privacyOptionActive]}
-                onPress={() => {
-                  setEditIsPrivate(true);
-                  if (Platform.OS !== 'web') Haptics.selectionAsync();
-                }}
-              >
-                <Ionicons 
-                  name="lock-closed-outline" 
-                  size={20} 
-                  color={editIsPrivate ? palette.accentDark : palette.muted} 
-                />
-                <View style={styles.privacyOptionContent}>
-                  <Text style={[styles.privacyOptionTitle, editIsPrivate && styles.privacyOptionTitleActive]}>
-                    Private
-                  </Text>
-                  <Text style={styles.privacyOptionDesc}>Invite or approval required</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+              </View>
 
-            <TouchableOpacity
-              style={[styles.saveButton, !editName.trim() && styles.buttonDisabled]}
-              onPress={handleEditGroup}
-              disabled={!editName.trim() || saving}
-            >
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveButton, !editName.trim() && styles.buttonDisabled]}
+                onPress={handleEditGroup}
+                disabled={!editName.trim() || saving}
+              >
+                <Text style={styles.saveButtonText}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1357,6 +1421,23 @@ const styles = StyleSheet.create({
     color: palette.accent,
     fontWeight: '600',
   },
+  memberActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  memberActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  memberActionText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
   // Photo picker styles
   photoPickerContainer: {
     flexDirection: 'row',
@@ -1553,6 +1634,22 @@ const styles = StyleSheet.create({
   privacyOptionDesc: {
     fontSize: 12,
     color: palette.muted,
+    marginTop: 2,
+  },
+  privacyInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+  },
+  privacyInfoTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  privacyInfoDesc: {
+    fontSize: 12,
     marginTop: 2,
   },
 });

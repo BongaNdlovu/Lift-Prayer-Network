@@ -1,11 +1,14 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { useColorScheme, StyleSheet } from 'react-native';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useColorScheme, StyleSheet, Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightPalette, darkPalette, setPalette, type ThemePalette, spacing, radius } from '../theme/colors';
 
 const THEME_KEY = '@lift_theme_preference';
 
 type ThemeMode = 'dark' | 'system';
+
+// Get system color scheme synchronously for immediate render
+const getInitialColorScheme = () => Appearance.getColorScheme() === 'dark';
 
 type ThemeContextValue = {
   isDark: boolean;
@@ -139,17 +142,23 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const systemColorScheme = useColorScheme();
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Use ref to track if we've loaded saved preference (avoids re-render flash)
+  const hasLoadedRef = useRef(false);
 
   // Determine if dark mode based on theme mode and system preference
-  const isDark = themeMode === 'system' 
-    ? systemColorScheme === 'dark' 
+  // Use synchronous Appearance API for initial render to avoid flash
+  const isDark: boolean = themeMode === 'system' 
+    ? (systemColorScheme === 'dark' || (systemColorScheme == null && getInitialColorScheme()))
     : themeMode === 'dark';
 
   const colors = isDark ? darkPalette : lightPalette;
 
-  // Load saved theme preference
+  // Load saved theme preference (but don't block render)
   useEffect(() => {
+    // Only load once
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
     const loadTheme = async () => {
       try {
         const saved = await AsyncStorage.getItem(THEME_KEY);
@@ -160,10 +169,9 @@ export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) =
           setThemeModeState('system');
           await AsyncStorage.setItem(THEME_KEY, 'system');
         }
+        // For fresh install (saved === null), 'system' is already the default
       } catch (err) {
         console.warn('Error loading theme preference:', err);
-      } finally {
-        setIsLoaded(true);
       }
     };
     loadTheme();
@@ -191,11 +199,8 @@ export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) =
   // Create dynamic styles that update when theme changes
   const styles = useMemo(() => createDynamicStyles(colors, isDark), [colors, isDark]);
 
-  // Don't render until theme is loaded to prevent flash
-  if (!isLoaded) {
-    return null;
-  }
-
+  // Always render immediately with system theme as default
+  // This prevents the blank flash on fresh install
   return (
     <ThemeContext.Provider value={{ isDark, themeMode, colors, setThemeMode, toggleTheme, styles }}>
       {children}

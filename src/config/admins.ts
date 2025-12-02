@@ -14,7 +14,7 @@ export const VERIFIED_ADMIN_EMAILS: string[] = [
 export const VERIFIED_ADMIN_UIDS: string[] = [];
 
 // Badge types for different verification levels
-export type BadgeType = 'admin' | 'verified' | 'moderator';
+export type BadgeType = 'admin' | 'verified' | 'moderator' | 'emailVerified';
 
 // Permission levels
 export type PermissionLevel = 'user' | 'moderator' | 'admin';
@@ -34,6 +34,12 @@ export const VERIFIED_USERS: VerifiedUser[] = [
     badgeType: 'admin',
     badgeLabel: 'App Creator',
     permissionLevel: 'admin',
+  },
+  {
+    email: 'kellyconning@gmail.com',
+    badgeType: 'moderator',
+    badgeLabel: 'Moderator',
+    permissionLevel: 'moderator',
   },
 ];
 
@@ -115,8 +121,8 @@ export const canDeleteContent = (
 ): boolean => {
   if (!currentUserUid) return false;
   
-  // Admins can delete anything
-  if (hasAdminPermission(currentUserEmail)) return true;
+  // Admins and Moderators can delete any content
+  if (hasModeratorPermission(currentUserEmail)) return true;
   
   // Users can only delete their own content
   return contentOwnerUid === currentUserUid;
@@ -151,4 +157,20 @@ export const BADGE_STYLES = {
     icon: 'shield',
     emoji: '🛡️',
   },
+  emailVerified: {
+    backgroundColor: 'transparent',
+    textColor: '#16a34a',
+    icon: 'checkmark-circle',
+    emoji: '✓',
+    showLabelOnly: false, // Only show icon, no text
+  },
 } as const;
+
+/**
+ * Email verified badge info (for users who verified their email)
+ */
+export const EMAIL_VERIFIED_BADGE: VerifiedUser = {
+  badgeType: 'emailVerified',
+  badgeLabel: '', // No label, just icon
+  permissionLevel: 'user',
+};

@@ -225,6 +225,78 @@ export const unbanUser = async (targetUserId: string): Promise<BanResult> => {
 };
 
 /**
+ * Admin/Moderator: Block a user from posting (soft restriction)
+ * User can still view content but cannot create new posts
+ */
+export const blockUserFromPosting = async (
+  targetUserId: string,
+  reason?: string
+): Promise<BanResult> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const userRef = doc(db, 'users', targetUserId);
+    await updateDoc(userRef, {
+      isBlockedFromPosting: true,
+      blockedFromPostingAt: serverTimestamp(),
+      blockFromPostingReason: reason || 'Posting privileges suspended by moderator',
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Error blocking user from posting:', err);
+    return { success: false, error: 'Could not block user. Please try again.' };
+  }
+};
+
+/**
+ * Admin/Moderator: Unblock a user from posting
+ */
+export const unblockUserFromPosting = async (targetUserId: string): Promise<BanResult> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const userRef = doc(db, 'users', targetUserId);
+    await updateDoc(userRef, {
+      isBlockedFromPosting: false,
+      unblockedFromPostingAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Error unblocking user from posting:', err);
+    return { success: false, error: 'Could not unblock user. Please try again.' };
+  }
+};
+
+/**
+ * Check if a user is blocked from posting
+ */
+export const checkUserBlockedFromPosting = async (userId: string): Promise<{ isBlocked: boolean; reason?: string }> => {
+  if (!firebaseEnabled || !db || !userId) {
+    return { isBlocked: false };
+  }
+
+  try {
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        isBlocked: data?.isBlockedFromPosting === true,
+        reason: data?.blockFromPostingReason,
+      };
+    }
+    return { isBlocked: false };
+  } catch (err) {
+    console.error('Error checking posting block status:', err);
+    return { isBlocked: false };
+  }
+};
+
+/**
  * Check if a user is banned (fetches from Firestore)
  */
 export const checkUserBanned = async (userId: string): Promise<{ isBanned: boolean; reason?: string }> => {

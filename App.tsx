@@ -1,9 +1,10 @@
-import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet, View } from 'react-native';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/hooks/useAuth';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
@@ -12,11 +13,18 @@ import { setupNotificationHandler } from './src/services/notifications';
 import { useAppFonts } from './src/hooks/useFonts';
 import { initSentry, withErrorBoundary } from './src/services/sentry';
 import { ToastProvider } from './src/contexts/ToastContext';
+import { NotificationPollingProvider } from './src/components/NotificationPollingProvider';
 
 enableScreens();
 
 // Initialize Sentry for crash reporting
 initSentry();
+
+// Separate component for boot status bar to access theme context
+function BootStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+}
 
 function App() {
   const [booting, setBooting] = useState(true);
@@ -43,7 +51,7 @@ function App() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <ThemeProvider>
-            <StatusBar style="light" />
+            <BootStatusBar />
             <BootScreen />
           </ThemeProvider>
         </SafeAreaProvider>
@@ -64,17 +72,25 @@ function App() {
 
 // Separate component to use theme context
 function ThemedApp() {
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   
   return (
-    <>
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={colors.gradientDeep as any}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <AuthProvider>
-        <ToastProvider>
-          <AppNavigator />
-        </ToastProvider>
+        <NotificationPollingProvider>
+          <ToastProvider>
+            <AppNavigator />
+          </ToastProvider>
+        </NotificationPollingProvider>
       </AuthProvider>
-    </>
+    </View>
   );
 }
 

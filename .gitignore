@@ -17,8 +17,10 @@ tmp
 !.env.example
 
 # Firebase & Google service files (contain API keys)
-google-services.json
-google-services*.json
+# Note: google-services.json is NOT ignored to ensure push notifications work
+# This file contains client-side Firebase config (safe for private repos)
+# google-services.json
+# google-services*.json
 GoogleService-Info.plist
 client_secret_*.json
 

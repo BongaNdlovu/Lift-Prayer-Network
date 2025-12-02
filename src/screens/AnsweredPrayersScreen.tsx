@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -314,6 +315,14 @@ export const AnsweredPrayersScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => {
+                // Haptic feedback on pull-to-refresh
+                if (Platform.OS !== 'web') {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch {
+                    // Haptics not available
+                  }
+                }
                 setRefreshing(true);
                 loadTestimonies();
               }}

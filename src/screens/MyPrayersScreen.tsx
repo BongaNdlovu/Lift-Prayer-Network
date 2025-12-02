@@ -167,6 +167,15 @@ export const MyPrayersScreen: React.FC = () => {
   }, [items]);
 
   const onRefresh = async () => {
+    // Haptic feedback on pull-to-refresh
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {
+        // Haptics not available
+      }
+    }
+    
     setRefreshing(true);
     // The onSnapshot will automatically update
     setTimeout(() => setRefreshing(false), 800);

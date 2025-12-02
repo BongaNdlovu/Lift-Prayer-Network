@@ -334,6 +334,7 @@ export const ProfileScreen: React.FC = () => {
               {(() => {
                 const badge = getVerifiedBadge(user.email);
                 const badgeStyle = badge ? BADGE_STYLES[badge.badgeType] : null;
+                // Show admin/moderator badge with label
                 if (badge && badgeStyle) {
                   return (
                     <View style={[styles.verifiedBadgeProfile, { backgroundColor: badgeStyle.backgroundColor }]}>
@@ -342,6 +343,12 @@ export const ProfileScreen: React.FC = () => {
                         {badge.badgeLabel}
                       </Text>
                     </View>
+                  );
+                }
+                // Show email verified tick for regular users
+                if (!user.isAnonymous && user.emailVerified) {
+                  return (
+                    <Ionicons name="checkmark-circle" size={16} color="#16a34a" style={{ marginLeft: 4 }} />
                   );
                 }
                 return null;
@@ -455,27 +462,51 @@ export const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-      {user && !user.isAnonymous && user.email && !user.emailVerified && (
-        <View style={styles.card}>
-          <Text style={styles.label}>Email verification</Text>
-          <Text style={styles.value}>Your email is not verified.</Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={async () => {
-              setVerifying(true);
-              try {
-                await resendVerification();
-                Alert.alert('Verification sent', 'Check your inbox for the verification email.');
-              } catch (err: any) {
-                Alert.alert('Failed to send', err.message ?? 'Try again.');
-              } finally {
-                setVerifying(false);
-              }
-            }}
-            disabled={verifying}
-          >
-            <Text style={styles.buttonText}>{verifying ? 'Sending...' : 'Resend verification'}</Text>
-          </TouchableOpacity>
+      {/* Email Verification Status */}
+      {user && !user.isAnonymous && user.email && (
+        <View style={[styles.card, { backgroundColor: user.emailVerified ? colors.successLight : '#fef2f2' }]}>
+          <View style={styles.row}>
+            <Ionicons 
+              name={user.emailVerified ? "checkmark-circle" : "alert-circle"} 
+              size={24} 
+              color={user.emailVerified ? colors.success : "#dc2626"} 
+            />
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={[styles.label, { color: user.emailVerified ? colors.success : "#dc2626" }]}>
+                {user.emailVerified ? 'Email Verified ✓' : 'Email Not Verified'}
+              </Text>
+              <Text style={[styles.value, { color: colors.muted, fontSize: 12 }]}>
+                {user.emailVerified 
+                  ? 'Your account is verified and trusted' 
+                  : 'Verify your email to get a verified badge'}
+              </Text>
+            </View>
+          </View>
+          {!user.emailVerified && (
+            <TouchableOpacity
+              style={[styles.button, { marginTop: spacing.sm, backgroundColor: '#dc2626' }]}
+              onPress={async () => {
+                setVerifying(true);
+                try {
+                  await resendVerification();
+                  Alert.alert(
+                    'Verification Email Sent! 📧',
+                    'Check your inbox (and spam folder) for the verification link. After clicking it, come back and refresh your profile.',
+                    [{ text: 'OK' }]
+                  );
+                } catch (err: any) {
+                  Alert.alert('Failed to send', err.message ?? 'Try again.');
+                } finally {
+                  setVerifying(false);
+                }
+              }}
+              disabled={verifying}
+            >
+              <Text style={[styles.buttonText, { color: '#fff' }]}>
+                {verifying ? 'Sending...' : 'Send Verification Email'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
       {user && (

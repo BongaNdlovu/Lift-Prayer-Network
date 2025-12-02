@@ -33,6 +33,8 @@ import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import { NotificationsInboxScreen } from '../screens/NotificationsInboxScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { AnsweredPrayersScreen } from '../screens/AnsweredPrayersScreen';
+import { AnnouncementsScreen } from '../screens/AnnouncementsScreen';
+import { DevotionsScreen } from '../screens/DevotionsScreen';
 import { useAuth } from '../hooks/useAuth';
 import { MainTabParamList, RootStackParamList } from './types';
 import { useTheme } from '../contexts/ThemeContext';
@@ -95,7 +97,7 @@ export const AppNavigator: React.FC = () => {
     dark: isDark,
     colors: {
       primary: colors.accent,
-      background: colors.background,
+      background: 'transparent', // Make transparent for global gradient
       card: colors.surface,
       text: colors.text,
       border: colors.border,
@@ -121,10 +123,8 @@ export const AppNavigator: React.FC = () => {
         if (isMounted) {
           setShowOnboarding(!onboardingComplete);
           setHasEverSignedIn(signedInBefore === 'true');
-          // Small delay to ensure state is settled before showing UI
-          setTimeout(() => {
-            if (isMounted) setIsReady(true);
-          }, 50);
+          // Set ready immediately - React batch updates these state changes
+          setIsReady(true);
         }
       } catch (err) {
         console.error('[AppNavigator] Error checking initial state:', err);
@@ -365,6 +365,16 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="TermsOfService"
               component={TermsOfServiceScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Announcements"
+              component={AnnouncementsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Devotions"
+              component={DevotionsScreen}
               options={{ headerShown: false }}
             />
           </>

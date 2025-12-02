@@ -510,6 +510,182 @@ export const deleteGroupPhoto = async (
   }
 };
 
+/**
+ * Remove a member from the group (owner only)
+ */
+export const removeMemberFromGroup = async (
+  groupId: string,
+  memberUid: string,
+  ownerUid: string
+): Promise<{ success: boolean; error?: string }> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const group = await getGroup(groupId);
+    if (!group) {
+      return { success: false, error: 'Group not found' };
+    }
+
+    if (group.ownerUid !== ownerUid) {
+      return { success: false, error: 'Only the group owner can remove members' };
+    }
+
+    if (memberUid === ownerUid) {
+      return { success: false, error: 'Cannot remove yourself. Delete the group instead.' };
+    }
+
+    if (!group.memberUids.includes(memberUid)) {
+      return { success: false, error: 'User is not a member of this group' };
+    }
+
+    // Remove from group
+    const groupRef = doc(db, 'groups', groupId);
+    await updateDoc(groupRef, {
+      memberUids: arrayRemove(memberUid),
+    });
+
+    // Remove group from user's profile
+    const userRef = doc(db, 'users', memberUid);
+    await updateDoc(userRef, {
+      groupIds: arrayRemove(groupId),
+    });
+
+    return { success: true };
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error removing member:', appError.message);
+    return { success: false, error: appError.message };
+  }
+};
+
+/**
+ * Block a user from posting in a specific group (owner only)
+ */
+export const blockUserFromGroupPosting = async (
+  groupId: string,
+  userUid: string,
+  ownerUid: string,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const group = await getGroup(groupId);
+    if (!group) {
+      return { success: false, error: 'Group not found' };
+    }
+
+    if (group.ownerUid !== ownerUid) {
+      return { success: false, error: 'Only the group owner can block users' };
+    }
+
+    if (userUid === ownerUid) {
+      return { success: false, error: 'Cannot block yourself' };
+    }
+
+    const groupRef = doc(db, 'groups', groupId);
+    await updateDoc(groupRef, {
+      blockedFromPosting: arrayUnion(userUid),
+    });
+
+    return { success: true };
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error blocking user from posting:', appError.message);
+    return { success: false, error: appError.message };
+  }
+};
+
+/**
+ * Unblock a user from posting in a specific group (owner only)
+ */
+export const unblockUserFromGroupPosting = async (
+  groupId: string,
+  userUid: string,
+  ownerUid: string
+): Promise<{ success: boolean; error?: string }> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const group = await getGroup(groupId);
+    if (!group) {
+      return { success: false, error: 'Group not found' };
+    }
+
+    if (group.ownerUid !== ownerUid) {
+      return { success: false, error: 'Only the group owner can unblock users' };
+    }
+
+    const groupRef = doc(db, 'groups', groupId);
+    await updateDoc(groupRef, {
+      blockedFromPosting: arrayRemove(userUid),
+    });
+
+    return { success: true };
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error unblocking user from posting:', appError.message);
+    return { success: false, error: appError.message };
+  }
+};
+
+/**
+ * Check if a user is blocked from posting in a group
+ */
+export const isUserBlockedFromGroupPosting = async (
+  groupId: string,
+  userUid: string
+): Promise<boolean> => {
+  if (!firebaseEnabled || !db) return false;
+
+  try {
+    const group = await getGroup(groupId);
+    if (!group) return false;
+    return group.blockedFromPosting?.includes(userUid) ?? false;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Delete a prayer request from a group (owner only)
+ */
+export const deleteGroupPrayer = async (
+  groupId: string,
+  prayerId: string,
+  ownerUid: string
+): Promise<{ success: boolean; error?: string }> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const group = await getGroup(groupId);
+    if (!group) {
+      return { success: false, error: 'Group not found' };
+    }
+
+    if (group.ownerUid !== ownerUid) {
+      return { success: false, error: 'Only the group owner can delete prayers' };
+    }
+
+    // Delete the prayer request
+    await deleteDoc(doc(db, 'requests', prayerId));
+
+    return { success: true };
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error deleting group prayer:', appError.message);
+    return { success: false, error: appError.message };
+  }
+};
+
 // Get group members with their profiles
 export const getGroupMembers = async (groupId: string): Promise<GroupMember[]> => {
   if (!firebaseEnabled || !db) return [];

@@ -116,7 +116,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 autoCorrect={false}
                 textContentType="name"
                 autoComplete="name"
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 value={displayName}
                 onChangeText={setDisplayName}
                 editable={!isLoading}
@@ -134,7 +134,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 autoComplete="email"
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 value={email}
                 onChangeText={setEmail}
                 editable={!isLoading}
@@ -150,7 +150,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 secureTextEntry={!showPassword}
                 textContentType="newPassword"
                 autoComplete="password-new"
-                style={[styles.input, styles.passwordInput]}
+                style={[styles.input, styles.passwordInput, { color: colors.text }]}
                 value={password}
                 onChangeText={setPassword}
                 editable={!isLoading}
