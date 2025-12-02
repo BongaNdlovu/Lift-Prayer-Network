@@ -166,6 +166,8 @@ export type UserProfile = {
     longestStreak?: number;
     prayersThisWeek?: number;
     prayersThisMonth?: number;
+    currentStreakStart?: string;
+    streakFreezeUsed?: boolean;
   };
   settings?: {
     notifications?: boolean;
@@ -174,6 +176,9 @@ export type UserProfile = {
     notificationsComments?: boolean;
     notificationsTestimonies?: boolean;
     notificationsGroups?: boolean;
+    weeklyRecapEnabled?: boolean;
+    weeklyRecapDay?: number;
+    weeklyRecapTime?: string;
     shareProfile?: boolean;
     reminderTime?: string;
     reminderDays?: number[];

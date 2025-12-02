@@ -36,6 +36,7 @@ type NotificationSettings = {
   achievements: boolean;
   dailyReminder: boolean;
   reminderTime: string; // HH:MM format
+  weeklyRecapEnabled: boolean;
 };
 
 const DEFAULT_SETTINGS: NotificationSettings = {
@@ -48,6 +49,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   achievements: true,
   dailyReminder: false,
   reminderTime: '09:00',
+  weeklyRecapEnabled: false,
 };
 
 export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => {
@@ -84,6 +86,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
             achievements: userSettings.notificationsAchievements ?? true,
             dailyReminder: userSettings.dailyReminder ?? false,
             reminderTime: userSettings.reminderTime ?? '09:00',
+            weeklyRecapEnabled: userSettings.weeklyRecapEnabled ?? false,
           });
         }
       } catch (err) {
@@ -147,6 +150,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
       achievements: 'notificationsAchievements',
       dailyReminder: 'dailyReminder',
       reminderTime: 'reminderTime',
+      weeklyRecapEnabled: 'weeklyRecapEnabled',
     };
 
     try {
@@ -317,6 +321,33 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
           </View>
         </View>
 
+        {/* Weekly Recap Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Weekly Recap</Text>
+          
+          <View style={styles.settingCard}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <View style={[styles.iconContainer, { backgroundColor: '#fef9c3' }]}>
+                  <Ionicons name="calendar-outline" size={22} color={colors.text} />
+                </View>
+                <View style={styles.settingText}>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Weekly Summary</Text>
+                  <Text style={[styles.settingDesc, { color: colors.muted }]}>
+                    Receive a weekly summary of your prayer activity
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={settings.weeklyRecapEnabled}
+                onValueChange={() => handleToggle('weeklyRecapEnabled')}
+                trackColor={{ false: '#e5e7eb', true: '#fde68a' }}
+                thumbColor={settings.weeklyRecapEnabled ? '#f59e0b' : '#9ca3af'}
+              />
+            </View>
+          </View>
+        </View>
+
         {/* Reminders Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Daily Reminders</Text>
@@ -404,7 +435,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               </View>
               <View style={styles.debugButtonText}>
                 <Text style={styles.settingTitle}>View Push Token</Text>
-                <Text style={styles.settingSubtitle}>Check your device's push token</Text>
+                <Text style={styles.settingSubtitle}>Check your device&apos;s push token</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={palette.muted} />
             </TouchableOpacity>
@@ -573,6 +604,22 @@ const styles = StyleSheet.create({
   },
   settingInfo: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  settingText: {
+    flex: 1,
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: palette.text,
+  },
+  settingDesc: {
+    fontSize: 12,
+    color: palette.muted,
+    marginTop: 2,
   },
   settingTitle: {
     fontSize: 15,

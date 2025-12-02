@@ -35,6 +35,7 @@ const defaultProfile = (user: User): UserProfile => ({
     notificationsComments: true,
     notificationsTestimonies: true,
     notificationsGroups: true,
+    weeklyRecapEnabled: false,
     shareProfile: false 
   },
 });

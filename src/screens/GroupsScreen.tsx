@@ -36,6 +36,7 @@ import { SkeletonGroups } from '../components/SkeletonCard';
 import type { PrayerGroup } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 
+const GROUP_ITEM_HEIGHT = 220;
 const GROUP_EMOJIS = ['🙏', '⛪', '👨‍👩‍👧‍👦', '❤️', '✝️', '🕊️', '📖', '🌟', '💒', '🤝'];
 
 type GroupNotification = {
@@ -386,7 +387,7 @@ export const GroupsScreen: React.FC = () => {
             <View style={styles.notificationText}>
               <Text style={[styles.notificationTitle, { color: colors.text }]}>Welcome!</Text>
               <Text style={[styles.notificationMessage, { color: colors.muted }]}>
-                You've been added to "{notif.groupName}"
+                You&apos;ve been added to &quot;{notif.groupName}&quot;
               </Text>
             </View>
           </View>
@@ -434,6 +435,16 @@ export const GroupsScreen: React.FC = () => {
           renderItem={renderGroup}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={8}
+          windowSize={5}
+          maxToRenderPerBatch={8}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          getItemLayout={(_, index) => ({
+            length: GROUP_ITEM_HEIGHT,
+            offset: GROUP_ITEM_HEIGHT * index,
+            index,
+          })}
           ListFooterComponent={
             publicGroups.length > 0 ? (
               <View style={styles.discoverSection}>

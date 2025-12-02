@@ -32,6 +32,7 @@ import { updateUserSettings, updateUserProfile } from '../services/userProfile';
 import { RootStackParamList } from '../navigation/types';
 import { getVerifiedBadge, BADGE_STYLES, hasAdminPermission } from '../config/admins';
 import { validateDisplayName, validateEmail } from '../utils/security';
+import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
 
 export const ProfileScreen: React.FC = () => {
   const { user, signOut, resendVerification, linkGuestToEmail } = useAuth();
@@ -53,6 +54,11 @@ export const ProfileScreen: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const isAdminUser = hasAdminPermission(user?.email);
+  const [streakData, setStreakData] = useState({
+    currentStreak: 0,
+    longestStreak: 0,
+    lastPrayedDate: undefined as string | undefined,
+  });
 
   useEffect(() => {
     setupNotificationHandler();
@@ -196,6 +202,12 @@ export const ProfileScreen: React.FC = () => {
         if (settings?.notificationsCritical !== undefined) {
           setPushEnabled(!!settings.notificationsCritical);
         }
+        const stats = (snap.data() as any).stats || {};
+        setStreakData({
+          currentStreak: stats.streakDays || 0,
+          longestStreak: stats.longestStreak || 0,
+          lastPrayedDate: stats.streakLastDate,
+        });
       }
     };
     loadSettings();
@@ -342,6 +354,15 @@ export const ProfileScreen: React.FC = () => {
               Tap photo to change • Long press to remove
             </Text>
           </View>
+        )}
+
+        {user && (
+          <PrayerStreakWidget
+            currentStreak={streakData.currentStreak}
+            longestStreak={streakData.longestStreak}
+            lastPrayedDate={streakData.lastPrayedDate}
+            onPress={() => navigation.navigate('Stats')}
+          />
         )}
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>

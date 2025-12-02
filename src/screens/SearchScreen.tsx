@@ -32,6 +32,7 @@ import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
+const SEARCH_ITEM_HEIGHT = 260;
 import { PRAYER_CATEGORIES, type PrayerCategory, type FeedItem } from '../types';
 
 type SearchFilter = {
@@ -473,6 +474,16 @@ export const SearchScreen: React.FC = () => {
               currentUserEmail={user?.email}
             />
           )}
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          getItemLayout={(_, index) => ({
+            length: SEARCH_ITEM_HEIGHT,
+            offset: SEARCH_ITEM_HEIGHT * index,
+            index,
+          })}
           contentContainerStyle={styles.resultsList}
           ListHeaderComponent={
             <Text style={styles.resultsCount}>

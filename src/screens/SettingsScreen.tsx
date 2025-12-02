@@ -420,7 +420,7 @@ export const SettingsScreen: React.FC = () => {
             <View style={[styles.offlineBanner, { backgroundColor: isDark ? '#7f1d1d' : '#fef2f2' }]}>
               <Ionicons name="cloud-offline-outline" size={18} color={isDark ? '#fecaca' : '#dc2626'} />
               <Text style={[styles.offlineText, { color: isDark ? '#fecaca' : '#991b1b' }]}>
-                You're offline
+                You&apos;re offline
               </Text>
             </View>
           )}

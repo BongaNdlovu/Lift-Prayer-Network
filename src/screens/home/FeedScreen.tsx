@@ -16,6 +16,7 @@ import { SkeletonCard } from '../../components/SkeletonCard';
 import { Confetti } from '../../components/Confetti';
 import { queuePendingPrayer } from '../../services/offlineCache';
 import { subscribeToUserGroups } from '../../services/groups';
+import { prefetchFeedAvatars } from '../../utils/imagePrefetch';
 import { radius, spacing } from '../../theme/colors';
 import type { FeedItem, PrayerCategory } from '../../types';
 import { PRAYER_CATEGORIES } from '../../types';
@@ -51,6 +52,12 @@ export const FeedScreen: React.FC = () => {
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
   const netInfo = useNetInfo();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  useEffect(() => {
+    if (items.length > 0) {
+      prefetchFeedAvatars(items as any);
+    }
+  }, [items]);
 
   // Filter items based on search, category, and urgent filter
   const filteredItems = useMemo(() => {

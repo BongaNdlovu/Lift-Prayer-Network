@@ -35,6 +35,8 @@ import { palette, radius, spacing } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 
+const FEED_ITEM_HEIGHT = 260;
+
 type FilterType = 'all' | 'requests' | 'testimonies';
 type StatusFilter = 'all' | 'PENDING' | 'ACTIVE' | 'RESOLVED';
 
@@ -348,6 +350,16 @@ export const MyPrayersScreen: React.FC = () => {
                 currentUserEmail={user?.email}
               />
             )}
+            initialNumToRender={10}
+            windowSize={5}
+            maxToRenderPerBatch={10}
+            updateCellsBatchingPeriod={50}
+            removeClippedSubviews={Platform.OS !== 'web'}
+            getItemLayout={(_, index) => ({
+              length: FEED_ITEM_HEIGHT,
+              offset: FEED_ITEM_HEIGHT * index,
+              index,
+            })}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={

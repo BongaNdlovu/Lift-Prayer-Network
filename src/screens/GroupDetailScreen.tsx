@@ -35,6 +35,10 @@ import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GroupDetail'>;
 
+const GROUP_FEED_ITEM_HEIGHT = 260;
+const GROUP_MEMBER_ITEM_HEIGHT = 72;
+const GROUP_PENDING_ITEM_HEIGHT = 72;
+
 export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { groupId, groupName, groupEmoji } = route.params;
   const { user } = useAuth();
@@ -666,6 +670,16 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         ListEmptyComponent={ListEmpty}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={10}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={Platform.OS !== 'web'}
+        getItemLayout={(_, index) => ({
+          length: GROUP_FEED_ITEM_HEIGHT,
+          offset: GROUP_FEED_ITEM_HEIGHT * index,
+          index,
+        })}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -693,6 +707,16 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               renderItem={renderMember}
               contentContainerStyle={styles.membersList}
               showsVerticalScrollIndicator={false}
+              initialNumToRender={10}
+              windowSize={5}
+              maxToRenderPerBatch={10}
+              updateCellsBatchingPeriod={50}
+              removeClippedSubviews={Platform.OS !== 'web'}
+              getItemLayout={(_, index) => ({
+                length: GROUP_MEMBER_ITEM_HEIGHT,
+                offset: GROUP_MEMBER_ITEM_HEIGHT * index,
+                index,
+              })}
             />
           </View>
         </View>
@@ -894,6 +918,16 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               <FlatList
                 data={pendingUsers}
                 keyExtractor={(item) => item.uid}
+                initialNumToRender={8}
+                windowSize={5}
+                maxToRenderPerBatch={8}
+                updateCellsBatchingPeriod={50}
+                removeClippedSubviews={Platform.OS !== 'web'}
+                getItemLayout={(_, index) => ({
+                  length: GROUP_PENDING_ITEM_HEIGHT,
+                  offset: GROUP_PENDING_ITEM_HEIGHT * index,
+                  index,
+                })}
                 renderItem={({ item }) => (
                   <View style={styles.pendingItem}>
                     <View style={styles.pendingUserInfo}>

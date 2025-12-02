@@ -22,6 +22,9 @@ export type UserStats = {
   prayersThisWeek: number;
   prayersThisMonth: number;
   peopleSupported: number;
+  streakLastDate?: string;
+  currentStreakStart?: string;
+  streakFreezeUsed?: boolean;
 };
 
 const getDateString = (date: Date = new Date()): string => {
@@ -50,6 +53,9 @@ export const getUserStats = async (userId: string): Promise<UserStats> => {
     prayersThisWeek: 0,
     prayersThisMonth: 0,
     peopleSupported: 0,
+    streakLastDate: undefined,
+    currentStreakStart: undefined,
+    streakFreezeUsed: false,
   };
 
   if (!firebaseEnabled || !db) return defaultStats;
@@ -65,6 +71,9 @@ export const getUserStats = async (userId: string): Promise<UserStats> => {
         defaultStats.testimonyCount = profile.stats.testimonyCount || 0;
         defaultStats.streakDays = profile.stats.streakDays || 0;
         defaultStats.longestStreak = profile.stats.longestStreak || 0;
+        defaultStats.streakLastDate = profile.stats.streakLastDate;
+        defaultStats.currentStreakStart = profile.stats.currentStreakStart;
+        defaultStats.streakFreezeUsed = profile.stats.streakFreezeUsed || false;
       }
     }
 

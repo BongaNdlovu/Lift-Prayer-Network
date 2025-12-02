@@ -30,11 +30,6 @@ import DonationScreen from '../screens/DonationScreen';
 import { OnboardingScreen, checkOnboardingComplete } from '../screens/OnboardingScreen';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
-import { ReportsScreen } from '../screens/admin/ReportsScreen';
-import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
-import { PinnedRequestsScreen } from '../screens/admin/PinnedRequestsScreen';
-import { GlobalStatsScreen } from '../screens/admin/GlobalStatsScreen';
-import { BannedUsersScreen } from '../screens/admin/BannedUsersScreen';
 import { NotificationsInboxScreen } from '../screens/NotificationsInboxScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { AnsweredPrayersScreen } from '../screens/AnsweredPrayersScreen';
@@ -43,6 +38,7 @@ import { MainTabParamList, RootStackParamList } from './types';
 import { useTheme } from '../contexts/ThemeContext';
 import { startOfflineSyncListener } from '../services/offlineSync';
 import { validateAndRepairCache } from '../services/offlineCache';
+import { LazyScreen } from '../components/LazyScreen';
 
 const HAS_EVER_SIGNED_IN_KEY = '@lift_has_ever_signed_in';
 
@@ -243,29 +239,79 @@ export const AppNavigator: React.FC = () => {
             />
             <Stack.Screen
               name="AdminDashboard"
-              component={AdminDashboardScreen}
               options={{ headerShown: false }}
-            />
+            >
+              {(props) => (
+                <LazyScreen
+                  factory={() =>
+                    import('../screens/admin/AdminDashboardScreen').then((m) => ({
+                      default: m.AdminDashboardScreen,
+                    }))
+                  }
+                  componentProps={props}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen
               name="AdminReports"
-              component={ReportsScreen}
               options={{ headerShown: true, title: 'Reports' }}
-            />
+            >
+              {(props) => (
+                <LazyScreen
+                  factory={() =>
+                    import('../screens/admin/ReportsScreen').then((m) => ({
+                      default: m.ReportsScreen,
+                    }))
+                  }
+                  componentProps={props}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen
               name="AdminPinnedRequests"
-              component={PinnedRequestsScreen}
               options={{ headerShown: true, title: 'Pinned Requests' }}
-            />
+            >
+              {(props) => (
+                <LazyScreen
+                  factory={() =>
+                    import('../screens/admin/PinnedRequestsScreen').then((m) => ({
+                      default: m.PinnedRequestsScreen,
+                    }))
+                  }
+                  componentProps={props}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen
               name="AdminGlobalStats"
-              component={GlobalStatsScreen}
               options={{ headerShown: true, title: 'Global Stats' }}
-            />
+            >
+              {(props) => (
+                <LazyScreen
+                  factory={() =>
+                    import('../screens/admin/GlobalStatsScreen').then((m) => ({
+                      default: m.GlobalStatsScreen,
+                    }))
+                  }
+                  componentProps={props}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen
               name="AdminBannedUsers"
-              component={BannedUsersScreen}
               options={{ headerShown: false }}
-            />
+            >
+              {(props) => (
+                <LazyScreen
+                  factory={() =>
+                    import('../screens/admin/BannedUsersScreen').then((m) => ({
+                      default: m.BannedUsersScreen,
+                    }))
+                  }
+                  componentProps={props}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen
               name="NotificationsInbox"
               component={NotificationsInboxScreen}

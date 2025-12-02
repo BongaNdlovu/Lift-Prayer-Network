@@ -231,12 +231,17 @@ async function sendExpoPushNotification(expoPushTokens, title, body, data = {}, 
             await markTokenAsDead(token, 'DeviceNotRegistered');
           }
         } else if (item.id) {
-          // Store ticket for later receipt checking
+          // Store ticket for later receipt checking and retry capability
           ticketsToStore.push({
             ticketId: item.id,
             token,
+            title,
+            body,
+            data: data || {},
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             checked: false,
+            retryCount: 0,
+            lastRetryAt: null,
           });
         }
       }
@@ -458,6 +463,145 @@ exports.cleanupDeadTokens = onSchedule('0 3 * * *', async (event) => {
     console.log(`Cleanup complete: deleted ${deletedTokens} dead tokens, ${deletedTickets} old tickets`);
   } catch (error) {
     console.error('Error during cleanup:', error);
+  }
+});
+
+/**
+ * Clean up stale offline queues from users who haven't synced
+ * Runs daily at 4 AM
+ */
+exports.cleanupStaleOfflineQueues = onSchedule('0 4 * * *', async (event) => {
+  console.log('Starting stale offline queue cleanup...');
+  
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    let cleanedCount = 0;
+    const threshold = admin.firestore.Timestamp.fromDate(thirtyDaysAgo);
+    
+    // Clean up old pending prayers that were never synced
+    const stalePrayersSnapshot = await db.collection('pendingPrayers')
+      .where('createdAt', '<', threshold)
+      .limit(500)
+      .get();
+    
+    if (!stalePrayersSnapshot.empty) {
+      const batch = db.batch();
+      stalePrayersSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+        cleanedCount++;
+      });
+      await batch.commit();
+    }
+    
+    // Clean up old pending requests
+    const staleRequestsSnapshot = await db.collection('pendingRequests')
+      .where('createdAt', '<', threshold)
+      .limit(500)
+      .get();
+    
+    if (!staleRequestsSnapshot.empty) {
+      const batch = db.batch();
+      staleRequestsSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+        cleanedCount++;
+      });
+      await batch.commit();
+    }
+    
+    console.log(`Cleaned up ${cleanedCount} stale offline queue items`);
+  } catch (error) {
+    console.error('Error cleaning stale offline queues:', error);
+  }
+});
+
+/**
+ * Retry failed push notifications
+ * Runs every 30 minutes
+ */
+exports.retryFailedPushes = onSchedule('every 30 minutes', async (event) => {
+  console.log('Starting failed push retry...');
+  
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const sixHoursTimestamp = admin.firestore.Timestamp.fromDate(sixHoursAgo);
+    
+    // Get failed tickets from the last 6 hours
+    const failedTicketsSnapshot = await db.collection('pushTickets')
+      .where('receiptStatus', '==', 'error')
+      .where('receiptError', 'in', ['MessageTooBig', 'MessageRateExceeded', 'InvalidCredentials'])
+      .where('createdAt', '>', sixHoursTimestamp)
+      .limit(50)
+      .get();
+    
+    if (failedTicketsSnapshot.empty) {
+      console.log('No failed pushes to retry');
+      return;
+    }
+    
+    let retryCount = 0;
+    let successCount = 0;
+    
+    for (const ticketDoc of failedTicketsSnapshot.docs) {
+      const ticketData = ticketDoc.data();
+      const lastRetryAt = ticketData.lastRetryAt?.toDate?.() || null;
+      
+      // Skip if retried recently or already exceeded retry limit
+      if ((ticketData.retryCount || 0) >= 3) {
+        continue;
+      }
+      if (lastRetryAt && lastRetryAt > oneHourAgo) {
+        continue;
+      }
+      
+      retryCount++;
+      
+      try {
+        const response = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: ticketData.token,
+            title: ticketData.title,
+            body: ticketData.body,
+            data: ticketData.data || {},
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (result.data?.status === 'ok') {
+          successCount++;
+          await ticketDoc.ref.update({
+            retryCount: admin.firestore.FieldValue.increment(1),
+            lastRetryAt: admin.firestore.FieldValue.serverTimestamp(),
+            retryTicketId: result.data.id,
+            retryStatus: 'sent',
+          });
+        } else {
+          await ticketDoc.ref.update({
+            retryCount: admin.firestore.FieldValue.increment(1),
+            lastRetryAt: admin.firestore.FieldValue.serverTimestamp(),
+            retryStatus: 'failed',
+            retryError: result.data?.message || 'Unknown error',
+          });
+        }
+      } catch (err) {
+        console.error('Error retrying push:', err);
+        await ticketDoc.ref.update({
+          retryCount: admin.firestore.FieldValue.increment(1),
+          lastRetryAt: admin.firestore.FieldValue.serverTimestamp(),
+          retryStatus: 'error',
+        });
+      }
+    }
+    
+    console.log(`Retried ${retryCount} failed pushes, ${successCount} successful`);
+  } catch (error) {
+    console.error('Error in retry failed pushes:', error);
   }
 });
 
@@ -941,6 +1085,89 @@ exports.onReactionCreated = onDocumentCreated('reactions/{reactionId}', async (e
     }
   } catch (err) {
     console.error('Error sending amen notification:', err);
+  }
+});
+
+/**
+ * Send weekly recap notifications
+ * Runs every Sunday at 9 AM
+ */
+exports.sendWeeklyRecap = onSchedule('0 9 * * 0', async (event) => {
+  console.log('Starting weekly recap notifications...');
+  
+  try {
+    const usersSnapshot = await db.collection('users')
+      .where('settings.weeklyRecapEnabled', '==', true)
+      .limit(500)
+      .get();
+    
+    if (usersSnapshot.empty) {
+      console.log('No users with weekly recap enabled');
+      return;
+    }
+    
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const weekTimestamp = admin.firestore.Timestamp.fromDate(oneWeekAgo);
+    let sentCount = 0;
+    
+    for (const userDoc of usersSnapshot.docs) {
+      const userId = userDoc.id;
+      const userData = userDoc.data();
+      
+      try {
+        // Get user's weekly stats
+        const prayersSnapshot = await db.collection('prayers')
+          .where('actorUid', '==', userId)
+          .where('prayedAt', '>=', weekTimestamp)
+          .get();
+        const prayerCount = prayersSnapshot.size;
+        
+        const requestsSnapshot = await db.collection('requests')
+          .where('ownerUid', '==', userId)
+          .where('createdAt', '>=', weekTimestamp)
+          .get();
+        const requestCount = requestsSnapshot.size;
+        
+        // Unique people prayed for
+        const uniquePeople = new Set();
+        prayersSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.targetOwnerUid) {
+            uniquePeople.add(data.targetOwnerUid);
+          }
+        });
+        
+        const streakDays = userData.stats?.streakDays || 0;
+        let message = `This week: ${prayerCount} prayers`;
+        if (uniquePeople.size > 0) {
+          message += ` for ${uniquePeople.size} people`;
+        }
+        if (requestCount > 0) {
+          message += ` • ${requestCount} new requests`;
+        }
+        if (streakDays > 0) {
+          message += `. ${streakDays}-day streak! 🙏`;
+        }
+        
+        const tokens = await getUserPushTokens(userId);
+        if (tokens.length > 0) {
+          await sendExpoPushNotification(
+            tokens,
+            '🙏 Your Weekly Prayer Recap',
+            message,
+            { type: 'WEEKLY_RECAP', userId },
+            { channelId: 'default', priority: 'high' }
+          );
+          sentCount++;
+        }
+      } catch (err) {
+        console.error(`Error sending recap to user ${userId}:`, err);
+      }
+    }
+    
+    console.log(`Sent weekly recap to ${sentCount} users`);
+  } catch (error) {
+    console.error('Error in weekly recap:', error);
   }
 });
 

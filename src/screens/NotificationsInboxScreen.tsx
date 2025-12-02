@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   SafeAreaView,
-  ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   View,
@@ -9,6 +9,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -46,6 +47,8 @@ type Notification = {
   createdAt: Timestamp;
   read: boolean;
 };
+
+const NOTIFICATION_ITEM_HEIGHT = 96;
 
 const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
   switch (type) {
@@ -205,6 +208,52 @@ export const NotificationsInboxScreen: React.FC = () => {
       .slice(0, 2);
   };
 
+  const renderNotification = ({ item }: { item: Notification }) => {
+    const icon = getNotificationIcon(item.type);
+    const message = getNotificationMessage(item);
+
+    return (
+      <TouchableOpacity
+        style={[styles.notificationCard, !item.read && styles.notificationUnread]}
+        onPress={() => handleNotificationPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.notificationLeft}>
+          {item.actorPhotoURL ? (
+            <Image
+              source={{ uri: item.actorPhotoURL }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={[styles.avatarPlaceholder, { backgroundColor: icon.color + '20' }]}>
+              <Text style={[styles.avatarText, { color: icon.color }]}>
+                {getInitials(item.actorDisplayName)}
+              </Text>
+            </View>
+          )}
+          <View style={[styles.iconBadge, { backgroundColor: icon.color }]}>
+            <Ionicons name={icon.name} size={10} color="#fff" />
+          </View>
+        </View>
+
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationText}>
+            <Text style={styles.actorName}>{item.actorDisplayName}</Text>
+            {' '}{message}
+          </Text>
+          {item.targetSummary && (
+            <Text style={styles.targetSummary} numberOfLines={1}>
+              &quot;{item.targetSummary}&quot;
+            </Text>
+          )}
+          <Text style={styles.timeAgo}>{formatTimeAgo(item.createdAt)}</Text>
+        </View>
+
+        {!item.read && <View style={styles.unreadDot} />}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -237,8 +286,11 @@ export const NotificationsInboxScreen: React.FC = () => {
           </Text>
         </View>
       ) : (
-        <ScrollView
+        <FlatList
           style={styles.list}
+          data={notifications}
+          keyExtractor={(item) => item.id}
+          renderItem={renderNotification}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -248,62 +300,25 @@ export const NotificationsInboxScreen: React.FC = () => {
               }}
             />
           }
-        >
-          {unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>{unreadCount} new</Text>
-            </View>
-          )}
-
-          {notifications.map((notification) => {
-            const icon = getNotificationIcon(notification.type);
-            const message = getNotificationMessage(notification);
-
-            return (
-              <TouchableOpacity
-                key={notification.id}
-                style={[styles.notificationCard, !notification.read && styles.notificationUnread]}
-                onPress={() => handleNotificationPress(notification)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.notificationLeft}>
-                  {notification.actorPhotoURL ? (
-                    <Image
-                      source={{ uri: notification.actorPhotoURL }}
-                      style={styles.avatar}
-                    />
-                  ) : (
-                    <View style={[styles.avatarPlaceholder, { backgroundColor: icon.color + '20' }]}>
-                      <Text style={[styles.avatarText, { color: icon.color }]}>
-                        {getInitials(notification.actorDisplayName)}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={[styles.iconBadge, { backgroundColor: icon.color }]}>
-                    <Ionicons name={icon.name} size={10} color="#fff" />
-                  </View>
-                </View>
-
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationText}>
-                    <Text style={styles.actorName}>{notification.actorDisplayName}</Text>
-                    {' '}{message}
-                  </Text>
-                  {notification.targetSummary && (
-                    <Text style={styles.targetSummary} numberOfLines={1}>
-                      &quot;{notification.targetSummary}&quot;
-                    </Text>
-                  )}
-                  <Text style={styles.timeAgo}>{formatTimeAgo(notification.createdAt)}</Text>
-                </View>
-
-                {!notification.read && <View style={styles.unreadDot} />}
-              </TouchableOpacity>
-            );
+          ListHeaderComponent={
+            unreadCount > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>{unreadCount} new</Text>
+              </View>
+            ) : null
+          }
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          getItemLayout={(_, index) => ({
+            length: NOTIFICATION_ITEM_HEIGHT,
+            offset: NOTIFICATION_ITEM_HEIGHT * index,
+            index,
           })}
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
+          ListFooterComponent={<View style={{ height: 40 }} />}
+        />
       )}
     </SafeAreaView>
   );

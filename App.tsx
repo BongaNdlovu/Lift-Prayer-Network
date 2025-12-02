@@ -31,7 +31,10 @@ function App() {
   }, [fontsLoaded]);
 
   useEffect(() => {
-    setupNotificationHandler();
+    const timer = setTimeout(() => {
+      setupNotificationHandler();
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Show boot screen while fonts are loading

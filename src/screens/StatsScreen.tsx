@@ -18,6 +18,7 @@ import { getUserStats, type UserStats } from '../services/stats';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
+import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
 
 type StatCardProps = {
   emoji: string;
@@ -119,6 +120,13 @@ export const StatsScreen: React.FC = () => {
           <Text style={[styles.heading, { color: colors.text }]}>Your Journey</Text>
           <Text style={[styles.subheading, { color: colors.muted }]}>Prayer statistics & streaks</Text>
 
+          <PrayerStreakWidget
+            currentStreak={stats?.streakDays || 0}
+            longestStreak={stats?.longestStreak || 0}
+            lastPrayedDate={stats?.streakLastDate}
+            onPress={() => navigation.navigate('History')}
+          />
+
           {/* Streak Banner */}
           <View style={styles.streakBanner}>
             <Text style={styles.streakEmoji}>🔥</Text>
@@ -206,7 +214,7 @@ export const StatsScreen: React.FC = () => {
                 <Text style={styles.galleryEmoji}>🎉</Text>
                 <View style={styles.galleryText}>
                   <Text style={styles.galleryTitle}>Answered Prayers Gallery</Text>
-                  <Text style={styles.gallerySubtitle}>Celebrate God's faithfulness</Text>
+                  <Text style={styles.gallerySubtitle}>Celebrate God&apos;s faithfulness</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={24} color="#fff" />

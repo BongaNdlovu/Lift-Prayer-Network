@@ -9,6 +9,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Animated,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +27,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
+const TESTIMONY_ITEM_HEIGHT = 220;
 import { Testimony } from '../types';
 import { Confetti } from '../components/Confetti';
 
@@ -297,6 +299,16 @@ export const AnsweredPrayersScreen: React.FC = () => {
               index={index}
             />
           )}
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          getItemLayout={(_, index) => ({
+            length: TESTIMONY_ITEM_HEIGHT,
+            offset: TESTIMONY_ITEM_HEIGHT * index,
+            index,
+          })}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl
