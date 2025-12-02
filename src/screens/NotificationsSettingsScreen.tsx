@@ -54,7 +54,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 
 export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<string>('unknown');

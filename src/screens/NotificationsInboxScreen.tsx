@@ -7,7 +7,6 @@ import {
   View,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
   Image,
   Platform,
 } from 'react-native';
@@ -104,7 +103,7 @@ const formatTimeAgo = (timestamp: Timestamp): string => {
 export const NotificationsInboxScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

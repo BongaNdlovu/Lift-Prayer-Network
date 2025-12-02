@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import { useFeed } from '../../hooks/useFeed';
 import { logPrayer, logReaction, likeTestimony, pinRequest, unpinRequest } from '../../services/prayers';
@@ -47,7 +46,7 @@ export const FeedScreen: React.FC = () => {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PrayerCategory | 'all'>('all');
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
   const netInfo = useNetInfo();

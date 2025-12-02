@@ -29,7 +29,6 @@ import { hasAdminPermission } from '../config/admins';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { 
   getPendingActionCounts, 
-  cleanupPendingActions,
   clearAllCache,
   type PendingActionCounts 
 } from '../services/offlineCache';

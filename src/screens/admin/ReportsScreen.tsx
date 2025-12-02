@@ -20,7 +20,7 @@ type Report = {
 
 export const ReportsScreen: React.FC = () => {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
 

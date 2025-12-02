@@ -32,7 +32,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CreateRequest'>;
 
 export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const netInfo = useNetInfo();
   const [content, setContent] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PrayerCategory>('other');

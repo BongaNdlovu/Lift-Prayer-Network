@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette } from '../theme/colors';
 
 export const BootScreen: React.FC = () => {
   const { colors } = useTheme();

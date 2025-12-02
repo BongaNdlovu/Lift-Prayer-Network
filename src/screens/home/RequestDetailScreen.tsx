@@ -50,7 +50,7 @@ const formatDate = (value?: any) => {
 export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id, type, item: initialItem } = route.params;
   const { user } = useAuth();
-  const { colors } = useTheme();
+  useTheme();
   const [item, setItem] = useState<FeedItem | null>(initialItem || null);
   const [loading, setLoading] = useState(!initialItem);
   const [editMode, setEditMode] = useState(false);

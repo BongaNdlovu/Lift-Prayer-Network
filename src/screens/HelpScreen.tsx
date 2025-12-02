@@ -280,7 +280,7 @@ const CollapsibleSection: React.FC<{
 };
 
 export const HelpScreen: React.FC = () => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 

@@ -33,7 +33,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CreateTestimony'>;
 
 export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const netInfo = useNetInfo();
   const { items: allRequests } = useFeed('REQUEST', user?.uid);
   const [content, setContent] = useState('');

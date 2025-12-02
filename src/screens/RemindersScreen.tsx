@@ -41,7 +41,7 @@ const DAYS = [
 
 export const RemindersScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const [reminders, setReminders] = useState<PrayerReminder[]>([]);
   const [, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

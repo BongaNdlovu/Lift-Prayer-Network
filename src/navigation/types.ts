@@ -43,6 +43,7 @@ export type RootStackParamList = {
   NotificationsInbox: undefined;
   AnsweredPrayers: undefined;
   Search: undefined;
+  Stats: undefined;
 };
 
 export type MainTabParamList = {

@@ -12,7 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
 
 export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const isAdmin = hasAdminPermission(user?.email);
 

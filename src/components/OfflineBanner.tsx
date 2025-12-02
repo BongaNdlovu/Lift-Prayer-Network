@@ -13,7 +13,7 @@ type Props = {
 
 export const OfflineBanner: React.FC<Props> = ({ onSyncPress, showPendingCount = true }) => {
   const netInfo = useNetInfo();
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const [pendingCounts, setPendingCounts] = useState<PendingActionCounts>({
     prayers: 0,
     requests: 0,

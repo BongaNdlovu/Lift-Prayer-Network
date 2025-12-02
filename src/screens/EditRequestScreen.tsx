@@ -31,7 +31,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EditRequest'>;
 export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id, type, item } = route.params;
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const isRequest = type === 'REQUEST';
   
   // Form state

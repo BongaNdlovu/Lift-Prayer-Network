@@ -36,7 +36,7 @@ import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
 
 export const ProfileScreen: React.FC = () => {
   const { user, signOut, resendVerification, linkGuestToEmail } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [upgradeName, setUpgradeName] = useState('');

@@ -18,7 +18,7 @@ export const prefetchImages = async (urls: (string | null | undefined)[]): Promi
   await Promise.allSettled(validUrls.map(prefetchImage));
 };
 
-export const prefetchFeedAvatars = async (items: Array<{ userPhotoURL?: string | null }>): Promise<void> => {
+export const prefetchFeedAvatars = async (items: { userPhotoURL?: string | null }[]): Promise<void> => {
   const urls = items
     .slice(0, 20)
     .map((item) => item.userPhotoURL)

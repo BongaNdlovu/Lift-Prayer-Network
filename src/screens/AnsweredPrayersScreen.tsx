@@ -27,10 +27,10 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
-const TESTIMONY_ITEM_HEIGHT = 220;
 import { Testimony } from '../types';
 import { Confetti } from '../components/Confetti';
 
+const TESTIMONY_ITEM_HEIGHT = 220;
 
 type TestimonyWithMeta = Testimony & {
   id: string;

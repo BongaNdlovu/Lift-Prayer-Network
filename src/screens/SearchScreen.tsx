@@ -32,8 +32,9 @@ import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
-const SEARCH_ITEM_HEIGHT = 260;
 import { PRAYER_CATEGORIES, type PrayerCategory, type FeedItem } from '../types';
+
+const SEARCH_ITEM_HEIGHT = 260;
 
 type SearchFilter = {
   category: PrayerCategory | 'all';
@@ -51,7 +52,7 @@ const TIME_RANGES = [
 export const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);

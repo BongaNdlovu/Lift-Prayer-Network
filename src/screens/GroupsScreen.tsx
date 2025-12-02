@@ -50,7 +50,7 @@ type GroupNotification = {
 
 export const GroupsScreen: React.FC = () => {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [groups, setGroups] = useState<PrayerGroup[]>([]);
   const [publicGroups, setPublicGroups] = useState<PrayerGroup[]>([]);

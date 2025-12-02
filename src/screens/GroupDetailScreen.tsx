@@ -42,7 +42,7 @@ const GROUP_PENDING_ITEM_HEIGHT = 72;
 export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { groupId, groupName, groupEmoji } = route.params;
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  useTheme();
   const [group, setGroup] = useState<PrayerGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [prayers, setPrayers] = useState<LiftRequest[]>([]);
