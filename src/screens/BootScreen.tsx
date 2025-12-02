@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette } from '../theme/colors';
 
 export const BootScreen: React.FC = () => {
+  const { colors } = useTheme();
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -74,7 +76,7 @@ export const BootScreen: React.FC = () => {
 
   return (
     <LinearGradient
-      colors={['#0a0a0a', '#111827']}
+      colors={[colors.background, colors.surface]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -91,12 +93,12 @@ export const BootScreen: React.FC = () => {
           },
         ]}
       >
-        <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
-        <View style={styles.crossVertical} />
-        <View style={styles.crossHorizontal} />
+        <Animated.View style={[styles.pulseRing, { borderColor: colors.accent, transform: [{ scale: pulseAnim }] }]} />
+        <View style={[styles.crossVertical, { backgroundColor: colors.accent }]} />
+        <View style={[styles.crossHorizontal, { backgroundColor: colors.accent }]} />
       </Animated.View>
-      <Animated.Text style={[styles.title, { opacity: titleOpacity }]}>LIFT</Animated.Text>
-      <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
+      <Animated.Text style={[styles.title, { color: colors.text, opacity: titleOpacity }]}>LIFT</Animated.Text>
+      <Animated.Text style={[styles.subtitle, { color: colors.muted, opacity: subtitleOpacity }]}>
         Live Network of Prayer
       </Animated.Text>
     </LinearGradient>
@@ -113,7 +115,6 @@ const styles = StyleSheet.create({
   logoBox: {
     width: 96,
     height: 96,
-    borderColor: palette.accent,
     borderWidth: 2,
     borderRadius: 8,
     alignItems: 'center',
@@ -131,32 +132,27 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 2,
-    borderColor: 'rgba(234, 179, 8, 0.3)',
   },
   crossVertical: {
     position: 'absolute',
     width: 6,
     height: 68,
-    backgroundColor: palette.accent,
     borderRadius: 3,
   },
   crossHorizontal: {
     position: 'absolute',
     height: 6,
     width: 68,
-    backgroundColor: palette.accent,
     borderRadius: 3,
   },
   title: {
     fontSize: 42,
     fontWeight: '900',
-    color: '#f9fafb',
     letterSpacing: 8,
     marginTop: 8,
   },
   subtitle: {
     fontSize: 13,
-    color: '#eab308',
     letterSpacing: 2,
     textTransform: 'uppercase',
     fontWeight: '600',

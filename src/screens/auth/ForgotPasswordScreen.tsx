@@ -14,6 +14,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 
@@ -21,6 +22,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
 export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const { resetPassword } = useAuth();
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -51,31 +53,31 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
   if (emailSent) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.content}>
-          <View style={styles.successCard}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="mail" size={48} color={palette.accent} />
+          <View style={[styles.successCard, { backgroundColor: colors.surface }]}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
+              <Ionicons name="mail" size={48} color={colors.accent} />
             </View>
-            <Text style={styles.successTitle}>Check Your Email</Text>
-            <Text style={styles.successText}>
+            <Text style={[styles.successTitle, { color: colors.text }]}>Check Your Email</Text>
+            <Text style={[styles.successText, { color: colors.muted }]}>
               We&apos;ve sent password reset instructions to:
             </Text>
-            <Text style={styles.emailText}>{email.trim()}</Text>
-            <Text style={styles.successHint}>
+            <Text style={[styles.emailText, { color: colors.text }]}>{email.trim()}</Text>
+            <Text style={[styles.successHint, { color: colors.muted }]}>
               Don&apos;t forget to check your spam folder if you don&apos;t see the email.
             </Text>
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
+              style={[styles.button, styles.primaryButton, { backgroundColor: colors.accent }]}
               onPress={() => navigation.navigate('SignIn')}
             >
-              <Text style={styles.primaryButtonText}>Back to Sign In</Text>
+              <Text style={[styles.primaryButtonText, { color: colors.text }]}>Back to Sign In</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.resendButton}
               onPress={() => setEmailSent(false)}
             >
-              <Text style={styles.resendText}>Didn&apos;t receive it? Try again</Text>
+              <Text style={[styles.resendText, { color: colors.muted }]}>Didn&apos;t receive it? Try again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -84,7 +86,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -92,37 +94,37 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.content}>
           {/* Back Button */}
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.surface }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color={palette.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.logo}>LIFT</Text>
-            <Text style={styles.tagline}>Reset your password</Text>
+            <Text style={[styles.logo, { color: colors.text }]}>LIFT</Text>
+            <Text style={[styles.tagline, { color: colors.muted }]}>Reset your password</Text>
           </View>
 
           {/* Reset Card */}
-          <View style={styles.card}>
-            <Text style={styles.title}>Forgot Password?</Text>
-            <Text style={styles.subtitle}>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Forgot Password?</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>
               Enter your email address and we&apos;ll send you instructions to reset your password.
             </Text>
 
             {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={palette.muted} style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="mail-outline" size={20} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 placeholder="Email address"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 autoComplete="email"
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 value={email}
                 onChangeText={setEmail}
                 editable={!loading}
@@ -132,14 +134,19 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Reset Button */}
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
+              style={[
+                styles.button, 
+                styles.primaryButton, 
+                { backgroundColor: colors.accent },
+                loading && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
+              ]}
               onPress={handleResetPassword}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#1f2937" />
+                <ActivityIndicator color={colors.text} />
               ) : (
-                <Text style={styles.primaryButtonText}>Send Reset Email</Text>
+                <Text style={[styles.primaryButtonText, { color: colors.text }]}>Send Reset Email</Text>
               )}
             </TouchableOpacity>
 
@@ -149,8 +156,8 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
               onPress={() => navigation.navigate('SignIn')}
               disabled={loading}
             >
-              <Ionicons name="arrow-back" size={16} color={palette.accentDark} />
-              <Text style={styles.backToSignInText}>Back to Sign In</Text>
+              <Ionicons name="arrow-back" size={16} color={colors.accent} />
+              <Text style={[styles.backToSignInText, { color: colors.accent }]}>Back to Sign In</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -186,15 +193,12 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '900',
     letterSpacing: 3,
-    color: palette.text,
   },
   tagline: {
-    color: palette.muted,
     marginTop: 4,
     fontSize: 14,
   },
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     shadowColor: palette.shadow,
@@ -208,12 +212,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: palette.muted,
     marginBottom: spacing.lg,
     lineHeight: 20,
   },
@@ -223,7 +225,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
     borderRadius: radius.md,
-    backgroundColor: '#f8fafc',
     marginBottom: spacing.lg,
   },
   inputIcon: {
@@ -233,7 +234,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
-    color: palette.text,
     fontSize: 16,
   },
   button: {
@@ -248,11 +248,9 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   primaryButton: {
-    backgroundColor: palette.accent,
   },
   primaryButtonText: {
     fontWeight: '700',
-    color: '#1f2937',
     fontSize: 16,
   },
   backToSignIn: {
@@ -263,13 +261,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   backToSignInText: {
-    color: palette.accentDark,
     fontWeight: '600',
     fontSize: 14,
   },
   // Success state styles
   successCard: {
-    backgroundColor: palette.surface,
     borderRadius: radius.lg,
     padding: spacing.xl,
     shadowColor: palette.shadow,
@@ -285,7 +281,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: `${palette.accent}20`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
@@ -293,23 +288,19 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: spacing.sm,
   },
   successText: {
     fontSize: 14,
-    color: palette.muted,
     textAlign: 'center',
   },
   emailText: {
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
     marginVertical: spacing.sm,
   },
   successHint: {
     fontSize: 12,
-    color: palette.muted,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
@@ -317,7 +308,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   resendText: {
-    color: palette.accentDark,
     fontWeight: '600',
     fontSize: 14,
   },

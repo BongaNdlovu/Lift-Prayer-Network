@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { ActivityIndicator, View, Text } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,9 +34,13 @@ import { ReportsScreen } from '../screens/admin/ReportsScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { PinnedRequestsScreen } from '../screens/admin/PinnedRequestsScreen';
 import { GlobalStatsScreen } from '../screens/admin/GlobalStatsScreen';
+import { BannedUsersScreen } from '../screens/admin/BannedUsersScreen';
+import { NotificationsInboxScreen } from '../screens/NotificationsInboxScreen';
+import { SearchScreen } from '../screens/SearchScreen';
+import { AnsweredPrayersScreen } from '../screens/AnsweredPrayersScreen';
 import { useAuth } from '../hooks/useAuth';
 import { MainTabParamList, RootStackParamList } from './types';
-import { palette } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
 import { startOfflineSyncListener } from '../services/offlineSync';
 import { validateAndRepairCache } from '../services/offlineCache';
 
@@ -45,40 +49,69 @@ const HAS_EVER_SIGNED_IN_KEY = '@lift_has_ever_signed_in';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const MainTabs = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarActiveTintColor: palette.accentDark,
-      tabBarInactiveTintColor: palette.muted,
-      tabBarStyle: { paddingVertical: 6, height: 64 },
-      tabBarIcon: ({ color, size }) => {
-        const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-          Feed: 'radio-outline',
-          Groups: 'people-circle-outline',
-          Calendar: 'calendar-outline',
-          Stats: 'stats-chart-outline',
-          Profile: 'person-circle-outline',
-        };
-        return <Ionicons name={icons[route.name]} size={size} color={color} />;
-      },
-    })}
-  >
-    <Tab.Screen name="Feed" component={FeedScreen} />
-    <Tab.Screen name="Groups" component={GroupsScreen} />
-    <Tab.Screen name="Calendar" component={CalendarScreen} />
-    <Tab.Screen name="Stats" component={StatsScreen} />
-    <Tab.Screen name="Profile" component={ProfileScreen} />
-  </Tab.Navigator>
-);
+const MainTabs = () => {
+  const { colors, isDark } = useTheme();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.accentDark,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: { 
+          paddingVertical: 6, 
+          height: 64,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
+        tabBarIcon: ({ color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Feed: 'radio-outline',
+            Groups: 'people-circle-outline',
+            Calendar: 'calendar-outline',
+            Stats: 'stats-chart-outline',
+            Donate: 'hand-left-outline',
+            Profile: 'person-circle-outline',
+          };
+          return <Ionicons name={icons[route.name]} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Feed" component={FeedScreen} />
+      <Tab.Screen name="Groups" component={GroupsScreen} />
+      <Tab.Screen name="Calendar" component={CalendarScreen} />
+      <Tab.Screen name="Stats" component={StatsScreen} />
+      <Tab.Screen name="Donate" component={DonationScreen} options={{ tabBarLabel: 'Support' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+};
 
 export const AppNavigator: React.FC = () => {
-  const { user, initializing } = useAuth();
+  const { user, initializing, bannedReason } = useAuth();
+  const { colors, isDark } = useTheme();
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [hasEverSignedIn, setHasEverSignedIn] = useState<boolean | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  
+  // Create navigation theme based on current theme
+  const navigationTheme: Theme = {
+    dark: isDark,
+    colors: {
+      primary: colors.accent,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.accent,
+    },
+    fonts: DefaultTheme.fonts,
+  };
 
-  // Check onboarding status and sign-in history
+  // Check onboarding status and sign-in history - do this ONCE at startup
   useEffect(() => {
+    let isMounted = true;
+    
     const checkInitialState = async () => {
       try {
         // Validate and repair any corrupted cache data first
@@ -88,20 +121,32 @@ export const AppNavigator: React.FC = () => {
           checkOnboardingComplete(),
           AsyncStorage.getItem(HAS_EVER_SIGNED_IN_KEY),
         ]);
-        setShowOnboarding(!onboardingComplete);
-        setHasEverSignedIn(signedInBefore === 'true');
+        
+        if (isMounted) {
+          setShowOnboarding(!onboardingComplete);
+          setHasEverSignedIn(signedInBefore === 'true');
+          // Small delay to ensure state is settled before showing UI
+          setTimeout(() => {
+            if (isMounted) setIsReady(true);
+          }, 50);
+        }
       } catch (err) {
         console.error('[AppNavigator] Error checking initial state:', err);
-        setShowOnboarding(false);
-        setHasEverSignedIn(false);
+        if (isMounted) {
+          setShowOnboarding(false);
+          setHasEverSignedIn(false);
+          setIsReady(true);
+        }
       }
     };
     checkInitialState();
+    
+    return () => { isMounted = false; };
   }, []);
 
   // Track when user signs in for the first time
   useEffect(() => {
-    if (user && !hasEverSignedIn) {
+    if (user && hasEverSignedIn === false) {
       AsyncStorage.setItem(HAS_EVER_SIGNED_IN_KEY, 'true');
       setHasEverSignedIn(true);
     }
@@ -114,11 +159,11 @@ export const AppNavigator: React.FC = () => {
     };
   }, [user]);
 
-  // Show loading while initializing
-  if (initializing || showOnboarding === null || hasEverSignedIn === null) {
+  // Show loading while initializing - wait for all states to be ready
+  if (initializing || showOnboarding === null || hasEverSignedIn === null || !isReady) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.background }}>
-        <ActivityIndicator size="large" color={palette.accent} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -127,8 +172,26 @@ export const AppNavigator: React.FC = () => {
     return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
   }
 
+  // Show banned screen if user was banned
+  if (bannedReason) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 24 }}>
+        <Ionicons name="ban-outline" size={64} color="#dc2626" />
+        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text, marginTop: 16, textAlign: 'center' }}>
+          Account Suspended
+        </Text>
+        <Text style={{ fontSize: 16, color: colors.muted, marginTop: 12, textAlign: 'center', lineHeight: 24 }}>
+          {bannedReason}
+        </Text>
+        <Text style={{ fontSize: 14, color: colors.muted, marginTop: 24, textAlign: 'center' }}>
+          If you believe this is a mistake, please contact support.
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>
@@ -197,6 +260,26 @@ export const AppNavigator: React.FC = () => {
               name="AdminGlobalStats"
               component={GlobalStatsScreen}
               options={{ headerShown: true, title: 'Global Stats' }}
+            />
+            <Stack.Screen
+              name="AdminBannedUsers"
+              component={BannedUsersScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="NotificationsInbox"
+              component={NotificationsInboxScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Search"
+              component={SearchScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="AnsweredPrayers"
+              component={AnsweredPrayersScreen}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="People"

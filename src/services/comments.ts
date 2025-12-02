@@ -13,10 +13,38 @@ import {
   increment,
   onSnapshot,
   Unsubscribe,
+  Timestamp,
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
 import type { Comment } from '../types';
-import { validateContent } from '../utils/security';
+import { validateContent, checkDailyLimit } from '../utils/security';
+
+// Daily comment limit per user
+const DAILY_COMMENT_LIMIT = 10;
+
+/**
+ * Check how many comments a user has made today
+ */
+const getUserDailyCommentCount = async (authorUid: string): Promise<number> => {
+  if (!firebaseEnabled || !db) return 0;
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startTimestamp = Timestamp.fromDate(startOfDay);
+
+  try {
+    const q = query(
+      collection(db, 'comments'),
+      where('authorUid', '==', authorUid),
+      where('createdAt', '>=', startTimestamp)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.size;
+  } catch (err) {
+    console.warn('Error checking daily comment count:', err);
+    return 0;
+  }
+};
 
 export const addComment = async (
   parentId: string,
@@ -26,6 +54,18 @@ export const addComment = async (
   content: string
 ): Promise<string | null> => {
   if (!firebaseEnabled || !db) return null;
+
+  // Check daily limit (client-side)
+  const dailyCheck = checkDailyLimit(`comments_${authorUid}`, DAILY_COMMENT_LIMIT);
+  if (!dailyCheck.allowed) {
+    throw new Error(`You've reached your daily limit of ${DAILY_COMMENT_LIMIT} comments. Please try again tomorrow.`);
+  }
+
+  // Also verify against Firestore (more accurate)
+  const todayCount = await getUserDailyCommentCount(authorUid);
+  if (todayCount >= DAILY_COMMENT_LIMIT) {
+    throw new Error(`You've reached your daily limit of ${DAILY_COMMENT_LIMIT} comments. Please try again tomorrow.`);
+  }
 
   const validation = validateContent(content, {
     minLength: 1,

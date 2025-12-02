@@ -64,7 +64,7 @@ export type TestimonyEditUpdateData = {
 // ============================================================================
 
 /** After this many prayers, status changes from PENDING to ACTIVE */
-export const PRAYERS_FOR_ACTIVE = 3;
+export const PRAYERS_FOR_ACTIVE = 1;
 
 /** Maximum operations per Firestore batch */
 export const BATCH_SIZE = 500;

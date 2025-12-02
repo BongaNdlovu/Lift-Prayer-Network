@@ -24,6 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { db, firebaseEnabled, storage } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
@@ -34,6 +35,7 @@ import { validateDisplayName, validateEmail } from '../utils/security';
 
 export const ProfileScreen: React.FC = () => {
   const { user, signOut, resendVerification, linkGuestToEmail } = useAuth();
+  const { colors, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [upgradeName, setUpgradeName] = useState('');
@@ -274,10 +276,10 @@ export const ProfileScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerRow}>
-          <Text style={styles.heading}>Profile</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>Profile</Text>
           {user && (
             <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
               <Ionicons name="pencil" size={18} color={palette.accentDark} />
@@ -316,7 +318,7 @@ export const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
             
             <View style={styles.nameRowProfile}>
-              <Text style={styles.displayName}>{user.displayName || 'Guest'}</Text>
+              <Text style={[styles.displayName, { color: colors.text }]}>{user.displayName || 'Guest'}</Text>
               {(() => {
                 const badge = getVerifiedBadge(user.email);
                 const badgeStyle = badge ? BADGE_STYLES[badge.badgeType] : null;
@@ -333,7 +335,7 @@ export const ProfileScreen: React.FC = () => {
                 return null;
               })()}
             </View>
-            <Text style={styles.email}>{user.email || (user.isAnonymous ? 'Guest account' : 'No email')}</Text>
+            <Text style={[styles.email, { color: colors.muted }]}>{user.email || (user.isAnonymous ? 'Guest account' : 'No email')}</Text>
             
             {/* Hint text */}
             <Text style={styles.photoHint}>
@@ -342,28 +344,28 @@ export const ProfileScreen: React.FC = () => {
           </View>
         )}
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.infoRow}>
-            <Ionicons name="person-outline" size={20} color={palette.muted} />
+            <Ionicons name="person-outline" size={20} color={colors.muted} />
             <View style={styles.infoContent}>
-              <Text style={styles.label}>Display Name</Text>
-              <Text style={styles.value}>{user?.displayName || 'Guest'}</Text>
+              <Text style={[styles.label, { color: colors.muted }]}>Display Name</Text>
+              <Text style={[styles.value, { color: colors.text }]}>{user?.displayName || 'Guest'}</Text>
             </View>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.infoRow}>
-            <Ionicons name="mail-outline" size={20} color={palette.muted} />
+            <Ionicons name="mail-outline" size={20} color={colors.muted} />
             <View style={styles.infoContent}>
-              <Text style={styles.label}>Email</Text>
-              <Text style={styles.value}>{user?.email || 'Not set'}</Text>
+              <Text style={[styles.label, { color: colors.muted }]}>Email</Text>
+              <Text style={[styles.value, { color: colors.text }]}>{user?.email || 'Not set'}</Text>
             </View>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.infoRow}>
-            <Ionicons name="shield-checkmark-outline" size={20} color={palette.muted} />
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.muted} />
             <View style={styles.infoContent}>
-              <Text style={styles.label}>Account Type</Text>
-              <Text style={styles.value}>
+              <Text style={[styles.label, { color: colors.muted }]}>Account Type</Text>
+              <Text style={[styles.value, { color: colors.text }]}>
                 {user?.isAnonymous ? 'Guest' : user?.providerData?.[0]?.providerId === 'google.com' ? 'Google' : 'Email'}
               </Text>
             </View>
@@ -469,8 +471,8 @@ export const ProfileScreen: React.FC = () => {
 
       {/* Feature Menu */}
       {user && (
-        <View style={styles.menuCard}>
-          <Text style={styles.menuHeading}>Features</Text>
+        <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.menuHeading, { color: colors.muted }]}>Features</Text>
           
           <TouchableOpacity
             style={styles.menuItem}
@@ -480,10 +482,10 @@ export const ProfileScreen: React.FC = () => {
               <Ionicons name="bookmark" size={20} color="#f59e0b" />
             </View>
             <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>My Prayers</Text>
-              <Text style={styles.menuSubtitle}>View your requests & testimonies</Text>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>My Prayers</Text>
+              <Text style={[styles.menuSubtitle, { color: colors.muted }]}>View your requests & testimonies</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />

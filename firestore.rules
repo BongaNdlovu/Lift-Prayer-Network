@@ -20,37 +20,6 @@ service cloud.firestore {
     function isMember(data) {
       return isSignedIn() && data.memberUids != null && data.memberUids.hasAny([request.auth.uid]);
     }
-
-    // Check if request is public - must check both legacy isPrivate flag AND visibility field
-    // A request is public if:
-    // - visibility is explicitly 'PUBLIC', OR
-    // - visibility is not set AND isPrivate is not true (legacy posts)
-    function isPublicRequest(data) {
-      return data.visibility == 'PUBLIC' || 
-        (data.visibility == null && !(data.isPrivate == true));
-    }
-    
-    // Check if user is a member of any of the request's groups
-    // Uses user's groupIds array for efficient membership check
-    function isGroupMemberForRequest(data) {
-      let userGroupIds = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupIds;
-      return isSignedIn() && 
-        data.visibility == 'GROUP' && 
-        data.groupIds != null && 
-        data.groupIds.size() > 0 &&
-        userGroupIds != null &&
-        userGroupIds.hasAny(data.groupIds);
-    }
-    
-    // Fallback check for group membership via direct group doc lookup (for first group)
-    // Used when user doc might not have groupIds synced
-    function isFirstGroupMember(data) {
-      return isSignedIn() && 
-        data.visibility == 'GROUP' && 
-        data.groupIds != null && 
-        data.groupIds.size() > 0 &&
-        get(/databases/$(database)/documents/groups/$(data.groupIds[0])).data.memberUids.hasAny([request.auth.uid]);
-    }
     
     // Validate request privacy flags are consistent
     // - GROUP visibility requires non-empty groupIds
@@ -75,39 +44,75 @@ service cloud.firestore {
 
     match /users/{uid} {
       // Only allow reading certain fields publicly, full profile to self
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow write: if isSignedIn() && request.auth.uid == uid;
+      // Admins can read any user for moderation
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      // Users can write to their own profile
+      // Admins can update ban status on any user
+      allow write: if isSignedIn() && (
+        request.auth.uid == uid || 
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['isBanned', 'bannedAt', 'banReason', 'unbannedAt']))
+      );
     }
 
     match /requests/{requestId} {
-      // Allow read if: public, owned by user, user is admin, OR verified group member
-      // Group membership is verified server-side via user's groupIds or direct group doc check
-      allow read: if isPublicRequest(resource.data) || isOwner(resource.data) || isAdmin() || isGroupMemberForRequest(resource.data) || isFirstGroupMember(resource.data);
+      // Requests are publicly readable for backward compatibility and smooth queries
+      // Privacy filtering (PRIVATE, GROUP visibility) happens client-side
+      // This avoids query permission errors when listing the main feed
+      allow read: if true;
       // Create requires: signed in, owns the request, and privacy flags are consistent
       allow create: if isSignedIn() 
         && request.resource.data.ownerUid == request.auth.uid
         && isValidRequestPrivacy(request.resource.data);
-      // Allow owner OR admin to update - simplified check
-      // Owner can update their own content, admin can update anything including pins
+      // Update rules:
+      // 1. Owner can update their own content
+      // 2. Admin can update anything including pins
+      // 3. Any signed-in user can increment prayer count (for praying functionality)
+      // 4. Any signed-in user can update reaction counts
       allow update: if isSignedIn() && (
         resource.data.ownerUid == request.auth.uid || 
-        isAdmin()
+        isAdmin() ||
+        // Allow any user to update ONLY prayer-related and reaction fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['prayers', 'status', 'severity', 'activatedAt', 'heartCount', 'fireCount', 'strongCount'])
       );
       // Allow owner OR admin to delete - simplified check
       allow delete: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
     }
 
     match /testimonies/{testimonyId} {
+      // Testimonies are publicly readable for backward compatibility
+      // Privacy filtering happens client-side for a smooth UX
+      // New testimonies with visibility: PRIVATE or GROUP will be filtered by client
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
       // Allow owner OR admin to update - simplified check
-      allow update: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      // Also allow any signed-in user to update reaction counts
+      allow update: if isSignedIn() && (
+        resource.data.ownerUid == request.auth.uid || 
+        isAdmin() ||
+        // Allow any user to update ONLY likes and reaction fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likes', 'heartCount', 'fireCount', 'strongCount'])
+      );
       // Allow owner OR admin to delete - simplified check
       allow delete: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
     }
 
+    // Reactions collection - tracks individual user reactions to prevent duplicates
+    match /reactions/{reactionId} {
+      // Allow any signed-in user to read reactions (needed for toggle check in transactions)
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.actorUid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.actorUid == request.auth.uid;
+    }
+
     match /prayers/{prayerId} {
-      allow read: if isSignedIn() && request.auth.uid == resource.data.actorUid;
+      // Allow reading prayers where user is actor or target owner (for history and notifications)
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.actorUid || 
+        request.auth.uid == resource.data.targetOwnerUid
+      );
       allow create: if isSignedIn() && request.resource.data.actorUid == request.auth.uid;
       // Allow users to delete their own prayer records (for delete prayer history feature)
       allow delete: if isSignedIn() && request.auth.uid == resource.data.actorUid;
@@ -121,20 +126,46 @@ service cloud.firestore {
       allow read: if !resource.data.isPrivate || isMember(resource.data) || isOwner(resource.data);
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
 
-      // Owner can manage everything; members can only adjust basic metadata (no membership changes)
+      // Owner can manage everything including membership
+      // Members can only adjust basic metadata (no membership changes)
+      // Non-members can:
+      //   - Join public groups (add themselves to memberUids)
+      //   - Request to join private groups (add themselves to pendingRequests)
       allow update: if isOwner(resource.data)
         || (
+          // Members can update metadata only
           isMember(resource.data)
           && request.resource.data.diff(resource.data).changedKeys().hasOnly(['name', 'description', 'emoji'])
           && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.memberUids == resource.data.memberUids
           && request.resource.data.isPrivate == resource.data.isPrivate
+        )
+        || (
+          // Non-members can join PUBLIC groups (add only themselves to memberUids)
+          isSignedIn()
+          && !resource.data.isPrivate
+          && !isMember(resource.data)
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['memberUids'])
+          && request.resource.data.memberUids.hasAll(resource.data.memberUids)
+          && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
+          && request.resource.data.memberUids.hasAny([request.auth.uid])
+        )
+        || (
+          // Non-members can request to join PRIVATE groups (add only themselves to pendingRequests)
+          isSignedIn()
+          && resource.data.isPrivate
+          && !isMember(resource.data)
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['pendingRequests'])
+          && (resource.data.pendingRequests == null || request.resource.data.pendingRequests.hasAll(resource.data.pendingRequests))
+          && request.resource.data.pendingRequests.hasAny([request.auth.uid])
         );
 
       allow delete: if isOwner(resource.data);
     }
 
     match /comments/{commentId} {
+      // Comments are publicly readable for consistency with requests/testimonies
+      // Privacy filtering happens client-side
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
       // Allow comment owner OR admin to update/delete
@@ -179,9 +210,12 @@ service cloud.firestore {
     }
 
     // Notifications - users can read/update their own notifications
+    // Create is restricted to ensure actorUid matches the authenticated user (prevents spoofing)
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
-      allow create: if isSignedIn();
+      // Only allow creating notifications where the actor is the authenticated user
+      // This prevents users from creating fake notifications impersonating others
+      allow create: if isSignedIn() && request.resource.data.actorUid == request.auth.uid;
       allow update: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
     }

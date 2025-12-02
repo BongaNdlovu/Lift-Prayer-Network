@@ -7,11 +7,17 @@ const CACHE_KEYS = {
   TESTIMONIES: '@lift_cache_testimonies',
   PENDING_PRAYERS: '@lift_pending_prayers',
   PENDING_REQUESTS: '@lift_pending_requests',
+  PENDING_COMMENTS: '@lift_pending_comments',
+  PENDING_REACTIONS: '@lift_pending_reactions',
   LAST_SYNC: '@lift_last_sync',
+  CURRENT_USER: '@lift_current_user',
 };
 
 // Cache duration in milliseconds (1 hour)
 const CACHE_DURATION = 60 * 60 * 1000;
+
+// TTL for pending actions (24 hours) - actions older than this are discarded
+const PENDING_ACTION_TTL = 24 * 60 * 60 * 1000;
 
 export type PendingPrayer = {
   id: string;
@@ -33,6 +39,33 @@ export type PendingRequest = {
   isUrgent: boolean;
   isPrivate: boolean;
   timestamp: number;
+};
+
+export type PendingComment = {
+  id: string;
+  targetId: string;
+  targetType: 'REQUEST' | 'TESTIMONY';
+  authorUid: string;
+  authorDisplayName: string;
+  content: string;
+  timestamp: number;
+};
+
+export type PendingReaction = {
+  id: string;
+  targetId: string;
+  targetType: 'REQUEST' | 'TESTIMONY';
+  actorUid: string;
+  reactionType: string;
+  timestamp: number;
+};
+
+export type PendingActionCounts = {
+  prayers: number;
+  requests: number;
+  comments: number;
+  reactions: number;
+  total: number;
 };
 
 // Save requests to cache
@@ -256,6 +289,8 @@ export const validateAndRepairCache = async (): Promise<boolean> => {
       CACHE_KEYS.TESTIMONIES,
       CACHE_KEYS.PENDING_PRAYERS,
       CACHE_KEYS.PENDING_REQUESTS,
+      CACHE_KEYS.PENDING_COMMENTS,
+      CACHE_KEYS.PENDING_REACTIONS,
     ];
 
     for (const key of keysToCheck) {
@@ -277,6 +312,266 @@ export const validateAndRepairCache = async (): Promise<boolean> => {
     // If validation fails completely, clear all cache
     await clearAllCache();
     return false;
+  }
+};
+
+// ============================================================================
+// Per-User Pending Actions with TTL
+// ============================================================================
+
+/**
+ * Set the current user ID for scoping pending actions
+ */
+export const setCurrentUser = async (userId: string | null): Promise<void> => {
+  try {
+    if (userId) {
+      await AsyncStorage.setItem(CACHE_KEYS.CURRENT_USER, userId);
+    } else {
+      await AsyncStorage.removeItem(CACHE_KEYS.CURRENT_USER);
+    }
+  } catch (error) {
+    console.error('[OfflineCache] Error setting current user:', getSafeErrorMessage(error));
+  }
+};
+
+/**
+ * Get the current user ID
+ */
+export const getCurrentUser = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem(CACHE_KEYS.CURRENT_USER);
+  } catch (error) {
+    console.error('[OfflineCache] Error getting current user:', getSafeErrorMessage(error));
+    return null;
+  }
+};
+
+/**
+ * Filter out expired pending actions (older than TTL)
+ */
+function filterExpiredActions<T extends { timestamp: number }>(actions: T[]): T[] {
+  const now = Date.now();
+  return actions.filter(action => now - action.timestamp < PENDING_ACTION_TTL);
+}
+
+/**
+ * Filter pending actions to only include those for the current user
+ */
+function filterByUser<T extends { actorUid?: string; authorUid?: string; ownerUid?: string }>(
+  actions: T[],
+  userId: string
+): T[] {
+  return actions.filter(action => 
+    action.actorUid === userId || 
+    action.authorUid === userId || 
+    action.ownerUid === userId
+  );
+}
+
+/**
+ * Clean up expired and orphaned pending actions
+ * Call this on app start and when user signs out
+ */
+export const cleanupPendingActions = async (currentUserId?: string): Promise<void> => {
+  try {
+    // Get all pending actions
+    const [prayers, requests, comments, reactions] = await Promise.all([
+      getPendingPrayers(),
+      getPendingRequests(),
+      getPendingComments(),
+      getPendingReactions(),
+    ]);
+
+    // Filter out expired actions
+    const validPrayers = filterExpiredActions(prayers);
+    const validRequests = filterExpiredActions(requests);
+    const validComments = filterExpiredActions(comments);
+    const validReactions = filterExpiredActions(reactions);
+
+    // If user is specified, also filter to only their actions
+    const finalPrayers = currentUserId ? filterByUser(validPrayers, currentUserId) : validPrayers;
+    const finalRequests = currentUserId ? filterByUser(validRequests, currentUserId) : validRequests;
+    const finalComments = currentUserId ? filterByUser(validComments, currentUserId) : validComments;
+    const finalReactions = currentUserId ? filterByUser(validReactions, currentUserId) : validReactions;
+
+    // Save cleaned up lists
+    await Promise.all([
+      setPendingPrayers(finalPrayers),
+      setPendingRequests(finalRequests),
+      setPendingComments(finalComments),
+      setPendingReactions(finalReactions),
+    ]);
+
+    const removed = 
+      (prayers.length - finalPrayers.length) +
+      (requests.length - finalRequests.length) +
+      (comments.length - finalComments.length) +
+      (reactions.length - finalReactions.length);
+
+    if (removed > 0) {
+      console.log(`[OfflineCache] Cleaned up ${removed} expired/orphaned pending actions`);
+    }
+  } catch (error) {
+    console.error('[OfflineCache] Error cleaning up pending actions:', getSafeErrorMessage(error));
+  }
+};
+
+/**
+ * Clear all pending actions for a specific user (call on sign out)
+ */
+export const clearUserPendingActions = async (userId: string): Promise<void> => {
+  try {
+    const [prayers, requests, comments, reactions] = await Promise.all([
+      getPendingPrayers(),
+      getPendingRequests(),
+      getPendingComments(),
+      getPendingReactions(),
+    ]);
+
+    // Keep only actions from other users
+    const otherPrayers = prayers.filter(p => p.actorUid !== userId);
+    const otherRequests = requests.filter(r => r.ownerUid !== userId);
+    const otherComments = comments.filter(c => c.authorUid !== userId);
+    const otherReactions = reactions.filter(r => r.actorUid !== userId);
+
+    await Promise.all([
+      setPendingPrayers(otherPrayers),
+      setPendingRequests(otherRequests),
+      setPendingComments(otherComments),
+      setPendingReactions(otherReactions),
+    ]);
+
+    console.log(`[OfflineCache] Cleared pending actions for user ${userId}`);
+  } catch (error) {
+    console.error('[OfflineCache] Error clearing user pending actions:', getSafeErrorMessage(error));
+  }
+};
+
+// ============================================================================
+// Pending Comments
+// ============================================================================
+
+export const queuePendingComment = async (comment: Omit<PendingComment, 'id' | 'timestamp'>): Promise<void> => {
+  try {
+    const existing = await AsyncStorage.getItem(CACHE_KEYS.PENDING_COMMENTS);
+    const comments: PendingComment[] = existing ? JSON.parse(existing) : [];
+    
+    comments.push({
+      ...comment,
+      id: `pending_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      timestamp: Date.now(),
+    });
+    
+    await AsyncStorage.setItem(CACHE_KEYS.PENDING_COMMENTS, JSON.stringify(comments));
+    console.log('[OfflineCache] Comment queued for sync');
+  } catch (error) {
+    console.error('[OfflineCache] Error queuing comment:', getSafeErrorMessage(error));
+  }
+};
+
+export const getPendingComments = async (): Promise<PendingComment[]> => {
+  try {
+    const pending = await AsyncStorage.getItem(CACHE_KEYS.PENDING_COMMENTS);
+    if (pending) {
+      return JSON.parse(pending);
+    }
+  } catch (error) {
+    console.error('[OfflineCache] Error reading pending comments:', getSafeErrorMessage(error));
+  }
+  return [];
+};
+
+export const setPendingComments = async (comments: PendingComment[]): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(CACHE_KEYS.PENDING_COMMENTS, JSON.stringify(comments));
+  } catch (error) {
+    console.error('[OfflineCache] Error saving pending comments:', getSafeErrorMessage(error));
+  }
+};
+
+export const clearPendingComments = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(CACHE_KEYS.PENDING_COMMENTS);
+  } catch (error) {
+    console.error('[OfflineCache] Error clearing pending comments:', getSafeErrorMessage(error));
+  }
+};
+
+// ============================================================================
+// Pending Reactions
+// ============================================================================
+
+export const queuePendingReaction = async (reaction: Omit<PendingReaction, 'id' | 'timestamp'>): Promise<void> => {
+  try {
+    const existing = await AsyncStorage.getItem(CACHE_KEYS.PENDING_REACTIONS);
+    const reactions: PendingReaction[] = existing ? JSON.parse(existing) : [];
+    
+    reactions.push({
+      ...reaction,
+      id: `pending_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      timestamp: Date.now(),
+    });
+    
+    await AsyncStorage.setItem(CACHE_KEYS.PENDING_REACTIONS, JSON.stringify(reactions));
+    console.log('[OfflineCache] Reaction queued for sync');
+  } catch (error) {
+    console.error('[OfflineCache] Error queuing reaction:', getSafeErrorMessage(error));
+  }
+};
+
+export const getPendingReactions = async (): Promise<PendingReaction[]> => {
+  try {
+    const pending = await AsyncStorage.getItem(CACHE_KEYS.PENDING_REACTIONS);
+    if (pending) {
+      return JSON.parse(pending);
+    }
+  } catch (error) {
+    console.error('[OfflineCache] Error reading pending reactions:', getSafeErrorMessage(error));
+  }
+  return [];
+};
+
+export const setPendingReactions = async (reactions: PendingReaction[]): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(CACHE_KEYS.PENDING_REACTIONS, JSON.stringify(reactions));
+  } catch (error) {
+    console.error('[OfflineCache] Error saving pending reactions:', getSafeErrorMessage(error));
+  }
+};
+
+export const clearPendingReactions = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(CACHE_KEYS.PENDING_REACTIONS);
+  } catch (error) {
+    console.error('[OfflineCache] Error clearing pending reactions:', getSafeErrorMessage(error));
+  }
+};
+
+// ============================================================================
+// Pending Action Counts (for UI display)
+// ============================================================================
+
+export const getPendingActionCounts = async (): Promise<PendingActionCounts> => {
+  try {
+    const [prayers, requests, comments, reactions] = await Promise.all([
+      getPendingPrayers(),
+      getPendingRequests(),
+      getPendingComments(),
+      getPendingReactions(),
+    ]);
+
+    const counts = {
+      prayers: prayers.length,
+      requests: requests.length,
+      comments: comments.length,
+      reactions: reactions.length,
+      total: prayers.length + requests.length + comments.length + reactions.length,
+    };
+
+    return counts;
+  } catch (error) {
+    console.error('[OfflineCache] Error getting pending action counts:', getSafeErrorMessage(error));
+    return { prayers: 0, requests: 0, comments: 0, reactions: 0, total: 0 };
   }
 };
 

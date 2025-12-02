@@ -7,14 +7,16 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import { useFeed } from '../../hooks/useFeed';
-import { logPrayer, pinRequest, unpinRequest } from '../../services/prayers';
+import { logPrayer, logReaction, likeTestimony, pinRequest, unpinRequest } from '../../services/prayers';
+import type { ReactionType } from '../../services/prayers';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { FeedCard } from '../../components/FeedCard';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { Confetti } from '../../components/Confetti';
 import { queuePendingPrayer } from '../../services/offlineCache';
 import { subscribeToUserGroups } from '../../services/groups';
-import { palette, radius, spacing } from '../../theme/colors';
+import { radius, spacing } from '../../theme/colors';
 import type { FeedItem, PrayerCategory } from '../../types';
 import { PRAYER_CATEGORIES } from '../../types';
 import type { RootStackParamList } from '../../navigation/types';
@@ -23,6 +25,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 export const FeedScreen: React.FC = () => {
   const [mode, setMode] = useState<'REQUEST' | 'TESTIMONY'>('REQUEST');
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   
   // Subscribe to user's groups for proper feed filtering
@@ -128,6 +131,8 @@ export const FeedScreen: React.FC = () => {
       if (!result.success) {
         if (result.alreadyPrayed) {
           Alert.alert('Already Prayed', 'You have already prayed for this request. Thank you for your prayer! 🙏');
+        } else if (result.isSelfPrayer) {
+          Alert.alert('Your Request', 'You cannot pray on your own request. Share it with others to receive prayers!');
         } else {
           Alert.alert('Unable to pray', result.error || 'Please try again.');
         }
@@ -138,26 +143,46 @@ export const FeedScreen: React.FC = () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch { /* ignore */ }
         }
-        
-        // If self-prayer, send a local notification as confirmation
-        if (result.isSelfPrayer && Platform.OS !== 'web') {
-          try {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: '🙏 Prayer Recorded',
-                body: 'Your prayer for your own request has been recorded. Keep praying!',
-                sound: true,
-              },
-              trigger: null, // Show immediately
-            });
-          } catch (e) {
-            console.warn('[FeedScreen] Could not send self-prayer notification:', e);
-          }
-        }
+        // Refresh the feed to show updated prayer count and status
+        refresh();
       }
     } catch (err: any) {
       console.error('[FeedScreen] Prayer error:', err);
       Alert.alert('Unable to pray', err.message ?? 'An unexpected error occurred. Please try again.');
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  const handleLike = async (id: string) => {
+    if (!user) {
+      Alert.alert('Sign in required', 'Create an account or continue as guest to react.');
+      return;
+    }
+    
+    setBusyIds((prev) => new Set(prev).add(id));
+    try {
+      const result = await likeTestimony(user.uid, id);
+      
+      if (!result.success) {
+        Alert.alert('Unable to react', result.error || 'Please try again.');
+      } else {
+        // Success! Provide haptic feedback
+        if (Platform.OS !== 'web') {
+          try {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch { /* ignore */ }
+        }
+        // Refresh to show updated count
+        refresh();
+      }
+    } catch (err: any) {
+      console.error('[FeedScreen] Like error:', err);
+      Alert.alert('Unable to react', err.message ?? 'An unexpected error occurred. Please try again.');
     } finally {
       setBusyIds((prev) => {
         const next = new Set(prev);
@@ -212,6 +237,36 @@ export const FeedScreen: React.FC = () => {
     }
   };
 
+  const handleReact = async (id: string, reactionType: ReactionType) => {
+    if (!user) {
+      Alert.alert('Sign in required', 'Create an account to react to prayers.');
+      return;
+    }
+    
+    const target = items.find((i) => i.id === id);
+    if (!target) return;
+
+    try {
+      const result = await logReaction(
+        user.uid,
+        id,
+        target.type,
+        reactionType
+      );
+      
+      if (result.success) {
+        // Refresh to show updated counts
+        refresh();
+      } else {
+        console.error('[FeedScreen] Reaction failed:', result.error);
+        Alert.alert('Error', result.error || 'Could not save reaction');
+      }
+    } catch (err: any) {
+      console.error('[FeedScreen] Reaction error:', err);
+      Alert.alert('Error', 'Could not save reaction. Please try again.');
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     
@@ -230,10 +285,15 @@ export const FeedScreen: React.FC = () => {
     }
   };
 
+  // Dynamic gradient colors based on theme
+  const gradientColors = isDark 
+    ? (colors.screenGradient as unknown as [string, string, string])
+    : ['#fefce8', '#f4f4f5', '#ffffff'] as [string, string, string];
+
   return (
-    <LinearGradient colors={['#fefce8', '#f4f4f5']} style={{ flex: 1 }}>
+    <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         {offline && (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineText}>Offline — viewing cached data</Text>
@@ -241,16 +301,22 @@ export const FeedScreen: React.FC = () => {
         )}
         <View style={styles.topRow}>
           <View style={styles.topRowLeft}>
-            <Text style={styles.kicker}>Live Network</Text>
+            <Text style={[styles.kicker, { color: colors.muted }]}>Live Network</Text>
             <View style={styles.headingRow}>
-              <Text style={styles.heading}>Lift</Text>
-              {/* Discreet donate shortcut */}
-              <TouchableOpacity 
-                style={styles.donateHint} 
-                onPress={() => navigation.navigate('Donation')}
-                activeOpacity={0.7}
+              <Text style={[styles.heading, { color: colors.text }]}>Lift</Text>
+              {/* Notification Bell */}
+              <TouchableOpacity
+                style={[styles.notificationBell, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }]}
+                onPress={() => navigation.navigate('NotificationsInbox')}
               >
-                <Ionicons name="heart" size={14} color="#ec4899" />
+                <Ionicons name="notifications-outline" size={22} color={colors.text} />
+              </TouchableOpacity>
+              {/* Search Button */}
+              <TouchableOpacity
+                style={[styles.searchButton, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }]}
+                onPress={() => navigation.navigate('Search')}
+              >
+                <Ionicons name="search-outline" size={22} color={colors.text} />
               </TouchableOpacity>
             </View>
           </View>
@@ -277,35 +343,18 @@ export const FeedScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.modeSwitch}>
+        <View style={[styles.modeSwitch, { backgroundColor: colors.surfaceSecondary }]}>
           {(['REQUEST', 'TESTIMONY'] as const).map((m) => (
             <TouchableOpacity
               key={m}
-              style={[styles.modeButton, mode === m && styles.modeButtonActive]}
+              style={[styles.modeButton, mode === m && [styles.modeButtonActive, { backgroundColor: colors.surface }]]}
               onPress={() => setMode(m)}
             >
-              <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
+              <Text style={[styles.modeText, { color: colors.muted }, mode === m && { color: colors.text }]}>
                 {m === 'REQUEST' ? 'Prayer Requests' : 'Answered Prayers'}
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={palette.muted} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search prayers or people..."
-            placeholderTextColor={palette.muted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-              <Ionicons name="close-circle" size={18} color={palette.muted} />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Category Filter */}
@@ -317,21 +366,21 @@ export const FeedScreen: React.FC = () => {
             contentContainerStyle={styles.categoryContainer}
           >
             <TouchableOpacity
-              style={[styles.categoryChip, selectedCategory === 'all' && styles.categoryChipActive]}
+              style={[styles.categoryChip, { backgroundColor: colors.surface, borderColor: colors.border }, selectedCategory === 'all' && styles.categoryChipActive]}
               onPress={() => setSelectedCategory('all')}
             >
-              <Text style={[styles.categoryText, selectedCategory === 'all' && styles.categoryTextActive]}>
+              <Text style={[styles.categoryText, { color: colors.muted }, selectedCategory === 'all' && styles.categoryTextActive]}>
                 All
               </Text>
             </TouchableOpacity>
             {PRAYER_CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat.id}
-                style={[styles.categoryChip, selectedCategory === cat.id && styles.categoryChipActive]}
+                style={[styles.categoryChip, { backgroundColor: colors.surface, borderColor: colors.border }, selectedCategory === cat.id && styles.categoryChipActive]}
                 onPress={() => setSelectedCategory(selectedCategory === cat.id ? 'all' : cat.id)}
               >
                 <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-                <Text style={[styles.categoryText, selectedCategory === cat.id && styles.categoryTextActive]}>
+                <Text style={[styles.categoryText, { color: colors.muted }, selectedCategory === cat.id && styles.categoryTextActive]}>
                   {cat.label}
                 </Text>
               </TouchableOpacity>
@@ -375,14 +424,14 @@ export const FeedScreen: React.FC = () => {
           ) : filteredItems.length === 0 && !error ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>{mode === 'REQUEST' ? '🙏' : '✨'}</Text>
-              <Text style={styles.emptyTitle}>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
                 {searchQuery || selectedCategory !== 'all' 
                   ? 'No matching prayers found'
                   : mode === 'REQUEST' 
                     ? 'No prayer requests yet' 
                     : 'No testimonies yet'}
               </Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                 {searchQuery || selectedCategory !== 'all'
                   ? 'Try adjusting your filters'
                   : mode === 'REQUEST'
@@ -398,6 +447,8 @@ export const FeedScreen: React.FC = () => {
                 <FeedCard
                   item={item}
                   onPray={handlePray}
+                  onLike={handleLike}
+                  onReact={handleReact}
                   disabled={busyIds.has(item.id)}
                   onPress={handleOpen}
                   onEdit={handleEdit}
@@ -426,7 +477,7 @@ export const FeedScreen: React.FC = () => {
                   colors={['#f59e0b', '#eab308', '#d97706']}
                   tintColor="#f59e0b"
                   title="Refreshing prayers..."
-                  titleColor={palette.muted}
+                  titleColor={colors.muted}
                   progressBackgroundColor="#fef3c7"
                 />
               }
@@ -435,7 +486,7 @@ export const FeedScreen: React.FC = () => {
 
         {/* Floating Action Button */}
         <TouchableOpacity
-          style={[styles.fab, mode === 'TESTIMONY' && styles.fabTestimony]}
+          style={[styles.fab, { backgroundColor: colors.accent }, mode === 'TESTIMONY' && styles.fabTestimony]}
           onPress={navigateToCreate}
           activeOpacity={0.8}
         >
@@ -471,7 +522,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   kicker: {
-    color: palette.muted,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
     fontSize: 11,
@@ -485,17 +535,24 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 28,
     fontWeight: '900',
-    color: palette.text,
     letterSpacing: -0.5,
   },
-  donateHint: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#fce7f3',
+  notificationBell: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f1f5f9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginLeft: spacing.sm,
+  },
+  searchButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statPill: {
     backgroundColor: '#fff7d6',
@@ -533,8 +590,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   modeButtonActive: {
-    backgroundColor: '#fff',
-    shadowColor: palette.shadow,
+    shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
@@ -543,20 +599,14 @@ const styles = StyleSheet.create({
   modeText: {
     fontSize: 15,
     fontWeight: '700',
-    color: palette.muted,
-  },
-  modeTextActive: {
-    color: palette.text,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     marginBottom: spacing.xs,
     borderWidth: 1,
-    borderColor: palette.border,
     minHeight: 36,
   },
   searchIcon: {
@@ -566,7 +616,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.xs,
     fontSize: 13,
-    color: palette.text,
   },
   clearButton: {
     padding: spacing.xs,
@@ -583,18 +632,16 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: palette.border,
     gap: 3,
     minHeight: 28,
   },
   categoryChipActive: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
+    backgroundColor: '#eab308',
+    borderColor: '#eab308',
   },
   categoryEmoji: {
     fontSize: 12,
@@ -602,7 +649,6 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     fontWeight: '600',
-    color: palette.muted,
   },
   categoryTextActive: {
     color: '#1f2937',
@@ -677,13 +723,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -708,7 +752,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: palette.accent,
+    backgroundColor: '#eab308',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#f59e0b',

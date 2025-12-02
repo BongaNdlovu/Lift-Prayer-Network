@@ -23,6 +23,8 @@ import { auth, firebaseEnabled, db } from '../services/firebase';
 import { ensureUserProfile, syncOnboardingData, type OnboardingAnswers } from '../services/userProfile';
 import { clearAllCache, getCacheStats } from '../services/offlineCache';
 import { cleanupUserData } from '../services/userCleanup';
+import { checkUserBanned } from '../services/moderation';
+import { registerForPushNotifications, storePushToken, setupNotificationHandler } from '../services/notifications';
 
 const ONBOARDING_ANSWERS_KEY = '@lift_onboarding_answers';
 
@@ -77,6 +79,7 @@ const getAuthErrorMessage = (error: AuthError): string => {
 type AuthContextValue = {
   user: User | null;
   initializing: boolean;
+  bannedReason: string | null;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (displayName: string, email: string, password: string) => Promise<UserCredential>;
   signInGuest: () => Promise<UserCredential>;
@@ -92,6 +95,9 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [bannedReason, setBannedReason] = useState<string | null>(null);
+  // Track if we just completed signup to avoid duplicate ensureUserProfile calls
+  const justSignedUp = React.useRef(false);
 
   // Sync onboarding data to user profile
   const syncOnboardingToProfile = useCallback(async (user: User) => {
@@ -118,12 +124,51 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     console.log('[Auth] Setting up auth state listener');
     const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
       console.log('[Auth] Auth state changed:', nextUser?.email || 'No user');
+      
+      // Check if user is banned before allowing access
+      if (nextUser) {
+        try {
+          const banStatus = await checkUserBanned(nextUser.uid);
+          if (banStatus.isBanned) {
+            console.log('[Auth] User is banned, signing out');
+            // Set the ban reason so UI can show message
+            setBannedReason(banStatus.reason || 'You have been banned from this app for violating community guidelines.');
+            // Sign out the banned user
+            if (auth) await firebaseSignOut(auth);
+            setUser(null);
+            setInitializing(false);
+            return; // Don't proceed further
+          } else {
+            // Clear any previous ban reason
+            setBannedReason(null);
+          }
+        } catch (err: any) {
+          console.warn('[Auth] Error checking ban status:', err);
+        }
+      }
+      
       setUser(nextUser);
       if (nextUser) {
         try {
-          await ensureUserProfile(nextUser);
+          // Skip ensureUserProfile if we just signed up (it was already called in signUp)
+          if (!justSignedUp.current) {
+            await ensureUserProfile(nextUser);
+          }
+          justSignedUp.current = false;
           // Sync onboarding data to user profile (if they completed onboarding before signing in)
           await syncOnboardingToProfile(nextUser);
+          
+          // Auto-register push notifications for all signed-in users
+          try {
+            setupNotificationHandler();
+            const registration = await registerForPushNotifications();
+            if (registration.status === 'granted' && registration.expoPushToken) {
+              await storePushToken(nextUser.uid, registration.expoPushToken, registration.devicePushToken);
+              console.log('[Auth] Push token registered automatically');
+            }
+          } catch (pushErr) {
+            console.warn('[Auth] Could not register push token:', pushErr);
+          }
         } catch (err) {
           console.error('[Auth] Error ensuring user profile:', err);
         }
@@ -182,6 +227,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     try {
       console.log('[Auth] Attempting sign up for:', trimmedEmail);
+      
+      // Mark that we're signing up to avoid duplicate ensureUserProfile in auth listener
+      justSignedUp.current = true;
+      
       const credential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       
       // Update display name
@@ -202,6 +251,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       return credential;
     } catch (error) {
       console.error('[Auth] Sign up error:', error);
+      justSignedUp.current = false; // Reset on error
       throw new Error(getAuthErrorMessage(error as AuthError));
     }
   }, []);
@@ -319,6 +369,9 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }
 
     try {
+      // Mark that we're linking account to avoid duplicate profile update
+      justSignedUp.current = true;
+      
       const credential = EmailAuthProvider.credential(trimmedEmail, password);
       const result = await linkWithCredential(auth.currentUser, credential);
       
@@ -335,6 +388,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       return result;
     } catch (error) {
       console.error('[Auth] Link guest account error:', error);
+      justSignedUp.current = false; // Reset on error
       throw new Error(getAuthErrorMessage(error as AuthError));
     }
   }, []);
@@ -369,6 +423,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     () => ({
       user,
       initializing,
+      bannedReason,
       signIn,
       signUp,
       signInGuest,
@@ -378,7 +433,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       linkGuestToEmail,
       deleteAccount,
     }),
-    [user, initializing, signIn, signUp, signInGuest, signOut, resetPassword, resendVerification, linkGuestToEmail, deleteAccount]
+    [user, initializing, bannedReason, signIn, signUp, signInGuest, signOut, resetPassword, resendVerification, linkGuestToEmail, deleteAccount]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

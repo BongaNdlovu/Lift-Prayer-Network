@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 
 // Bank Details
@@ -27,6 +28,7 @@ const BANK_DETAILS = {
 
 const DonationScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string, fieldName: string) => {
@@ -64,9 +66,9 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={['#fefce8', '#f5f3ff', '#fef3c7']}
+        colors={isDark ? ['#1a1a1a', '#2d2d2d', '#1f1f1f'] : ['#fefce8', '#f5f3ff', '#fef3c7']}
         style={styles.gradient}
       >
         {/* Header */}
@@ -75,9 +77,9 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color={palette.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Support Lift</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Support Lift</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -91,23 +93,23 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
             <View style={styles.heartContainer}>
               <Text style={styles.heartEmoji}>💝</Text>
             </View>
-            <Text style={styles.heroTitle}>Help Keep Lift Running</Text>
-            <Text style={styles.heroSubtitle}>
+            <Text style={[styles.heroTitle, { color: colors.text }]}>Help Keep Lift Running</Text>
+            <Text style={[styles.heroSubtitle, { color: colors.muted }]}>
               Your donation helps us maintain and improve the app for our prayer community
             </Text>
           </View>
 
           {/* Why Donate Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Why Your Support Matters</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Why Your Support Matters</Text>
             
             <View style={styles.reasonCard}>
               <View style={styles.reasonIcon}>
-                <Ionicons name="server-outline" size={24} color="#3b82f6" />
+                <Ionicons name="server-outline" size={24} color={colors.accent} />
               </View>
               <View style={styles.reasonContent}>
-                <Text style={styles.reasonTitle}>Server & Infrastructure</Text>
-                <Text style={styles.reasonText}>
+                <Text style={[styles.reasonTitle, { color: colors.text }]}>Server & Infrastructure</Text>
+                <Text style={[styles.reasonText, { color: colors.muted }]}>
                   Keeping our servers running 24/7 so you can always access your prayers and connect with others
                 </Text>
               </View>
@@ -115,11 +117,11 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
 
             <View style={styles.reasonCard}>
               <View style={styles.reasonIcon}>
-                <Ionicons name="construct-outline" size={24} color="#22c55e" />
+                <Ionicons name="construct-outline" size={24} color={colors.success} />
               </View>
               <View style={styles.reasonContent}>
-                <Text style={styles.reasonTitle}>App Development</Text>
-                <Text style={styles.reasonText}>
+                <Text style={[styles.reasonTitle, { color: colors.text }]}>App Development</Text>
+                <Text style={[styles.reasonText, { color: colors.muted }]}>
                   Continuous improvements, new features, and bug fixes to make your experience better
                 </Text>
               </View>
@@ -127,11 +129,11 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
 
             <View style={styles.reasonCard}>
               <View style={styles.reasonIcon}>
-                <Ionicons name="shield-checkmark-outline" size={24} color="#8b5cf6" />
+                <Ionicons name="shield-checkmark-outline" size={24} color={colors.accent} />
               </View>
               <View style={styles.reasonContent}>
-                <Text style={styles.reasonTitle}>Security & Privacy</Text>
-                <Text style={styles.reasonText}>
+                <Text style={[styles.reasonTitle, { color: colors.text }]}>Security & Privacy</Text>
+                <Text style={[styles.reasonText, { color: colors.muted }]}>
                   Maintaining secure infrastructure to protect your personal data and prayer requests
                 </Text>
               </View>
@@ -139,11 +141,11 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
 
             <View style={styles.reasonCard}>
               <View style={styles.reasonIcon}>
-                <Ionicons name="people-outline" size={24} color="#f59e0b" />
+                <Ionicons name="people-outline" size={24} color={colors.accent} />
               </View>
               <View style={styles.reasonContent}>
-                <Text style={styles.reasonTitle}>Growing Community</Text>
-                <Text style={styles.reasonText}>
+                <Text style={[styles.reasonTitle, { color: colors.text }]}>Growing Community</Text>
+                <Text style={[styles.reasonText, { color: colors.muted }]}>
                   Supporting more users as our prayer community grows and reaches more people
                 </Text>
               </View>
@@ -152,8 +154,8 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
 
           {/* How to Donate Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>How to Donate</Text>
-            <Text style={styles.sectionSubtitle}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>How to Donate</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>
               You can support us through EFT, bank deposit, or any other banking method
             </Text>
 
@@ -164,8 +166,8 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
                   <Text style={styles.bankLogo}>🏦</Text>
                 </View>
                 <View>
-                  <Text style={styles.bankName}>{BANK_DETAILS.bankName}</Text>
-                  <Text style={styles.accountType}>{BANK_DETAILS.accountType}</Text>
+                  <Text style={[styles.bankName, { color: colors.text }]}> {BANK_DETAILS.bankName}</Text>
+                  <Text style={[styles.accountType, { color: colors.text }]}>{BANK_DETAILS.accountType}</Text>
                 </View>
               </View>
 
@@ -176,14 +178,14 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
                   onPress={() => copyToClipboard(BANK_DETAILS.accountHolder, 'Account Holder')}
                 >
                   <View style={styles.detailInfo}>
-                    <Text style={styles.detailLabel}>Account Holder</Text>
-                    <Text style={styles.detailValue}>{BANK_DETAILS.accountHolder}</Text>
+                    <Text style={[styles.detailLabel, { color: colors.muted }]}>Account Holder</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>{BANK_DETAILS.accountHolder}</Text>
                   </View>
                   <View style={[styles.copyButton, copiedField === 'Account Holder' && styles.copyButtonCopied]}>
                     <Ionicons 
                       name={copiedField === 'Account Holder' ? 'checkmark' : 'copy-outline'} 
                       size={18} 
-                      color={copiedField === 'Account Holder' ? '#22c55e' : palette.muted} 
+                      color={copiedField === 'Account Holder' ? colors.success : colors.muted} 
                     />
                   </View>
                 </TouchableOpacity>
@@ -194,14 +196,14 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
                   onPress={() => copyToClipboard(BANK_DETAILS.accountNumber, 'Account Number')}
                 >
                   <View style={styles.detailInfo}>
-                    <Text style={styles.detailLabel}>Account Number</Text>
-                    <Text style={styles.detailValueLarge}>{BANK_DETAILS.accountNumber}</Text>
+                    <Text style={[styles.detailLabel, { color: colors.muted }]}>Account Number</Text>
+                    <Text style={[styles.detailValueLarge, { color: colors.text }]}>{BANK_DETAILS.accountNumber}</Text>
                   </View>
                   <View style={[styles.copyButton, copiedField === 'Account Number' && styles.copyButtonCopied]}>
                     <Ionicons 
                       name={copiedField === 'Account Number' ? 'checkmark' : 'copy-outline'} 
                       size={18} 
-                      color={copiedField === 'Account Number' ? '#22c55e' : palette.muted} 
+                      color={copiedField === 'Account Number' ? colors.success : colors.muted} 
                     />
                   </View>
                 </TouchableOpacity>
@@ -212,14 +214,14 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
                   onPress={() => copyToClipboard(BANK_DETAILS.branchCode, 'Branch Code')}
                 >
                   <View style={styles.detailInfo}>
-                    <Text style={styles.detailLabel}>Branch Code</Text>
-                    <Text style={styles.detailValue}>{BANK_DETAILS.branchCode}</Text>
+                    <Text style={[styles.detailLabel, { color: colors.muted }]}>Branch Code</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>{BANK_DETAILS.branchCode}</Text>
                   </View>
                   <View style={[styles.copyButton, copiedField === 'Branch Code' && styles.copyButtonCopied]}>
                     <Ionicons 
                       name={copiedField === 'Branch Code' ? 'checkmark' : 'copy-outline'} 
                       size={18} 
-                      color={copiedField === 'Branch Code' ? '#22c55e' : palette.muted} 
+                      color={copiedField === 'Branch Code' ? colors.success : colors.muted} 
                     />
                   </View>
                 </TouchableOpacity>
@@ -230,14 +232,14 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
                   onPress={() => copyToClipboard(BANK_DETAILS.bankName, 'Bank Name')}
                 >
                   <View style={styles.detailInfo}>
-                    <Text style={styles.detailLabel}>Bank</Text>
-                    <Text style={styles.detailValue}>{BANK_DETAILS.bankName}</Text>
+                    <Text style={[styles.detailLabel, { color: colors.muted }]}>Bank</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>{BANK_DETAILS.bankName}</Text>
                   </View>
                   <View style={[styles.copyButton, copiedField === 'Bank Name' && styles.copyButtonCopied]}>
                     <Ionicons 
                       name={copiedField === 'Bank Name' ? 'checkmark' : 'copy-outline'} 
                       size={18} 
-                      color={copiedField === 'Bank Name' ? '#22c55e' : palette.muted} 
+                      color={copiedField === 'Bank Name' ? colors.success : colors.muted} 
                     />
                   </View>
                 </TouchableOpacity>
@@ -245,31 +247,31 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
 
               {/* Copy All Button */}
               <TouchableOpacity style={styles.copyAllButton} onPress={copyAllDetails}>
-                <Ionicons name="clipboard-outline" size={18} color="#1f2937" />
-                <Text style={styles.copyAllText}>Copy All Details</Text>
+                <Ionicons name="clipboard-outline" size={18} color={colors.text} />
+                <Text style={[styles.copyAllText, { color: colors.text }]}>Copy All Details</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Payment Methods */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Accepted Payment Methods</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Accepted Payment Methods</Text>
             <View style={styles.methodsGrid}>
               <View style={styles.methodCard}>
-                <Ionicons name="swap-horizontal" size={24} color="#3b82f6" />
-                <Text style={styles.methodText}>EFT Transfer</Text>
+                <Ionicons name="swap-horizontal" size={24} color={colors.accent} />
+                <Text style={[styles.methodText, { color: colors.text }]}>EFT Transfer</Text>
               </View>
               <View style={styles.methodCard}>
-                <Ionicons name="business" size={24} color="#22c55e" />
-                <Text style={styles.methodText}>Bank Deposit</Text>
+                <Ionicons name="business" size={24} color={colors.success} />
+                <Text style={[styles.methodText, { color: colors.text }]}>Bank Deposit</Text>
               </View>
               <View style={styles.methodCard}>
-                <Ionicons name="phone-portrait" size={24} color="#8b5cf6" />
-                <Text style={styles.methodText}>Mobile Banking</Text>
+                <Ionicons name="phone-portrait" size={24} color={colors.accent} />
+                <Text style={[styles.methodText, { color: colors.text }]}>Mobile Banking</Text>
               </View>
               <View style={styles.methodCard}>
-                <Ionicons name="card" size={24} color="#f59e0b" />
-                <Text style={styles.methodText}>Internet Banking</Text>
+                <Ionicons name="card" size={24} color={colors.accent} />
+                <Text style={[styles.methodText, { color: colors.text }]}>Internet Banking</Text>
               </View>
             </View>
           </View>
@@ -277,15 +279,15 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
           {/* Thank You Section */}
           <View style={styles.thankYouSection}>
             <Text style={styles.thankYouEmoji}>🙏</Text>
-            <Text style={styles.thankYouTitle}>Thank You</Text>
-            <Text style={styles.thankYouText}>
+            <Text style={[styles.thankYouTitle, { color: colors.text }]}>Thank You</Text>
+            <Text style={[styles.thankYouText, { color: colors.muted }]}>
               Every donation, no matter the size, helps keep this prayer community running. 
               We are deeply grateful for your support and generosity.
             </Text>
-            <Text style={styles.thankYouVerse}>
+            <Text style={[styles.thankYouVerse, { color: colors.text }]}>
               &quot;Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver.&quot;
             </Text>
-            <Text style={styles.verseReference}>— 2 Corinthians 9:7</Text>
+            <Text style={[styles.verseReference, { color: colors.muted }]}>— 2 Corinthians 9:7</Text>
           </View>
 
           <View style={{ height: 40 }} />
@@ -310,13 +312,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: palette.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -344,7 +345,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
   },
   reasonCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -402,7 +401,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#f8fafc',
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -422,7 +421,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   bankCard: {
-    backgroundColor: '#fff',
     borderRadius: radius.lg,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -435,13 +433,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.lg,
-    backgroundColor: '#16a34a',
+    backgroundColor: palette.success,
   },
   bankLogoContainer: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -452,7 +449,6 @@ const styles = StyleSheet.create({
   bankName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#fff',
   },
   accountType: {
     fontSize: 14,
@@ -468,7 +464,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: palette.border,
   },
   detailRowLast: {
     borderBottomWidth: 0,
@@ -498,12 +494,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f8fafc',
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   copyButtonCopied: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: palette.successLight,
   },
   copyAllButton: {
     flexDirection: 'row',
@@ -517,9 +513,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   copyAllText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#1f2937',
   },
   methodsGrid: {
     flexDirection: 'row',
@@ -528,7 +523,6 @@ const styles = StyleSheet.create({
   },
   methodCard: {
     width: '48%',
-    backgroundColor: '#fff',
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',

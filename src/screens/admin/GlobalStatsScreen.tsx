@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
 import { hasAdminPermission } from '../../config/admins';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
 
 type GlobalStats = {
@@ -15,6 +16,7 @@ type GlobalStats = {
 
 export const GlobalStatsScreen: React.FC = () => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [stats, setStats] = useState<GlobalStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,37 +48,37 @@ export const GlobalStatsScreen: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="shield" size={32} color={palette.muted} />
-        <Text style={styles.denied}>Admin access required</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Ionicons name="shield" size={32} color={colors.muted} />
+        <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={palette.accent} />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Global Prayer Activity</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Global Prayer Activity</Text>
         <View style={styles.row}>
-          <View style={styles.metric}>
-            <Text style={styles.metricLabel}>Total Requests</Text>
-            <Text style={styles.metricValue}>{stats?.totalRequests ?? 0}</Text>
+          <View style={[styles.metric, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.metricLabel, { color: colors.muted }]}>Total Requests</Text>
+            <Text style={[styles.metricValue, { color: colors.text }]}>{stats?.totalRequests ?? 0}</Text>
           </View>
-          <View style={styles.metric}>
-            <Text style={styles.metricLabel}>Total Prayers</Text>
-            <Text style={styles.metricValue}>{stats?.totalPrayers ?? 0}</Text>
+          <View style={[styles.metric, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.metricLabel, { color: colors.muted }]}>Total Prayers</Text>
+            <Text style={[styles.metricValue, { color: colors.text }]}>{stats?.totalPrayers ?? 0}</Text>
           </View>
         </View>
         {stats?.updatedAt ? (
-          <Text style={styles.updated}>
+          <Text style={[styles.updated, { color: colors.muted }]}>
             Updated at {new Date(stats.updatedAt.toDate ? stats.updatedAt.toDate() : stats.updatedAt).toLocaleString()}
           </Text>
         ) : null}
@@ -89,10 +91,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.lg,
-    backgroundColor: palette.background,
   },
   card: {
-    backgroundColor: '#ffffff',
     padding: spacing.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -101,7 +101,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: spacing.lg,
   },
   row: {
@@ -114,28 +113,23 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontSize: 12,
-    color: palette.muted,
     marginBottom: 4,
   },
   metricValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
   },
   updated: {
     marginTop: spacing.md,
     fontSize: 12,
-    color: palette.muted,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.background,
   },
   denied: {
     marginTop: spacing.sm,
-    color: palette.muted,
   },
 });
 

@@ -17,6 +17,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { recordOnboardingAnalytics, type OnboardingAnswers } from '../services/userProfile';
 import { validateDisplayName } from '../utils/security';
@@ -35,27 +36,27 @@ type OnboardingSlide = {
 };
 
 // Tutorial slides with cross emoji as requested
-const slides: OnboardingSlide[] = [
+const getSlides = (isDark: boolean): OnboardingSlide[] => [
   {
     id: '1',
     emoji: '✝️',
     title: 'Welcome to Lift',
     description: 'A live network where prayers meet purpose. Share your needs, lift others up.',
-    color: '#fef3c7',
+    color: isDark ? '#4a4a00' : '#fef3c7',
   },
   {
     id: '2',
     emoji: '📡',
     title: 'Transmit Your Need',
     description: 'Post prayer requests and let the community rally around you in support.',
-    color: '#dbeafe',
+    color: isDark ? '#003366' : '#dbeafe',
   },
   {
     id: '3',
     emoji: '✨',
     title: 'Verify & Celebrate',
     description: 'When prayers are answered, share your testimony and inspire others.',
-    color: '#dcfce7',
+    color: isDark ? '#004d00' : '#dcfce7',
   },
 ];
 
@@ -125,7 +126,9 @@ type Props = {
 };
 
 export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
+  const { colors, isDark } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const slides = getSlides(isDark);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -244,8 +247,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       <View style={[styles.emojiContainer, { backgroundColor: item.color }]}>
         <Text style={styles.emoji}>{item.emoji}</Text>
       </View>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+      <Text style={[styles.description, { color: colors.muted }]}>{item.description}</Text>
     </View>
   );
 
@@ -284,10 +287,10 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       : (currentAnswer && (Array.isArray(currentAnswer) ? currentAnswer.length > 0 : true));
 
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.questionHeader}>
-          <TouchableOpacity onPress={handleQuestionBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <TouchableOpacity onPress={handleQuestionBack} style={[styles.backButton, { backgroundColor: colors.surface }]}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.progressContainer}>
             {questions.map((_, idx) => (
@@ -307,16 +310,16 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
           contentContainerStyle={styles.questionContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.questionText}>{question.question}</Text>
+          <Text style={[styles.questionText, { color: colors.text }]}>{question.question}</Text>
           {question.subtitle && (
-            <Text style={styles.questionSubtitle}>{question.subtitle}</Text>
+            <Text style={[styles.questionSubtitle, { color: colors.muted }]}>{question.subtitle}</Text>
           )}
 
           {question.type === 'text' ? (
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
               placeholder={question.placeholder}
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
               value={(currentAnswer as string) || ''}
               onChangeText={(text) => setAnswers((prev) => ({ ...prev, [question.id]: text }))}
               autoFocus
@@ -328,18 +331,22 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
                 return (
                   <TouchableOpacity
                     key={option.id}
-                    style={[styles.optionButton, isSelected && styles.optionButtonSelected]}
+                    style={[
+                      styles.optionButton, 
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      isSelected && [styles.optionButtonSelected, { backgroundColor: colors.accentLight, borderColor: colors.accent }]
+                    ]}
                     onPress={() => handleSelectOption(question.id, option.id, isMulti)}
                   >
                     {option.emoji && <Text style={styles.optionEmoji}>{option.emoji}</Text>}
-                    <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
+                    <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected, { color: colors.text }]}>
                       {option.label}
                     </Text>
                     {isSelected && (
                       <Ionicons 
                         name={isMulti ? "checkbox" : "radio-button-on"} 
                         size={20} 
-                        color="#f59e0b" 
+                        color={colors.accent} 
                       />
                     )}
                   </TouchableOpacity>
@@ -351,16 +358,20 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.button, !canProceed && styles.buttonDisabled]}
+            style={[
+              styles.button, 
+              { backgroundColor: colors.accent },
+              !canProceed && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
+            ]}
             onPress={handleQuestionNext}
           >
-            <Text style={styles.buttonText}>
+            <Text style={[styles.buttonText, { color: colors.text }]}>
               {questionIndex === questions.length - 1 ? "Let's Go! ✝️" : 'Continue'}
             </Text>
           </TouchableOpacity>
           {question.type !== 'text' && !canProceed && (
             <TouchableOpacity onPress={handleQuestionNext} style={styles.skipButton}>
-              <Text style={styles.skipButtonText}>Skip this question</Text>
+              <Text style={[styles.skipButtonText, { color: colors.muted }]}>Skip this question</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -377,7 +388,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       <View style={styles.skipContainer}>
         {currentIndex < slides.length - 1 && (
           <TouchableOpacity onPress={() => setShowQuestionnaire(true)}>
-            <Text style={styles.skipText}>Skip</Text>
+            <Text style={[styles.skipText, { color: colors.muted }]}>Skip</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -402,8 +413,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       {renderDots()}
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleNext}>
-          <Text style={styles.buttonText}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleNext}>
+          <Text style={[styles.buttonText, { color: colors.text }]}>
             {currentIndex === slides.length - 1 ? 'Continue' : 'Next'}
           </Text>
         </TouchableOpacity>
@@ -462,13 +473,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '900',
-    color: palette.text,
     textAlign: 'center',
     marginBottom: spacing.md,
   },
   description: {
     fontSize: 16,
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: spacing.lg,
@@ -490,7 +499,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   button: {
-    backgroundColor: palette.accent,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
@@ -506,7 +514,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1f2937',
   },
   // Question styles
   questionHeader: {
@@ -520,7 +527,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -532,7 +538,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: palette.border,
   },
   progressDotActive: {
     backgroundColor: palette.accent,
@@ -546,12 +552,10 @@ const styles = StyleSheet.create({
   questionText: {
     fontSize: 24,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: spacing.sm,
   },
   questionSubtitle: {
     fontSize: 14,
-    color: palette.muted,
     marginBottom: spacing.xl,
   },
   optionsContainer: {
@@ -560,7 +564,6 @@ const styles = StyleSheet.create({
   optionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
@@ -569,7 +572,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   optionButtonSelected: {
-    backgroundColor: '#fef3c7',
     borderColor: palette.accent,
   },
   optionEmoji: {
@@ -579,20 +581,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
   },
   optionLabelSelected: {
-    color: '#92400e',
+    fontWeight: '700',
   },
   textInput: {
-    backgroundColor: '#fff',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
     borderWidth: 2,
     borderColor: palette.border,
     fontSize: 18,
-    color: palette.text,
     marginTop: spacing.md,
   },
   skipButton: {
@@ -600,7 +599,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipButtonText: {
-    color: palette.muted,
     fontSize: 14,
     fontWeight: '600',
   },

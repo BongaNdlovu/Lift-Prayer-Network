@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, Pressable, Platform, TouchableOpacity, Alert, M
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing, shadows } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
-import { reportContent, blockUser, REPORT_REASONS, ReportReason } from '../services/moderation';
+import { reportContent, blockUser, banUser, REPORT_REASONS, ReportReason } from '../services/moderation';
 import { getVerifiedBadge, BADGE_STYLES, canEditContent, canDeleteContent, hasAdminPermission } from '../config/admins';
 import { deletePrayerRequest, deleteTestimony } from '../services/prayers';
 
@@ -56,10 +57,9 @@ const getAvatarColor = (name: string): string => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-type ReactionType = 'pray' | 'heart' | 'fire' | 'strong';
+type ReactionType = 'heart' | 'fire' | 'strong';
 
 const REACTIONS: { type: ReactionType; emoji: string; label: string }[] = [
-  { type: 'pray', emoji: '🙏', label: 'Pray' },
   { type: 'heart', emoji: '❤️', label: 'Love' },
   { type: 'fire', emoji: '🔥', label: 'Fire' },
   { type: 'strong', emoji: '💪', label: 'Strength' },
@@ -92,6 +92,7 @@ export const FeedCard: React.FC<Props> = ({
   currentUserId,
   currentUserEmail,
 }) => {
+  const { colors, isDark } = useTheme();
   const isRequest = item.type === 'REQUEST';
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null);
@@ -99,6 +100,7 @@ export const FeedCard: React.FC<Props> = ({
   const [showReactions, setShowReactions] = useState(false);
   const [activeReaction, setActiveReaction] = useState<ReactionType | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   // Permission checks
   const canEdit = canEditContent(item.ownerUid, currentUserId, currentUserEmail);
@@ -151,6 +153,33 @@ export const FeedCard: React.FC<Props> = ({
     );
   };
 
+  const handleBanUser = async () => {
+    if (!isAdmin) return;
+    
+    Alert.alert(
+      '⛔ Ban User from App',
+      `This will ban "${item.userDisplayName}" from the entire app. They won't be able to post, pray, or interact.\n\nAre you sure?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Ban User',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await banUser(item.ownerUid, 'Banned by admin');
+            if (result.success) {
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+              Alert.alert('User Banned', `${item.userDisplayName} has been banned from the app.`);
+            } else {
+              Alert.alert('Error', result.error || 'Could not ban user.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDeleteContent = async () => {
     if (!currentUserId) return;
 
@@ -195,52 +224,109 @@ export const FeedCard: React.FC<Props> = ({
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync();
     }
+    setShowOptionsModal(true);
+  };
 
-    const options: any[] = [];
+  // Build options list for the modal
+  const getOptionsMenuItems = () => {
+    const options: { text: string; onPress: () => void; destructive?: boolean; icon: string }[] = [];
+
+    // Admin-only: View user profile
+    if (isAdmin && !isOwner) {
+      options.push({
+        text: 'View User Profile',
+        icon: 'person-outline',
+        onPress: () => {
+          setShowOptionsModal(false);
+          Alert.alert(
+            'User Profile',
+            `Display Name: ${item.userDisplayName}\nUser ID: ${item.ownerUid}\nEmail: ${(item as any).userEmail || 'Not available'}`,
+            [{ text: 'OK' }]
+          );
+        },
+      });
+    }
 
     // Pin/Unpin option - admin only, requests only
     if (isAdmin && isRequest) {
       options.push({
-        text: isPinned ? '📌 Unpin from Top' : '📌 Pin to Top',
-        onPress: () => onPin?.(item.id, !isPinned),
+        text: isPinned ? 'Unpin from Top' : 'Pin to Top',
+        icon: 'pin-outline',
+        onPress: () => {
+          setShowOptionsModal(false);
+          onPin?.(item.id, !isPinned);
+        },
       });
     }
 
     // Edit option - for owner or admin
     if (canEdit) {
       options.push({
-        text: '✏️ Edit',
-        onPress: () => onEdit?.(item),
+        text: 'Edit',
+        icon: 'create-outline',
+        onPress: () => {
+          setShowOptionsModal(false);
+          onEdit?.(item);
+        },
       });
     }
 
     // Delete option - for owner or admin
     if (canDelete) {
       options.push({
-        text: '🗑️ Delete',
-        onPress: handleDeleteContent,
-        style: 'destructive',
+        text: 'Delete',
+        icon: 'trash-outline',
+        destructive: true,
+        onPress: () => {
+          setShowOptionsModal(false);
+          handleDeleteContent();
+        },
       });
     }
 
     // Report & Block - for non-owners only
-    if (!isOwner) {
-      options.push({ text: '🚩 Report', onPress: () => setShowReportModal(true) });
-      options.push({ text: '🚫 Block User', onPress: handleBlockUser, style: 'destructive' });
+    if (!isOwner && currentUserId) {
+      options.push({
+        text: 'Report Content',
+        icon: 'flag-outline',
+        onPress: () => {
+          setShowOptionsModal(false);
+          setShowReportModal(true);
+        },
+      });
+      options.push({
+        text: 'Block This User',
+        icon: 'ban-outline',
+        destructive: true,
+        onPress: () => {
+          setShowOptionsModal(false);
+          handleBlockUser();
+        },
+      });
     }
 
-    options.push({ text: 'Cancel', style: 'cancel' });
-    
-    Alert.alert(
-      isOwner ? 'Manage Your Post' : (isAdmin ? 'Admin Options' : 'Options'),
-      isAdmin && !isOwner ? 'You are viewing as admin' : undefined,
-      options
-    );
+    // Admin-only: Ban user from app entirely
+    if (isAdmin && !isOwner) {
+      options.push({
+        text: 'Ban User from App',
+        icon: 'remove-circle-outline',
+        destructive: true,
+        onPress: () => {
+          setShowOptionsModal(false);
+          handleBanUser();
+        },
+      });
+    }
+
+    return options;
   };
 
   const handlePrayPress = () => {
-    // Prevent double-taps
+    // Prevent double-taps or if disabled
     if (disabled) return;
+    
+    // Prevent praying on own request
+    if (isOwner) return;
     
     // Haptic feedback (optional - don't crash if unavailable)
     if (Platform.OS !== 'web') {
@@ -282,16 +368,31 @@ export const FeedCard: React.FC<Props> = ({
   // Check if user is verified admin
   const verifiedBadge = getVerifiedBadge((item as any).userEmail);
   const badgeStyle = verifiedBadge ? BADGE_STYLES[verifiedBadge.badgeType] : null;
+  
+  // Privacy info
+  const visibility = (item as any).visibility || 'PUBLIC';
+  const isPrivate = (item as any).isPrivate || visibility === 'PRIVATE';
+  const isGroupOnly = visibility === 'GROUP';
+  const showPrivacyBadge = isPrivate || isGroupOnly;
+  
+  // Anonymous post detection - admin can see real identity
+  const isAnonymousPost = (item as any).isAnonymous === true;
+  const realDisplayName = (item as any)._realDisplayName;
+  const realEmail = (item as any)._realEmail;
 
-  // Different gradient for urgent prayers
-  const cardColors: [string, string] = isUrgent
-    ? ['#fef2f2', '#fee2e2']
-    : ['#ffffff', '#fef3c7'];
+  // Different gradient for urgent prayers - with dark mode support
+  const cardColors: [string, string] = isDark
+    ? (isUrgent ? ['#450a0a', '#7f1d1d'] : [colors.surface, colors.surfaceSecondary])
+    : (isUrgent ? ['#fef2f2', '#fee2e2'] : ['#ffffff', '#fef3c7']);
+  
+  const pinnedColors: [string, string] = isDark 
+    ? ['#422006', '#713f12'] 
+    : ['#fef3c7', '#fde68a'];
 
   return (
     <Pressable onPress={() => onPress?.(item)} style={isPinned && styles.pinnedCardWrapper}>
       <LinearGradient
-        colors={isPinned ? ['#fef3c7', '#fde68a'] : cardColors}
+        colors={isPinned ? pinnedColors : cardColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.card, isUrgent && styles.cardUrgent, isPinned && styles.cardPinned]}
@@ -318,7 +419,12 @@ export const FeedCard: React.FC<Props> = ({
             )}
             <View style={styles.userTextInfo}>
               <View style={styles.nameRow}>
-                <Text style={styles.title} numberOfLines={1}>{item.userDisplayName}</Text>
+                <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{item.userDisplayName}</Text>
+                {isAnonymousPost && (
+                  <View style={styles.anonymousBadge}>
+                    <Ionicons name="eye-off" size={10} color="#6b7280" />
+                  </View>
+                )}
                 {verifiedBadge && badgeStyle && (
                   <View style={[styles.verifiedBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
                     <Ionicons name="checkmark-circle" size={10} color={badgeStyle.textColor} />
@@ -328,10 +434,31 @@ export const FeedCard: React.FC<Props> = ({
                   </View>
                 )}
               </View>
+              {/* Admin-only: Show real identity for anonymous posts */}
+              {isAdmin && isAnonymousPost && realDisplayName && (
+                <View style={styles.adminRevealRow}>
+                  <Ionicons name="shield-checkmark" size={10} color="#7c3aed" />
+                  <Text style={styles.adminRevealText}>
+                    {realDisplayName}{realEmail ? ` (${realEmail})` : ''}
+                  </Text>
+                </View>
+              )}
               <Text style={styles.meta}>{formatRelativeTime((item as any).createdAt)}</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
+            {showPrivacyBadge && (
+              <View style={[styles.privacyBadge, isGroupOnly && styles.privacyBadgeGroup]}>
+                <Ionicons 
+                  name={isPrivate ? "lock-closed" : "people"} 
+                  size={10} 
+                  color={isGroupOnly ? "#7c3aed" : "#6b7280"} 
+                />
+                <Text style={[styles.privacyBadgeText, isGroupOnly && styles.privacyBadgeTextGroup]}>
+                  {isPrivate ? 'Private' : 'Group'}
+                </Text>
+              </View>
+            )}
             <View style={[
               styles.statusBadge, 
               displayStatus === 'PENDING' && styles.statusPending,
@@ -360,7 +487,7 @@ export const FeedCard: React.FC<Props> = ({
             )}
           </View>
         </View>
-        <Text style={styles.content}>{item.content}</Text>
+        <Text style={[styles.content, { color: colors.text }]}>{item.content}</Text>
         
         {/* Show linked prayer request badge for testimonies */}
         {!isRequest && (item as any).linkedRequestId && (
@@ -373,44 +500,60 @@ export const FeedCard: React.FC<Props> = ({
         <View style={styles.footer}>
           {isRequest ? (
             <View style={styles.reactionsRow}>
-              {/* Main Pray Button - simplified to avoid Android crashes */}
+              {/* Main Pray Button - disabled for own requests */}
               <TouchableOpacity
                 onPress={handlePrayPress}
-                onLongPress={() => setShowReactions(!showReactions)}
-                style={[styles.actionButton, styles.prayButtonWrapper, disabled && styles.disabled]}
-                disabled={disabled}
+                onLongPress={() => !isOwner && setShowReactions(!showReactions)}
+                style={[
+                  styles.actionButton, 
+                  styles.prayButtonWrapper, 
+                  (disabled || isOwner) && styles.disabled
+                ]}
+                disabled={disabled || isOwner}
                 activeOpacity={0.7}
               >
                 <Text style={styles.prayEmoji}>🙏</Text>
-                <Text style={styles.actionText}>Pray</Text>
+                <Text style={styles.actionText}>{isOwner ? 'Your Request' : 'Pray'}</Text>
                 <Text style={styles.counter}>{item.prayers ?? 0}</Text>
               </TouchableOpacity>
 
               {/* Additional Reactions */}
               <View style={styles.extraReactions}>
-                {REACTIONS.slice(1).map((reaction) => (
-                  <TouchableOpacity
-                    key={reaction.type}
-                    style={[
-                      styles.reactionButton,
-                      activeReaction === reaction.type && styles.reactionButtonActive,
-                    ]}
-                    onPress={() => {
-                      if (Platform.OS !== 'web') {
-                        try {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        } catch {
-                          // Haptics not available
+                {REACTIONS.map((reaction) => {
+                  // Get count for this reaction type
+                  const countMap: Record<string, number> = {
+                    heart: (item as any).heartCount ?? 0,
+                    fire: (item as any).fireCount ?? 0,
+                    strong: (item as any).strongCount ?? 0,
+                  };
+                  const count = countMap[reaction.type] ?? 0;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={reaction.type}
+                      style={[
+                        styles.reactionButton,
+                        activeReaction === reaction.type && styles.reactionButtonActive,
+                        count > 0 && styles.reactionButtonWithCount,
+                      ]}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') {
+                          try {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          } catch {
+                            // Haptics not available
+                          }
                         }
-                      }
-                      setActiveReaction(activeReaction === reaction.type ? null : reaction.type);
-                      onReact?.(item.id, reaction.type);
-                    }}
-                    disabled={disabled}
-                  >
-                    <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
-                  </TouchableOpacity>
-                ))}
+                        setActiveReaction(activeReaction === reaction.type ? null : reaction.type);
+                        onReact?.(item.id, reaction.type);
+                      }}
+                      disabled={disabled}
+                    >
+                      <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                      {count > 0 && <Text style={styles.reactionCount}>{count}</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           ) : (
@@ -432,42 +575,54 @@ export const FeedCard: React.FC<Props> = ({
 
               {/* Additional Reactions for Testimonies */}
               <View style={styles.extraReactions}>
-                {[{ type: 'heart' as ReactionType, emoji: '❤️' }, { type: 'fire' as ReactionType, emoji: '🔥' }].map((reaction) => (
-                  <TouchableOpacity
-                    key={reaction.type}
-                    style={[
-                      styles.reactionButton,
-                      activeReaction === reaction.type && styles.reactionButtonActive,
-                    ]}
-                    onPress={() => {
-                      if (Platform.OS !== 'web') {
-                        try {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        } catch {
-                          // Haptics not available
+                {[{ type: 'heart' as ReactionType, emoji: '❤️' }, { type: 'fire' as ReactionType, emoji: '🔥' }].map((reaction) => {
+                  const countMap: Record<string, number> = {
+                    heart: (item as any).heartCount ?? 0,
+                    fire: (item as any).fireCount ?? 0,
+                  };
+                  const count = countMap[reaction.type] ?? 0;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={reaction.type}
+                      style={[
+                        styles.reactionButton,
+                        activeReaction === reaction.type && styles.reactionButtonActive,
+                        count > 0 && styles.reactionButtonWithCount,
+                      ]}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') {
+                          try {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          } catch {
+                            // Haptics not available
+                          }
                         }
-                      }
-                      setActiveReaction(activeReaction === reaction.type ? null : reaction.type);
-                      onReact?.(item.id, reaction.type);
-                    }}
-                    disabled={disabled}
-                  >
-                    <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
-                  </TouchableOpacity>
-                ))}
+                        setActiveReaction(activeReaction === reaction.type ? null : reaction.type);
+                        onReact?.(item.id, reaction.type);
+                      }}
+                      disabled={disabled}
+                    >
+                      <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                      {count > 0 && <Text style={styles.reactionCount}>{count}</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           )}
           
           {/* Footer info row */}
           <View style={styles.footerInfo}>
-            {/* Comment count */}
-            {((item as any).commentCount ?? 0) > 0 && (
-              <View style={styles.commentBadge}>
-                <Ionicons name="chatbubble-outline" size={12} color={palette.muted} />
-                <Text style={styles.commentCount}>{(item as any).commentCount} comments</Text>
-              </View>
-            )}
+            {/* Comment indicator */}
+            <View style={styles.commentBadge}>
+              <Ionicons name="chatbubble-outline" size={11} color={palette.muted} />
+              <Text style={styles.commentCount}>
+                {((item as any).commentCount ?? 0) > 0 
+                  ? `${(item as any).commentCount} ${(item as any).commentCount === 1 ? 'comment' : 'comments'}`
+                  : 'Comment'}
+              </Text>
+            </View>
             <View style={styles.footerSpacer} />
           </View>
         </View>
@@ -521,6 +676,66 @@ export const FeedCard: React.FC<Props> = ({
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* Options ActionSheet Modal */}
+      <Modal
+        visible={showOptionsModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowOptionsModal(false)}
+      >
+        <Pressable style={styles.optionsOverlay} onPress={() => setShowOptionsModal(false)}>
+          <Pressable style={styles.optionsSheet} onPress={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <View style={styles.optionsHeader}>
+              <View style={styles.optionsHandle} />
+              <Text style={styles.optionsTitle}>
+                {isOwner ? 'Manage Your Post' : (isAdmin ? '🛡️ Admin Options' : 'Options')}
+              </Text>
+              {isAdmin && !isOwner && (
+                <Text style={styles.optionsSubtitle}>Viewing: {item.userDisplayName}</Text>
+              )}
+            </View>
+
+            {/* Options List */}
+            <View style={styles.optionsList}>
+              {getOptionsMenuItems().map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.optionItem,
+                    option.destructive && styles.optionItemDestructive,
+                  ]}
+                  onPress={option.onPress}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={option.icon as any}
+                    size={22}
+                    color={option.destructive ? '#ef4444' : palette.text}
+                  />
+                  <Text
+                    style={[
+                      styles.optionText,
+                      option.destructive && styles.optionTextDestructive,
+                    ]}
+                  >
+                    {option.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              style={styles.optionsCancelButton}
+              onPress={() => setShowOptionsModal(false)}
+            >
+              <Text style={styles.optionsCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
     </Pressable>
   );
@@ -695,16 +910,15 @@ const styles = StyleSheet.create({
   commentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#f8fafc',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
   },
   commentCount: {
-    fontSize: 11,
+    fontSize: 10,
     color: palette.muted,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   prayButtonWrapper: {
     borderRadius: radius.md,
@@ -806,7 +1020,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   reactionButton: {
-    width: 28,
+    flexDirection: 'row',
+    minWidth: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: '#f8fafc',
@@ -814,13 +1029,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: palette.border,
+    paddingHorizontal: 6,
   },
   reactionButtonActive: {
     backgroundColor: '#fef3c7',
     borderColor: palette.accent,
   },
+  reactionButtonWithCount: {
+    paddingHorizontal: 8,
+    minWidth: 44,
+  },
   reactionEmoji: {
     fontSize: 13,
+  },
+  reactionCount: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6b7280',
+    marginLeft: 3,
   },
   // Report Modal styles
   modalOverlay: {
@@ -891,5 +1117,119 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: '#fff',
+  },
+  // Privacy badge styles
+  privacyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginRight: spacing.xs,
+  },
+  privacyBadgeGroup: {
+    backgroundColor: '#ede9fe',
+  },
+  privacyBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  privacyBadgeTextGroup: {
+    color: '#7c3aed',
+  },
+  // Anonymous post styles
+  anonymousBadge: {
+    backgroundColor: '#f1f5f9',
+    padding: 3,
+    borderRadius: 6,
+    marginLeft: 4,
+  },
+  adminRevealRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ede9fe',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+  },
+  adminRevealText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#7c3aed',
+  },
+  // Options ActionSheet Modal styles
+  optionsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  optionsSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 34, // Safe area padding
+  },
+  optionsHeader: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  optionsHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#d1d5db',
+    borderRadius: 2,
+    marginBottom: spacing.sm,
+  },
+  optionsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: palette.text,
+  },
+  optionsSubtitle: {
+    fontSize: 13,
+    color: palette.muted,
+    marginTop: 4,
+  },
+  optionsList: {
+    paddingVertical: spacing.sm,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  optionItemDestructive: {
+    backgroundColor: '#fef2f2',
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: palette.text,
+  },
+  optionTextDestructive: {
+    color: '#ef4444',
+  },
+  optionsCancelButton: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    backgroundColor: '#f1f5f9',
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  optionsCancelText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: palette.muted,
   },
 });

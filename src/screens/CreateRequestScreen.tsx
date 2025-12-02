@@ -21,6 +21,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { submitFeedItem } from '../hooks/useFeed';
 import { queuePendingRequest } from '../services/offlineCache';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
@@ -31,6 +32,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CreateRequest'>;
 
 export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const netInfo = useNetInfo();
   const [content, setContent] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PrayerCategory>('other');

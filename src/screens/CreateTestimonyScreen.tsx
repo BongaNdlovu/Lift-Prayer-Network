@@ -19,35 +19,61 @@ import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useFeed, submitFeedItem } from '../hooks/useFeed';
+import { subscribeToUserGroups } from '../services/groups';
 import { Confetti } from '../components/Confetti';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import type { RootStackParamList } from '../navigation/types';
+import type { PrayerGroup } from '../types';
+
+type VisibilityOption = 'PUBLIC' | 'PRIVATE' | 'GROUP';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateTestimony'>;
 
 export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const netInfo = useNetInfo();
   const { items: allRequests } = useFeed('REQUEST', user?.uid);
   const [content, setContent] = useState('');
   const [linkedRequestId, setLinkedRequestId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  
+  // Privacy options
+  const [visibility, setVisibility] = useState<VisibilityOption>('PUBLIC');
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [userGroups, setUserGroups] = useState<PrayerGroup[]>([]);
 
   const offline = netInfo.isConnected === false;
+  
+  // Load user's groups
+  React.useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = subscribeToUserGroups(user.uid, (groups) => {
+      setUserGroups(groups);
+    });
+    return () => unsub();
+  }, [user?.uid]);
 
   // Get user's own requests that can be linked
   const userRequests = useMemo(() => {
     if (!user) return [];
     return allRequests.filter(
-      (item) => item.type === 'REQUEST' && item.ownerUid === user.uid && item.status !== 'RESOLVED'
+      (item) => item.type === 'REQUEST' && item.ownerUid === user.uid
     );
   }, [allRequests, user]);
 
   const handleSubmit = async () => {
     if (!content.trim()) {
       Alert.alert('Empty Testimony', 'Please share how God answered your prayer.');
+      return;
+    }
+
+    // Validate GROUP visibility has at least one group selected
+    if (visibility === 'GROUP' && selectedGroupIds.length === 0) {
+      Alert.alert('Select Groups', 'Please select at least one group to share with.');
       return;
     }
 
@@ -109,6 +135,15 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
+    // Require linking to a prayer request when the user has requests to tie it to
+    if (userRequests.length > 0 && !linkedRequestId) {
+      Alert.alert(
+        'Link your prayer request',
+        'Select the prayer request this testimony answers so we can notify everyone who prayed for you.'
+      );
+      return;
+    }
+
     // Show warnings if any
     if (validation.warnings && validation.warnings.length > 0) {
       Alert.alert('Notice', validation.warnings.join('\n'), [
@@ -131,6 +166,9 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
         linkedRequestId: linkedRequestId || undefined,
         userEmail: user.email || undefined,
         userPhotoURL: user.photoURL || null,
+        visibility,
+        isPrivate: visibility === 'PRIVATE',
+        groupIds: visibility === 'GROUP' ? selectedGroupIds : undefined,
       });
 
       if (Platform.OS !== 'web') {
@@ -207,7 +245,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
               <View style={styles.card}>
                 <Text style={styles.label}>Link to Prayer Request</Text>
                 <Text style={styles.hint}>
-                  Connect this testimony to your original prayer request
+                  Required to notify people who prayed for you. Choose the request this testimony answers.
                 </Text>
 
                 {linkedRequestId ? (
@@ -246,6 +284,102 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                 )}
               </View>
             )}
+
+            {/* Privacy Options */}
+            <View style={styles.card}>
+              <Text style={styles.label}>Who can see this testimony?</Text>
+              <View style={styles.visibilityOptions}>
+                <TouchableOpacity
+                  style={[styles.visibilityOption, visibility === 'PUBLIC' && styles.visibilityOptionActive]}
+                  onPress={() => {
+                    setVisibility('PUBLIC');
+                    setSelectedGroupIds([]);
+                    if (Platform.OS !== 'web') Haptics.selectionAsync();
+                  }}
+                >
+                  <Ionicons 
+                    name="globe-outline" 
+                    size={20} 
+                    color={visibility === 'PUBLIC' ? '#166534' : palette.muted} 
+                  />
+                  <Text style={[styles.visibilityOptionText, visibility === 'PUBLIC' && styles.visibilityOptionTextActive]}>
+                    Everyone
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.visibilityOption, visibility === 'PRIVATE' && styles.visibilityOptionActive]}
+                  onPress={() => {
+                    setVisibility('PRIVATE');
+                    setSelectedGroupIds([]);
+                    if (Platform.OS !== 'web') Haptics.selectionAsync();
+                  }}
+                >
+                  <Ionicons 
+                    name="lock-closed-outline" 
+                    size={20} 
+                    color={visibility === 'PRIVATE' ? '#166534' : palette.muted} 
+                  />
+                  <Text style={[styles.visibilityOptionText, visibility === 'PRIVATE' && styles.visibilityOptionTextActive]}>
+                    Only Me
+                  </Text>
+                </TouchableOpacity>
+                
+                {userGroups.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.visibilityOption, visibility === 'GROUP' && styles.visibilityOptionActive]}
+                    onPress={() => {
+                      setVisibility('GROUP');
+                      if (Platform.OS !== 'web') Haptics.selectionAsync();
+                    }}
+                  >
+                    <Ionicons 
+                      name="people-outline" 
+                      size={20} 
+                      color={visibility === 'GROUP' ? '#166534' : palette.muted} 
+                    />
+                    <Text style={[styles.visibilityOptionText, visibility === 'GROUP' && styles.visibilityOptionTextActive]}>
+                      Groups
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              {/* Group Selection */}
+              {visibility === 'GROUP' && userGroups.length > 0 && (
+                <View style={styles.groupSelection}>
+                  <Text style={styles.hint}>Select groups to share with:</Text>
+                  {userGroups.map((group) => (
+                    <TouchableOpacity
+                      key={group.id}
+                      style={[
+                        styles.groupChip,
+                        selectedGroupIds.includes(group.id) && styles.groupChipSelected,
+                      ]}
+                      onPress={() => {
+                        setSelectedGroupIds((prev) =>
+                          prev.includes(group.id)
+                            ? prev.filter((id) => id !== group.id)
+                            : [...prev, group.id]
+                        );
+                        if (Platform.OS !== 'web') Haptics.selectionAsync();
+                      }}
+                    >
+                      <Text style={styles.groupChipEmoji}>{group.emoji || '🙏'}</Text>
+                      <Text style={[
+                        styles.groupChipText,
+                        selectedGroupIds.includes(group.id) && styles.groupChipTextSelected,
+                      ]}>
+                        {group.name}
+                      </Text>
+                      {selectedGroupIds.includes(group.id) && (
+                        <Ionicons name="checkmark-circle" size={16} color="#166534" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
 
             {/* Preview */}
             {content.trim().length > 0 && (
@@ -518,6 +652,66 @@ const styles = StyleSheet.create({
     color: palette.muted,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  // Privacy options styles
+  visibilityOptions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  visibilityOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: palette.border,
+  },
+  visibilityOptionActive: {
+    backgroundColor: '#dcfce7',
+    borderColor: '#bbf7d0',
+  },
+  visibilityOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.muted,
+  },
+  visibilityOptionTextActive: {
+    color: '#166534',
+  },
+  groupSelection: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  groupChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: palette.border,
+    gap: spacing.sm,
+  },
+  groupChipSelected: {
+    backgroundColor: '#dcfce7',
+    borderColor: '#bbf7d0',
+  },
+  groupChipEmoji: {
+    fontSize: 18,
+  },
+  groupChipText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: palette.text,
+  },
+  groupChipTextSelected: {
+    color: '#166534',
   },
 });
 

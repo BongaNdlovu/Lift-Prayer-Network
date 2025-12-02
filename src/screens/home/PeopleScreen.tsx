@@ -4,6 +4,7 @@ import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { db, firebaseEnabled } from '../../services/firebase';
 import { palette, radius, spacing } from '../../theme/colors';
 import type { PeopleStat } from '../../types';
@@ -11,6 +12,7 @@ import type { PeopleStat } from '../../types';
 export const PeopleScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [people, setPeople] = useState<PeopleStat[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,47 +39,47 @@ export const PeopleScreen: React.FC = () => {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.title}>Sign in to see who you have prayed for.</Text>
+      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Sign in to see who you have prayed for.</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header with Back Button */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>People I Prayed For</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>People I Prayed For</Text>
         <View style={{ width: 40 }} />
       </View>
       
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={palette.accent} />
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
         <FlatList
           data={people}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.summary}>{item.targetName || item.targetOwnerUid}</Text>
-              <Text style={styles.meta}>Prayers: {item.count}</Text>
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.summary, { color: colors.text }]}>{item.targetName || item.targetOwnerUid}</Text>
+              <Text style={[styles.meta, { color: colors.muted }]}>Prayers: {item.count}</Text>
             </View>
           )}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
+            <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
               <View style={styles.emptyIcon}>
-                <View style={styles.emptyCircle}>
+                <View style={[styles.emptyCircle, { backgroundColor: colors.surface }]}>
                   <Text style={styles.emptyEmoji}>👥</Text>
                 </View>
-                <View style={styles.emptyRing} />
+                <View style={[styles.emptyRing, { borderColor: colors.muted }]} />
               </View>
-              <Text style={styles.emptyTitle}>No connections yet</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No connections yet</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                 People you pray for will{'\n'}appear in your network
               </Text>
             </View>
@@ -91,7 +93,6 @@ export const PeopleScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   header: {
     flexDirection: 'row',
@@ -113,12 +114,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   heading: {
     fontSize: 22,
     fontWeight: '900',
-    color: palette.text,
     marginBottom: spacing.md,
   },
   center: {
@@ -128,7 +127,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
@@ -137,16 +135,13 @@ const styles = StyleSheet.create({
   },
   summary: {
     fontWeight: '700',
-    color: palette.text,
     marginBottom: 4,
   },
   meta: {
-    color: palette.muted,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.text,
   },
   emptyState: {
     flex: 1,
@@ -165,7 +160,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#3b82f6',
@@ -180,7 +174,6 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 2,
-    borderColor: '#bfdbfe',
     borderStyle: 'dashed',
   },
   emptyEmoji: {
@@ -189,12 +182,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 22,
   },

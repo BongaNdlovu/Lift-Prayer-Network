@@ -5,75 +5,91 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { hasAdminPermission } from '../../config/admins';
 import { RootStackParamList } from '../../navigation/types';
+import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
 
 export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
 
   const isAdmin = hasAdminPermission(user?.email);
 
   if (!isAdmin) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Ionicons name="shield" size={40} color={palette.muted} />
-        <Text style={styles.denied}>Admin access required</Text>
+      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+        <Ionicons name="shield" size={40} color={colors.muted} />
+        <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Admin Tools</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Admin Tools</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.content}>
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => navigation.navigate('AdminReports')}
         >
-          <View style={styles.iconCircle}>
-            <Ionicons name="flag-outline" size={22} color={palette.accentDark} />
+          <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
+            <Ionicons name="flag-outline" size={22} color={colors.accent} />
           </View>
           <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>Reports</Text>
-            <Text style={styles.cardSubtitle}>Review and moderate reported content</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Reports</Text>
+            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>Review and moderate reported content</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => navigation.navigate('AdminPinnedRequests')}
         >
-          <View style={styles.iconCircle}>
-            <Ionicons name="star-outline" size={22} color={palette.accentDark} />
+          <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
+            <Ionicons name="star-outline" size={22} color={colors.accent} />
           </View>
           <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>Pinned Requests</Text>
-            <Text style={styles.cardSubtitle}>Manage highlighted requests in the feed</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Pinned Requests</Text>
+            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>Manage highlighted requests in the feed</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => navigation.navigate('AdminGlobalStats')}
         >
-          <View style={styles.iconCircle}>
-            <Ionicons name="stats-chart-outline" size={22} color={palette.accentDark} />
+          <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
+            <Ionicons name="stats-chart-outline" size={22} color={colors.accent} />
           </View>
           <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>Global Stats</Text>
-            <Text style={styles.cardSubtitle}>View overall prayer activity</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Global Stats</Text>
+            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View overall prayer activity</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => navigation.navigate('AdminBannedUsers')}
+        >
+          <View style={[styles.iconCircle, { backgroundColor: colors.dangerLight }]}>
+            <Ionicons name="ban-outline" size={22} color={colors.danger} />
+          </View>
+          <View style={styles.cardText}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Banned Users</Text>
+            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View and unban restricted users</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -98,7 +114,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -116,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     borderRadius: radius.lg,
-    backgroundColor: '#ffffff',
+    backgroundColor: palette.surface,
     borderWidth: 1,
     borderColor: palette.border,
   },
@@ -124,7 +140,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#fefce8',
+    backgroundColor: palette.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,

@@ -57,6 +57,10 @@ export type LiftRequest = {
   location?: string;
   createdAt?: TimeLike;
   commentCount?: number;
+  // Reaction counts
+  heartCount?: number;
+  fireCount?: number;
+  strongCount?: number;
   // Pinned feature - only admin can pin
   isPinned?: boolean;
   pinnedAt?: TimeLike;
@@ -76,6 +80,13 @@ export type Testimony = {
   location?: string;
   createdAt?: TimeLike;
   commentCount?: number;
+  // Reaction counts
+  heartCount?: number;
+  fireCount?: number;
+  // Privacy options (default: PUBLIC for backward compatibility)
+  isPrivate?: boolean;
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'GROUP';
+  groupIds?: string[];
 };
 
 export type Comment = {
@@ -98,6 +109,10 @@ export type PrayerGroup = {
   memberUids: string[];
   isPrivate: boolean;
   createdAt?: TimeLike;
+  // Indexed invite code for efficient lookups
+  inviteCode?: string;
+  // Pending join requests (for private groups)
+  pendingRequests?: string[];
 };
 
 export type PrayerReminder = {

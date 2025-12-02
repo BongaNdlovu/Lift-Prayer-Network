@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { db, firebaseEnabled } from '../../services/firebase';
 import { palette, radius, spacing } from '../../theme/colors';
 import type { PrayerRecord } from '../../types';
@@ -19,6 +20,7 @@ import type { PrayerRecord } from '../../types';
 export const HistoryScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [items, setItems] = useState<PrayerRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,11 +31,12 @@ export const HistoryScreen: React.FC = () => {
       return undefined;
     }
     
-    console.log('[History] Loading prayer history for user:', user.uid);
+    console.log('[History] Loading prayers received for user:', user.uid);
     
+    // Query prayers received ON the user's requests (who prayed for them)
     const q = query(
       collection(db, 'prayers'),
-      where('actorUid', '==', user.uid),
+      where('targetOwnerUid', '==', user.uid),
       orderBy('prayedAt', 'desc'),
       limit(50),
     );
@@ -42,7 +45,7 @@ export const HistoryScreen: React.FC = () => {
       q,
       (snap) => {
         const next = snap.docs.map((docSnap) => ({ ...(docSnap.data() as any), id: docSnap.id }));
-        console.log('[History] Loaded', next.length, 'prayer records');
+        console.log('[History] Loaded', next.length, 'prayers received');
         setItems(next as PrayerRecord[]);
         setLoading(false);
       },
@@ -50,7 +53,7 @@ export const HistoryScreen: React.FC = () => {
         console.error('[History] Query error:', error.code, error.message);
         // Handle missing index error
         if (error.code === 'failed-precondition') {
-          console.error('[History] Missing Firestore index. Please create a composite index for prayers collection: actorUid (==) + prayedAt (desc)');
+          console.error('[History] Missing Firestore index. Please create a composite index for prayers collection: targetOwnerUid (==) + prayedAt (desc)');
         }
         setLoading(false);
       }
@@ -60,47 +63,47 @@ export const HistoryScreen: React.FC = () => {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.title}>Sign in to track your prayer history.</Text>
+      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Sign in to track your prayer history.</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header with Back Button */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Prayer History</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Prayers Received</Text>
         <View style={{ width: 40 }} />
       </View>
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={palette.accent} />
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.summary}>{item.targetSummary}</Text>
-              <Text style={styles.meta}>Prayed for request {item.targetRequestId}</Text>
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.summary, { color: colors.text }]}>{(item as any).actorDisplayName || 'Someone'} prayed for you</Text>
+              <Text style={[styles.meta, { color: colors.muted }]}>{item.targetSummary}</Text>
             </View>
           )}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
+            <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
               <View style={styles.emptyIcon}>
-                <View style={styles.emptyCircle}>
+                <View style={[styles.emptyCircle, { backgroundColor: colors.surface }]}>
                   <Text style={styles.emptyEmoji}>🙏</Text>
                 </View>
-                <View style={styles.emptyRing} />
+                <View style={[styles.emptyRing, { borderColor: colors.muted }]} />
               </View>
-              <Text style={styles.emptyTitle}>No prayers yet</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No prayers received yet</Text>
               <Text style={styles.emptySubtitle}>
-                When you pray for someone&apos;s request,{'\n'}it will appear here
+                When someone prays for your request,{'\n'}it will appear here
               </Text>
             </View>
           }
@@ -113,7 +116,6 @@ export const HistoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   header: {
     flexDirection: 'row',
@@ -135,12 +137,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   heading: {
     fontSize: 22,
     fontWeight: '900',
-    color: palette.text,
     marginBottom: spacing.md,
   },
   center: {
@@ -150,7 +150,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
@@ -159,16 +158,13 @@ const styles = StyleSheet.create({
   },
   summary: {
     fontWeight: '700',
-    color: palette.text,
     marginBottom: 4,
   },
   meta: {
-    color: palette.muted,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.text,
   },
   emptyState: {
     flex: 1,
@@ -187,7 +183,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#fef3c7',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#f59e0b',
@@ -202,7 +197,6 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 2,
-    borderColor: '#fde68a',
     borderStyle: 'dashed',
   },
   emptyEmoji: {
@@ -211,12 +205,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 22,
   },

@@ -20,12 +20,13 @@ import { db, firebaseEnabled, storage } from './firebase';
 import type { PrayerGroup } from '../types';
 import { checkAndUnlockAchievements } from './achievements';
 import { classifyError, type AppError } from '../types/errors';
+import { checkRateLimit } from '../utils/security';
 
 export type GroupResult<T> = 
   | { success: true; data: T }
   | { success: false; error: AppError };
 
-type GroupMember = {
+export type GroupMember = {
   uid: string;
   displayName: string;
   email?: string;
@@ -56,6 +57,10 @@ export const createGroup = async (
       isPrivate,
       createdAt: serverTimestamp(),
     });
+
+    // Store invite code for efficient lookup (first 8 chars of ID, uppercase)
+    const inviteCode = groupRef.id.slice(0, 8).toUpperCase();
+    await updateDoc(groupRef, { inviteCode });
 
     console.log('[Groups] Group created with ID:', groupRef.id);
 
@@ -97,6 +102,38 @@ export const getUserGroups = async (userId: string): Promise<PrayerGroup[]> => {
   } catch (err) {
     const appError = classifyError(err);
     console.warn('[Groups] Error fetching groups:', appError.message);
+    return [];
+  }
+};
+
+/**
+ * Get public groups that the user is NOT a member of (for discovery)
+ */
+export const getPublicGroups = async (userId: string, limitCount: number = 10): Promise<PrayerGroup[]> => {
+  if (!firebaseEnabled || !db) return [];
+
+  try {
+    // Get public groups
+    const q = query(
+      collection(db, 'groups'),
+      where('isPrivate', '==', false),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    
+    // Filter out groups user is already a member of or has pending request
+    const publicGroups = snapshot.docs
+      .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as PrayerGroup))
+      .filter((group) => 
+        !group.memberUids.includes(userId) && 
+        !group.pendingRequests?.includes(userId)
+      )
+      .slice(0, limitCount);
+    
+    return publicGroups;
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error fetching public groups:', appError.message);
     return [];
   }
 };
@@ -154,13 +191,97 @@ export const getGroup = async (groupId: string): Promise<PrayerGroup | null> => 
   }
 };
 
-export const joinGroup = async (groupId: string, userId: string): Promise<boolean> => {
+export type JoinGroupResult = 
+  | { success: true; status: 'joined' }
+  | { success: true; status: 'pending' }
+  | { success: false; error: string };
+
+/**
+ * Join a group or request to join.
+ * - Public groups: User is added directly to memberUids
+ * - Private groups: User is added to pendingRequests for owner approval
+ */
+export const joinGroup = async (groupId: string, userId: string): Promise<JoinGroupResult> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Firebase not enabled' };
+  }
+
+  // Rate limit group joins (5 per hour)
+  const allowed = checkRateLimit(`group_join_${userId}`, 5, 60 * 60 * 1000);
+  if (!allowed) {
+    return { success: false, error: 'Too many join attempts. Please try again later.' };
+  }
+
+  try {
+    // First, get the group to check if it's private
+    const group = await getGroup(groupId);
+    if (!group) {
+      return { success: false, error: 'Group not found' };
+    }
+
+    if (group.memberUids.includes(userId)) {
+      return { success: false, error: 'Already a member' };
+    }
+
+    const groupRef = doc(db, 'groups', groupId);
+
+    if (group.isPrivate) {
+      // Private group: add to pending requests
+      if (group.pendingRequests?.includes(userId)) {
+        return { success: false, error: 'Join request already pending' };
+      }
+      
+      await updateDoc(groupRef, {
+        pendingRequests: arrayUnion(userId),
+      });
+      
+      return { success: true, status: 'pending' };
+    } else {
+      // Public group: add directly to members
+      await updateDoc(groupRef, {
+        memberUids: arrayUnion(userId),
+      });
+
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        groupIds: arrayUnion(groupId),
+      });
+
+      return { success: true, status: 'joined' };
+    }
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error joining group:', appError.message);
+    return { success: false, error: appError.message };
+  }
+};
+
+/**
+ * Approve a pending join request (owner only)
+ */
+export const approveJoinRequest = async (
+  groupId: string,
+  userId: string,
+  ownerUid: string
+): Promise<boolean> => {
   if (!firebaseEnabled || !db) return false;
 
   try {
+    const group = await getGroup(groupId);
+    if (!group || group.ownerUid !== ownerUid) {
+      console.warn('[Groups] Not authorized to approve requests');
+      return false;
+    }
+
+    if (!group.pendingRequests?.includes(userId)) {
+      console.warn('[Groups] User not in pending requests');
+      return false;
+    }
+
     const groupRef = doc(db, 'groups', groupId);
     await updateDoc(groupRef, {
       memberUids: arrayUnion(userId),
+      pendingRequests: arrayRemove(userId),
     });
 
     const userRef = doc(db, 'users', userId);
@@ -168,10 +289,57 @@ export const joinGroup = async (groupId: string, userId: string): Promise<boolea
       groupIds: arrayUnion(groupId),
     });
 
+    // Create notification for the user whose request was approved
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        type: 'group_join_approved',
+        recipientUid: userId,
+        actorUid: ownerUid,
+        groupId,
+        groupName: group.name,
+        groupEmoji: group.emoji || '🙏',
+        createdAt: serverTimestamp(),
+        read: false,
+      });
+    } catch (notifErr) {
+      // Non-critical: log but don't fail the approval
+      console.warn('[Groups] Could not create approval notification:', notifErr);
+    }
+
     return true;
   } catch (err) {
     const appError = classifyError(err);
-    console.warn('[Groups] Error joining group:', appError.message);
+    console.warn('[Groups] Error approving join request:', appError.message);
+    return false;
+  }
+};
+
+/**
+ * Reject a pending join request (owner only)
+ */
+export const rejectJoinRequest = async (
+  groupId: string,
+  userId: string,
+  ownerUid: string
+): Promise<boolean> => {
+  if (!firebaseEnabled || !db) return false;
+
+  try {
+    const group = await getGroup(groupId);
+    if (!group || group.ownerUid !== ownerUid) {
+      console.warn('[Groups] Not authorized to reject requests');
+      return false;
+    }
+
+    const groupRef = doc(db, 'groups', groupId);
+    await updateDoc(groupRef, {
+      pendingRequests: arrayRemove(userId),
+    });
+
+    return true;
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error rejecting join request:', appError.message);
     return false;
   }
 };
@@ -245,18 +413,42 @@ export const getInviteCode = (groupId: string): string => {
 };
 
 // Find group by invite code
+// Uses indexed inviteCode field for efficient lookup instead of fetching all groups
 export const findGroupByInviteCode = async (code: string): Promise<PrayerGroup | null> => {
   if (!firebaseEnabled || !db) return null;
 
   try {
-    const q = query(collection(db, 'groups'));
+    const normalizedCode = code.toUpperCase();
+    
+    // First try efficient query using inviteCode field (for newer groups)
+    const q = query(
+      collection(db, 'groups'),
+      where('inviteCode', '==', normalizedCode)
+    );
     const snapshot = await getDocs(q);
     
-    for (const docSnap of snapshot.docs) {
-      if (docSnap.id.slice(0, 8).toUpperCase() === code.toUpperCase()) {
+    if (!snapshot.empty) {
+      const docSnap = snapshot.docs[0];
+      return { id: docSnap.id, ...docSnap.data() } as PrayerGroup;
+    }
+    
+    // Fallback: Try to find by document ID prefix (for legacy groups without inviteCode field)
+    // This is less efficient but handles groups created before the inviteCode field was added
+    const allGroupsQuery = query(collection(db, 'groups'));
+    const allSnapshot = await getDocs(allGroupsQuery);
+    
+    for (const docSnap of allSnapshot.docs) {
+      if (docSnap.id.slice(0, 8).toUpperCase() === normalizedCode) {
+        // Migrate: add inviteCode field for future lookups
+        try {
+          await updateDoc(doc(db, 'groups', docSnap.id), { inviteCode: normalizedCode });
+        } catch {
+          // Ignore migration errors (user might not have permission)
+        }
         return { id: docSnap.id, ...docSnap.data() } as PrayerGroup;
       }
     }
+    
     return null;
   } catch (err) {
     const appError = classifyError(err);
@@ -268,9 +460,19 @@ export const findGroupByInviteCode = async (code: string): Promise<PrayerGroup |
 export const uploadGroupPhoto = async (
   groupId: string,
   imageUri: string,
+  currentUserUid: string,
 ): Promise<string> => {
-  if (!storage) {
+  if (!storage || !db) {
     throw new Error('Storage not initialized');
+  }
+
+  // Verify user is the group owner before uploading
+  const group = await getGroup(groupId);
+  if (!group) {
+    throw new Error('Group not found');
+  }
+  if (group.ownerUid !== currentUserUid) {
+    throw new Error('Only the group owner can upload a group photo');
   }
 
   const response = await fetch(imageUri);
@@ -284,8 +486,20 @@ export const uploadGroupPhoto = async (
   return getDownloadURL(storageRef);
 };
 
-export const deleteGroupPhoto = async (groupId: string): Promise<void> => {
-  if (!storage) return;
+export const deleteGroupPhoto = async (
+  groupId: string,
+  currentUserUid: string,
+): Promise<void> => {
+  if (!storage || !db) return;
+
+  // Verify user is the group owner before deleting
+  const group = await getGroup(groupId);
+  if (!group) {
+    throw new Error('Group not found');
+  }
+  if (group.ownerUid !== currentUserUid) {
+    throw new Error('Only the group owner can delete the group photo');
+  }
 
   try {
     const storageRef = ref(storage, `group-images/${groupId}/photo.jpg`);

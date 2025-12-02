@@ -2,6 +2,7 @@ import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, spacing } from '../theme/colors';
 
 const LAST_UPDATED = 'November 30, 2025';
@@ -9,37 +10,38 @@ const CONTACT_EMAIL = 'support@liftprayer.app';
 
 export const TermsOfServiceScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { colors } = useTheme();
 
   const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={[styles.section, { backgroundColor: colors.surface }]}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
       {children}
     </View>
   );
 
   const Paragraph: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <Text style={styles.paragraph}>{children}</Text>
+    <Text style={[styles.paragraph, { color: colors.text }]}>{children}</Text>
   );
 
   const BulletPoint: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <View style={styles.bulletRow}>
-      <Text style={styles.bullet}>•</Text>
-      <Text style={styles.bulletText}>{children}</Text>
+      <Text style={[styles.bullet, { color: colors.accent }]}>•</Text>
+      <Text style={[styles.bulletText, { color: colors.text }]}>{children}</Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Terms of Service</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Terms of Service</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.lastUpdated}>Last Updated: {LAST_UPDATED}</Text>
+        <Text style={[styles.lastUpdated, { color: colors.muted }]}>Last Updated: {LAST_UPDATED}</Text>
 
         <Paragraph>
           Welcome to Lift! By using our app, you agree to these Terms of Service. Please read them carefully.
@@ -133,7 +135,7 @@ export const TermsOfServiceScreen: React.FC = () => {
             For questions about these Terms, contact us at:
           </Paragraph>
           <TouchableOpacity onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}`)}>
-            <Text style={styles.link}>{CONTACT_EMAIL}</Text>
+            <Text style={[styles.link, { color: colors.accent }]}>{CONTACT_EMAIL}</Text>
           </TouchableOpacity>
         </Section>
 
@@ -163,7 +165,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   placeholder: {
     width: 40,
@@ -174,7 +175,6 @@ const styles = StyleSheet.create({
   },
   lastUpdated: {
     fontSize: 12,
-    color: palette.muted,
     marginTop: spacing.lg,
     marginBottom: spacing.md,
     fontStyle: 'italic',
@@ -185,13 +185,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.text,
     marginBottom: spacing.sm,
   },
   paragraph: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#374151',
     marginBottom: spacing.sm,
   },
   bulletRow: {
@@ -201,7 +199,6 @@ const styles = StyleSheet.create({
   },
   bullet: {
     fontSize: 14,
-    color: palette.accent,
     marginRight: spacing.sm,
     fontWeight: '700',
   },
@@ -209,11 +206,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
-    color: '#374151',
   },
   link: {
     fontSize: 14,
-    color: palette.accentDark,
     textDecorationLine: 'underline',
   },
   bottomPadding: {

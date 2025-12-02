@@ -17,9 +17,10 @@ import * as Notifications from 'expo-notifications';
 import { doc, getDoc } from 'firebase/firestore';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { db, firebaseEnabled } from '../services/firebase';
-import { registerForPushNotifications, storePushToken } from '../services/notifications';
+import { registerForPushNotifications, storePushToken, sendTestNotification, getPushTokenStatus } from '../services/notifications';
 import { updateUserSettings } from '../services/userProfile';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -32,6 +33,7 @@ type NotificationSettings = {
   testimonies: boolean;
   critical: boolean;
   groups: boolean;
+  achievements: boolean;
   dailyReminder: boolean;
   reminderTime: string; // HH:MM format
 };
@@ -43,12 +45,14 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   testimonies: true,
   critical: false,
   groups: true,
+  achievements: true,
   dailyReminder: false,
   reminderTime: '09:00',
 };
 
 export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<string>('unknown');
@@ -77,6 +81,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
             testimonies: userSettings.notificationsTestimonies ?? true,
             critical: userSettings.notificationsCritical ?? false,
             groups: userSettings.notificationsGroups ?? true,
+            achievements: userSettings.notificationsAchievements ?? true,
             dailyReminder: userSettings.dailyReminder ?? false,
             reminderTime: userSettings.reminderTime ?? '09:00',
           });
@@ -139,6 +144,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
       testimonies: 'notificationsTestimonies',
       critical: 'notificationsCritical',
       groups: 'notificationsGroups',
+      achievements: 'notificationsAchievements',
       dailyReminder: 'dailyReminder',
       reminderTime: 'reminderTime',
     };
@@ -294,6 +300,23 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
           </View>
         </View>
 
+        {/* Achievements Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Achievements</Text>
+          
+          <View style={styles.settingCard}>
+            <SettingRow
+              icon="trophy"
+              iconColor="#f59e0b"
+              title="Achievement Unlocked"
+              subtitle="When you earn a new achievement badge"
+              value={settings.achievements}
+              onToggle={() => handleToggle('achievements')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
+            />
+          </View>
+        </View>
+
         {/* Reminders Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Daily Reminders</Text>
@@ -328,6 +351,63 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
                 </TouchableOpacity>
               </>
             )}
+          </View>
+        </View>
+
+        {/* Debug Section - Test Notifications */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Troubleshooting</Text>
+          
+          <View style={styles.settingCard}>
+            <TouchableOpacity 
+              style={styles.debugButton}
+              onPress={async () => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                const success = await sendTestNotification();
+                if (success) {
+                  Alert.alert('Test Sent', 'A test notification was sent. You should see it shortly.');
+                } else {
+                  Alert.alert('Test Failed', 'Could not send test notification. Please check permissions.');
+                }
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
+                <Ionicons name="flask" size={20} color="#f59e0b" />
+              </View>
+              <View style={styles.debugButtonText}>
+                <Text style={styles.settingTitle}>Send Test Notification</Text>
+                <Text style={styles.settingSubtitle}>Verify notifications are working</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            </TouchableOpacity>
+            
+            <View style={styles.divider} />
+            
+            <TouchableOpacity 
+              style={styles.debugButton}
+              onPress={async () => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                const status = await getPushTokenStatus();
+                Alert.alert(
+                  'Push Token Status',
+                  `Permission: ${status.permissionStatus}\n\nToken: ${status.expoPushToken ? status.expoPushToken.substring(0, 40) + '...' : 'None'}\n\nError: ${status.error || 'None'}`,
+                  [{ text: 'OK' }]
+                );
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#dbeafe' }]}>
+                <Ionicons name="key" size={20} color="#3b82f6" />
+              </View>
+              <View style={styles.debugButtonText}>
+                <Text style={styles.settingTitle}>View Push Token</Text>
+                <Text style={styles.settingSubtitle}>Check your device's push token</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -538,6 +618,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#3b82f6',
     lineHeight: 18,
+  },
+  debugButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  debugButtonText: {
+    flex: 1,
   },
 });
 

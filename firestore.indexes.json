@@ -128,6 +128,22 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPinned", "order": "ASCENDING" },
+        { "fieldPath": "pinnedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "prayers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "targetOwnerUid", "order": "ASCENDING" },
+        { "fieldPath": "prayedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

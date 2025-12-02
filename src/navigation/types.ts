@@ -39,6 +39,10 @@ export type RootStackParamList = {
   AdminDashboard: undefined;
   AdminPinnedRequests: undefined;
   AdminGlobalStats: undefined;
+  AdminBannedUsers: undefined;
+  NotificationsInbox: undefined;
+  AnsweredPrayers: undefined;
+  Search: undefined;
 };
 
 export type MainTabParamList = {
@@ -46,5 +50,6 @@ export type MainTabParamList = {
   Groups: undefined;
   Calendar: undefined;
   Stats: undefined;
+  Donate: undefined;
   Profile: undefined;
 };

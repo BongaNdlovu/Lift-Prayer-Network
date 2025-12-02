@@ -62,6 +62,15 @@ export const logPrayer = async (
     return { success: false, error: 'Invalid request ID' };
   }
 
+  // Prevent users from praying on their own requests
+  if (actorUid === targetOwnerUid) {
+    return { 
+      success: false, 
+      error: 'You cannot pray on your own request. Share it with others to receive prayers!',
+      isSelfPrayer: true,
+    };
+  }
+
   // Check if user has already prayed on this request
   const alreadyPrayed = await hasUserPrayed(actorUid, targetRequestId);
   if (alreadyPrayed) {
@@ -142,11 +151,14 @@ export const logPrayer = async (
       txn.update(requestRef, updateData);
 
       // Update people prayed for - use set with merge to create if not exists
+      // Get the request owner's display name for the "People I Prayed For" list
+      const targetName = requestData?.userDisplayName || 'Anonymous';
       txn.set(
         peopleRef,
         {
           count: increment(1),
           targetOwnerUid: safeTargetOwnerUid,
+          targetName,
           lastPrayedAt: serverTimestamp(),
         },
         { merge: true }
@@ -195,6 +207,134 @@ export const logPrayer = async (
   } catch (err: unknown) {
     console.error('[Prayers] Error logging prayer:', err);
     const errorMessage = err instanceof Error ? err.message : 'Could not log prayer. Please try again.';
+    return { success: false, error: errorMessage };
+  }
+};
+
+/**
+ * Log a reaction (heart, fire, strong) on a prayer request or testimony.
+ */
+export type ReactionType = 'heart' | 'fire' | 'strong';
+
+export const logReaction = async (
+  actorUid: string,
+  targetId: string,
+  targetType: 'REQUEST' | 'TESTIMONY',
+  reactionType: ReactionType
+): Promise<{ success: boolean; error?: string }> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Firebase not enabled' };
+  }
+
+  if (!actorUid || !targetId) {
+    return { success: false, error: 'Invalid parameters' };
+  }
+
+  // Map reaction type to field name
+  const fieldMap: Record<ReactionType, string> = {
+    heart: 'heartCount',
+    fire: 'fireCount',
+    strong: 'strongCount',
+  };
+
+  const fieldName = fieldMap[reactionType];
+  if (!fieldName) {
+    return { success: false, error: 'Invalid reaction type' };
+  }
+
+  const collectionName = targetType === 'REQUEST' ? 'requests' : 'testimonies';
+  const targetRef = doc(db, collectionName, targetId);
+
+  try {
+    // Check if user already reacted with this type
+    const reactionId = `${actorUid}_${targetId}_${reactionType}`;
+    const reactionRef = doc(db, 'reactions', reactionId);
+
+    await runTransaction(db, async (txn) => {
+      const reactionSnap = await txn.get(reactionRef);
+      
+      if (reactionSnap.exists()) {
+        // User already reacted - this is a toggle off (decrement)
+        txn.delete(reactionRef);
+        txn.update(targetRef, {
+          [fieldName]: increment(-1),
+        });
+      } else {
+        // New reaction - increment
+        txn.set(reactionRef, {
+          actorUid,
+          targetId,
+          targetType,
+          reactionType,
+          createdAt: serverTimestamp(),
+        });
+        txn.update(targetRef, {
+          [fieldName]: increment(1),
+        });
+      }
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('[Reactions] Error logging reaction:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Could not log reaction';
+    return { success: false, error: errorMessage };
+  }
+};
+
+/**
+ * Like/Amen a testimony (toggle).
+ * Increments or decrements the likes count.
+ */
+export const likeTestimony = async (
+  actorUid: string,
+  testimonyId: string,
+): Promise<{ success: boolean; error?: string; liked?: boolean }> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Firebase not initialized' };
+  }
+
+  if (!actorUid || !testimonyId) {
+    return { success: false, error: 'Invalid parameters' };
+  }
+
+  const testimonyRef = doc(db, 'testimonies', testimonyId);
+  const likeId = `${actorUid}_${testimonyId}_amen`;
+  const likeRef = doc(db, 'reactions', likeId);
+
+  try {
+    let liked = false;
+    
+    await runTransaction(db, async (txn) => {
+      const likeSnap = await txn.get(likeRef);
+      
+      if (likeSnap.exists()) {
+        // User already liked - toggle off (decrement)
+        txn.delete(likeRef);
+        txn.update(testimonyRef, {
+          likes: increment(-1),
+        });
+        liked = false;
+      } else {
+        // New like - increment
+        txn.set(likeRef, {
+          actorUid,
+          targetId: testimonyId,
+          targetType: 'TESTIMONY',
+          reactionType: 'amen',
+          createdAt: serverTimestamp(),
+        });
+        txn.update(testimonyRef, {
+          likes: increment(1),
+        });
+        liked = true;
+      }
+    });
+
+    return { success: true, liked };
+  } catch (err: unknown) {
+    console.error('[Testimonies] Error liking testimony:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Could not like testimony';
     return { success: false, error: errorMessage };
   }
 };

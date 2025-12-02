@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -25,18 +26,34 @@ import {
   joinGroup,
   findGroupByInviteCode,
   getInviteCode,
+  getPublicGroups,
 } from '../services/groups';
+import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { SkeletonGroups } from '../components/SkeletonCard';
 import type { PrayerGroup } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 
 const GROUP_EMOJIS = ['🙏', '⛪', '👨‍👩‍👧‍👦', '❤️', '✝️', '🕊️', '📖', '🌟', '💒', '🤝'];
 
+type GroupNotification = {
+  id: string;
+  type: string;
+  groupName: string;
+  groupEmoji: string;
+  groupId: string;
+  read: boolean;
+};
+
 export const GroupsScreen: React.FC = () => {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [groups, setGroups] = useState<PrayerGroup[]>([]);
-  const [, setLoading] = useState(true);
+  const [publicGroups, setPublicGroups] = useState<PrayerGroup[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -45,6 +62,8 @@ export const GroupsScreen: React.FC = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<GroupNotification[]>([]);
 
   const handleGroupPress = (group: PrayerGroup) => {
     if (Platform.OS !== 'web') {
@@ -70,6 +89,55 @@ export const GroupsScreen: React.FC = () => {
 
     return () => unsub();
   }, [user]);
+
+  // Load public groups for discovery
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadPublicGroups = async () => {
+      const publicData = await getPublicGroups(user.uid, 5);
+      setPublicGroups(publicData);
+    };
+    
+    loadPublicGroups();
+  }, [user, groups]); // Re-fetch when user's groups change
+
+  // Subscribe to group-related notifications
+  useEffect(() => {
+    if (!user || !db) return;
+    
+    const notifQuery = query(
+      collection(db, 'notifications'),
+      where('recipientUid', '==', user.uid),
+      where('type', '==', 'group_join_approved'),
+      where('read', '==', false),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    
+    const unsub = onSnapshot(notifQuery, (snapshot) => {
+      const notifs = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as GroupNotification[];
+      setNotifications(notifs);
+    }, (err) => {
+      console.warn('[GroupsScreen] Notification subscription error:', err);
+    });
+    
+    return () => unsub();
+  }, [user]);
+
+  // Dismiss a notification
+  const dismissNotification = async (notifId: string) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, 'notifications', notifId), { read: true });
+      setNotifications(prev => prev.filter(n => n.id !== notifId));
+    } catch (err) {
+      console.warn('[GroupsScreen] Error dismissing notification:', err);
+    }
+  };
 
   const handleCreateGroup = async () => {
     if (!user || !newGroupName.trim()) return;
@@ -125,23 +193,25 @@ export const GroupsScreen: React.FC = () => {
         return;
       }
 
-      if (group.memberUids.includes(user.uid)) {
-        Alert.alert('Already Member', 'You are already in this group');
-        setJoining(false);
-        return;
-      }
-
-      const success = await joinGroup(group.id, user.uid);
+      const result = await joinGroup(group.id, user.uid);
       
-      if (success) {
+      if (result.success) {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
         setShowJoinModal(false);
         setInviteCode('');
-        Alert.alert('Joined!', `You've joined ${group.name}`);
+        
+        if (result.status === 'joined') {
+          Alert.alert('Joined!', `You've joined ${group.name}`);
+        } else if (result.status === 'pending') {
+          Alert.alert(
+            'Request Sent',
+            `Your request to join "${group.name}" has been sent. The group owner will review it.`
+          );
+        }
       } else {
-        Alert.alert('Error', 'Could not join group');
+        Alert.alert('Error', result.error || 'Could not join group');
       }
     } catch {
       Alert.alert('Error', 'Could not join group');
@@ -158,6 +228,41 @@ export const GroupsScreen: React.FC = () => {
       });
     } catch {
       // User cancelled
+    }
+  };
+
+  // Join a public group from discovery
+  const handleJoinPublicGroup = async (group: PrayerGroup) => {
+    if (!user) return;
+
+    setJoiningGroupId(group.id);
+    try {
+      const result = await joinGroup(group.id, user.uid);
+      
+      if (result.success) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        
+        if (result.status === 'joined') {
+          Alert.alert('Joined!', `You've joined ${group.name}`);
+          // Remove from public groups list
+          setPublicGroups(prev => prev.filter(g => g.id !== group.id));
+        } else if (result.status === 'pending') {
+          Alert.alert(
+            'Request Sent',
+            `Your request to join "${group.name}" has been sent. The group owner will review it.`
+          );
+          // Remove from public groups list
+          setPublicGroups(prev => prev.filter(g => g.id !== group.id));
+        }
+      } else {
+        Alert.alert('Error', result.error || 'Could not join group');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not join group');
+    } finally {
+      setJoiningGroupId(null);
     }
   };
 
@@ -189,8 +294,8 @@ export const GroupsScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.center}>
         <Text style={styles.emptyEmoji}>👥</Text>
-        <Text style={styles.emptyTitle}>Sign in to join groups</Text>
-        <Text style={styles.emptySubtitle}>Create prayer circles with family & friends</Text>
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to join groups</Text>
+        <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Create prayer circles with family & friends</Text>
       </SafeAreaView>
     );
   }
@@ -206,8 +311,8 @@ export const GroupsScreen: React.FC = () => {
           <Text style={styles.groupEmojiText}>{item.emoji || '🙏'}</Text>
         </View>
         <View style={styles.groupInfo}>
-          <Text style={styles.groupName}>{item.name}</Text>
-          <Text style={styles.groupMembers}>
+          <Text style={[styles.groupName, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.groupMembers, { color: colors.muted }]}>
             {item.memberUids.length} member{item.memberUids.length !== 1 ? 's' : ''}
           </Text>
         </View>
@@ -217,12 +322,12 @@ export const GroupsScreen: React.FC = () => {
               <Text style={styles.ownerBadgeText}>Owner</Text>
             </View>
           )}
-          <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
         </View>
       </View>
       
       {item.description && (
-        <Text style={styles.groupDesc}>{item.description}</Text>
+        <Text style={[styles.groupDesc, { color: colors.muted }]}>{item.description}</Text>
       )}
 
       <View style={styles.groupActions}>
@@ -233,8 +338,8 @@ export const GroupsScreen: React.FC = () => {
             handleShareInvite(item);
           }}
         >
-          <Ionicons name="share-outline" size={18} color={palette.accentDark} />
-          <Text style={styles.actionBtnText}>Invite</Text>
+          <Ionicons name="share-outline" size={18} color={colors.accent} />
+          <Text style={[styles.actionBtnText, { color: colors.accent }]}>Invite</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
@@ -244,8 +349,8 @@ export const GroupsScreen: React.FC = () => {
             handleLeaveGroup(item);
           }}
         >
-          <Ionicons name="exit-outline" size={18} color="#dc2626" />
-          <Text style={styles.leaveBtnText}>
+          <Ionicons name="exit-outline" size={18} color={colors.danger} />
+          <Text style={[styles.leaveBtnText, { color: colors.danger }]}>
             {item.ownerUid === user?.uid ? 'Delete' : 'Leave'}
           </Text>
         </TouchableOpacity>
@@ -254,30 +359,55 @@ export const GroupsScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.heading}>Prayer Groups</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>Prayer Groups</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerBtn}
             onPress={() => setShowJoinModal(true)}
           >
-            <Ionicons name="enter-outline" size={20} color={palette.text} />
+            <Ionicons name="enter-outline" size={20} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.headerBtn, styles.createBtn]}
             onPress={() => setShowCreateModal(true)}
           >
-            <Ionicons name="add" size={22} color="#fff" />
+            <Ionicons name="add" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {groups.length === 0 ? (
+      {/* Notification Banner for Group Join Approvals */}
+      {notifications.map((notif) => (
+        <View key={notif.id} style={styles.notificationBanner}>
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationEmoji}>{notif.groupEmoji || '🙏'}</Text>
+            <View style={styles.notificationText}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>Welcome!</Text>
+              <Text style={[styles.notificationMessage, { color: colors.muted }]}>
+                You've been added to "{notif.groupName}"
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.notificationDismiss}
+            onPress={() => dismissNotification(notif.id)}
+          >
+            <Ionicons name="close" size={18} color={colors.muted} />
+          </TouchableOpacity>
+        </View>
+      ))}
+
+      {loading ? (
+        <View style={styles.list}>
+          <SkeletonGroups count={4} />
+        </View>
+      ) : groups.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🤝</Text>
-          <Text style={styles.emptyTitle}>No groups yet</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No groups yet</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
             Create a prayer circle or join one with an invite code
           </Text>
           <View style={styles.emptyActions}>
@@ -285,15 +415,15 @@ export const GroupsScreen: React.FC = () => {
               style={styles.emptyBtn}
               onPress={() => setShowCreateModal(true)}
             >
-              <Ionicons name="add-circle-outline" size={20} color={palette.accentDark} />
-              <Text style={styles.emptyBtnText}>Create Group</Text>
+              <Ionicons name="add-circle-outline" size={20} color={colors.accent} />
+              <Text style={[styles.emptyBtnText, { color: colors.accent }]}>Create Group</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.emptyBtn}
               onPress={() => setShowJoinModal(true)}
             >
-              <Ionicons name="enter-outline" size={20} color={palette.accentDark} />
-              <Text style={styles.emptyBtnText}>Join with Code</Text>
+              <Ionicons name="enter-outline" size={20} color={colors.accent} />
+              <Text style={[styles.emptyBtnText, { color: colors.accent }]}>Join with Code</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -304,6 +434,52 @@ export const GroupsScreen: React.FC = () => {
           renderItem={renderGroup}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            publicGroups.length > 0 ? (
+              <View style={styles.discoverSection}>
+                <View style={styles.discoverHeader}>
+                  <Ionicons name="compass-outline" size={20} color={colors.accent} />
+                  <Text style={[styles.discoverTitle, { color: colors.text }]}>Discover Groups</Text>
+                </View>
+                <Text style={[styles.discoverSubtitle, { color: colors.muted }]}>Public groups you can join</Text>
+                
+                {publicGroups.map((group) => (
+                  <View key={group.id} style={styles.discoverCard}>
+                    <View style={styles.discoverCardHeader}>
+                      <View style={styles.groupEmoji}>
+                        <Text style={styles.groupEmojiText}>{group.emoji || '🙏'}</Text>
+                      </View>
+                      <View style={styles.discoverCardInfo}>
+                        <Text style={[styles.groupName, { color: colors.text }]}>{group.name}</Text>
+                        <Text style={[styles.groupMembers, { color: colors.muted }]}>
+                          {group.memberUids.length} member{group.memberUids.length !== 1 ? 's' : ''}
+                        </Text>
+                      </View>
+                    </View>
+                    {group.description && (
+                      <Text style={[styles.discoverCardDesc, { color: colors.muted }]} numberOfLines={2}>
+                        {group.description}
+                      </Text>
+                    )}
+                    <TouchableOpacity
+                      style={[styles.joinBtn, joiningGroupId === group.id && styles.joinBtnDisabled]}
+                      onPress={() => handleJoinPublicGroup(group)}
+                      disabled={joiningGroupId === group.id}
+                    >
+                      {joiningGroupId === group.id ? (
+                        <ActivityIndicator size="small" color={colors.text} />
+                      ) : (
+                        <>
+                          <Ionicons name="add-circle-outline" size={18} color={colors.text} />
+                          <Text style={[styles.joinBtnText, { color: colors.text }]}>Join Group</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ) : null
+          }
         />
       )}
 
@@ -317,34 +493,34 @@ export const GroupsScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Prayer Group</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Create Prayer Group</Text>
               <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>Group Name</Text>
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Group Name</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.text }]}
               placeholder="e.g., Family Prayers"
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
               value={newGroupName}
               onChangeText={setNewGroupName}
               maxLength={50}
             />
 
-            <Text style={styles.inputLabel}>Description (optional)</Text>
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Description (optional)</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { color: colors.text }]}
               placeholder="What is this group for?"
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
               value={newGroupDesc}
               onChangeText={setNewGroupDesc}
               multiline
               maxLength={200}
             />
 
-            <Text style={styles.inputLabel}>Choose an Emoji</Text>
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Choose an Emoji</Text>
             <View style={styles.emojiPicker}>
               {GROUP_EMOJIS.map((emoji) => (
                 <TouchableOpacity
@@ -365,7 +541,7 @@ export const GroupsScreen: React.FC = () => {
               onPress={handleCreateGroup}
               disabled={!newGroupName.trim() || creating}
             >
-              <Text style={styles.createButtonText}>
+              <Text style={[styles.createButtonText, { color: colors.text }]}>
                 {creating ? 'Creating...' : 'Create Group'}
               </Text>
             </TouchableOpacity>
@@ -383,17 +559,17 @@ export const GroupsScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Join Prayer Group</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Join Prayer Group</Text>
               <TouchableOpacity onPress={() => setShowJoinModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>Enter Invite Code</Text>
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Enter Invite Code</Text>
             <TextInput
-              style={[styles.input, styles.codeInput]}
+              style={[styles.input, styles.codeInput, { color: colors.text }]}
               placeholder="ABCD1234"
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
               value={inviteCode}
               onChangeText={(text) => setInviteCode(text.toUpperCase())}
               maxLength={8}
@@ -405,7 +581,7 @@ export const GroupsScreen: React.FC = () => {
               onPress={handleJoinGroup}
               disabled={!inviteCode.trim() || joining}
             >
-              <Text style={styles.createButtonText}>
+              <Text style={[styles.createButtonText, { color: colors.text }]}>
                 {joining ? 'Joining...' : 'Join Group'}
               </Text>
             </TouchableOpacity>
@@ -447,7 +623,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -464,7 +640,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   groupCard: {
-    backgroundColor: '#fff',
+    backgroundColor: palette.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
@@ -485,7 +661,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#fef3c7',
+    backgroundColor: palette.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -511,7 +687,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   ownerBadge: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: palette.accentLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.sm,
@@ -519,7 +695,7 @@ const styles = StyleSheet.create({
   ownerBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#3b82f6',
+    color: palette.accent,
   },
   groupDesc: {
     fontSize: 14,
@@ -543,14 +719,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
-    backgroundColor: '#fef3c7',
+    backgroundColor: palette.accentLight,
   },
   actionBtnText: {
     fontWeight: '700',
     color: palette.accentDark,
   },
   leaveBtn: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: palette.dangerLight,
   },
   leaveBtnText: {
     fontWeight: '700',
@@ -587,7 +763,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#fef3c7',
+    backgroundColor: palette.accentLight,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
@@ -607,7 +783,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: palette.surface,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.lg,
@@ -633,7 +809,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: palette.surface,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
@@ -665,12 +841,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emojiOptionActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: palette.accentLight,
     borderWidth: 2,
     borderColor: palette.accent,
   },
@@ -696,7 +872,107 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#1f2937',
+    color: palette.accentDark,
+  },
+  // Discover section styles
+  discoverSection: {
+    marginTop: spacing.xl,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: palette.border,
+  },
+  discoverHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  discoverTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: palette.text,
+  },
+  discoverSubtitle: {
+    fontSize: 13,
+    color: palette.muted,
+    marginBottom: spacing.md,
+  },
+  discoverCard: {
+    backgroundColor: palette.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: palette.border,
+  },
+  discoverCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  discoverCardInfo: {
+    flex: 1,
+  },
+  discoverCardDesc: {
+    fontSize: 13,
+    color: palette.muted,
+    lineHeight: 18,
+    marginBottom: spacing.md,
+  },
+  joinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: palette.success,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  joinBtnDisabled: {
+    opacity: 0.6,
+  },
+  joinBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  // Notification banner styles
+  notificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: palette.successLight,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: palette.success,
+  },
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+  },
+  notificationEmoji: {
+    fontSize: 24,
+  },
+  notificationText: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: palette.success,
+  },
+  notificationMessage: {
+    fontSize: 13,
+    color: palette.success,
+    marginTop: 2,
+  },
+  notificationDismiss: {
+    padding: spacing.xs,
   },
 });
 

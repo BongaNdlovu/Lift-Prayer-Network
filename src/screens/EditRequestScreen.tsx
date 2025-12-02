@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { editPrayerRequest, editTestimony, deletePrayerRequest, deleteTestimony } from '../services/prayers';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { canEditContent, canDeleteContent, hasAdminPermission } from '../config/admins';
@@ -30,6 +31,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EditRequest'>;
 export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id, type, item } = route.params;
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const isRequest = type === 'REQUEST';
   
   // Form state

@@ -1,4 +1,6 @@
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { db, firebaseEnabled } from './firebase';
 
 export type AchievementId =
@@ -253,6 +255,29 @@ export const unlockAchievement = async (
         'achievements.unlockedIds': [...currentIds, achievementId],
         [`achievements.unlockedAt.${achievementId}`]: serverTimestamp(),
       });
+
+      // Send local push notification for achievement
+      const achievement = getAchievementById(achievementId);
+      const userSettings = data.settings || {};
+      const notificationsEnabled = userSettings.notifications ?? false;
+      const achievementNotificationsEnabled = userSettings.notificationsAchievements ?? true;
+
+      if (achievement && notificationsEnabled && achievementNotificationsEnabled && Platform.OS !== 'web') {
+        try {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: `${achievement.emoji} Achievement Unlocked!`,
+              body: `${achievement.title}: ${achievement.description}`,
+              sound: true,
+              data: { type: 'achievement', achievementId },
+            },
+            trigger: null, // Send immediately
+          });
+        } catch (notifErr) {
+          console.warn('[Achievements] Could not send notification:', notifErr);
+        }
+      }
+
       return true;
     }
   } catch (err) {

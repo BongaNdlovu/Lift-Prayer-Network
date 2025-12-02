@@ -15,6 +15,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 
@@ -22,6 +23,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 export const SignInScreen: React.FC<Props> = ({ navigation }) => {
   const { signIn, signInGuest, resetPassword } = useAuth();
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -118,7 +120,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
   const isLoading = loading;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -130,27 +132,27 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.logo}>LIFT</Text>
-            <Text style={styles.tagline}>Live network of prayer</Text>
+            <Text style={[styles.logo, { color: colors.text }]}>LIFT</Text>
+            <Text style={[styles.tagline, { color: colors.muted }]}>Live network of prayer</Text>
           </View>
 
           {/* Sign In Card */}
-          <View style={styles.card}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Sign in to continue</Text>
 
             {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={palette.muted} style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="mail-outline" size={20} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 placeholder="Email address"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 autoComplete="email"
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 value={email}
                 onChangeText={setEmail}
                 editable={!isLoading}
@@ -158,15 +160,15 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={palette.muted} style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 placeholder="Password"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 secureTextEntry={!showPassword}
                 textContentType="password"
                 autoComplete="password"
-                style={[styles.input, styles.passwordInput]}
+                style={[styles.input, styles.passwordInput, { color: colors.text }]}
                 value={password}
                 onChangeText={setPassword}
                 editable={!isLoading}
@@ -179,34 +181,39 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color={palette.muted}
+                  color={colors.muted}
                 />
               </TouchableOpacity>
             </View>
 
             {/* Forgot Password */}
             <TouchableOpacity onPress={handleForgotPassword} disabled={isLoading}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Text style={[styles.forgotText, { color: colors.muted }]}>Forgot password?</Text>
             </TouchableOpacity>
 
             {/* Sign In Button */}
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton, isLoading && styles.buttonDisabled]}
+              style={[
+                styles.button, 
+                styles.primaryButton, 
+                { backgroundColor: colors.accent },
+                isLoading && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
+              ]}
               onPress={handleSignIn}
               disabled={isLoading}
             >
               {loading ? (
-                <ActivityIndicator color="#1f2937" />
+                <ActivityIndicator color={colors.text} />
               ) : (
-                <Text style={styles.primaryButtonText}>Sign In</Text>
+                <Text style={[styles.primaryButtonText, { color: colors.text }]}>Sign In</Text>
               )}
             </TouchableOpacity>
 
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
+              <Text style={[styles.signUpText, { color: colors.muted }]}>Don&apos;t have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={isLoading}>
-                <Text style={styles.signUpLink}>Sign Up</Text>
+                <Text style={[styles.signUpLink, { color: colors.accent }]}>Sign Up</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -217,7 +224,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
             onPress={handleGuestSignIn}
             disabled={isLoading}
           >
-            <Text style={styles.guestText}>Continue as guest</Text>
+            <Text style={[styles.guestText, { color: colors.muted }]}>Continue as guest</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -245,15 +252,12 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '900',
     letterSpacing: 3,
-    color: palette.text,
   },
   tagline: {
-    color: palette.muted,
     marginTop: 4,
     fontSize: 14,
   },
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     shadowColor: palette.shadow,
@@ -267,12 +271,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: palette.muted,
     marginBottom: spacing.lg,
   },
   inputContainer: {
@@ -281,7 +283,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
     borderRadius: radius.md,
-    backgroundColor: '#f8fafc',
     marginBottom: spacing.md,
   },
   inputIcon: {
@@ -291,7 +292,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
-    color: palette.text,
     fontSize: 16,
   },
   passwordInput: {
@@ -303,7 +303,6 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   forgotText: {
-    color: palette.accentDark,
     fontWeight: '600',
     textAlign: 'right',
     marginBottom: spacing.lg,
@@ -323,7 +322,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   primaryButton: {
-    backgroundColor: palette.accent,
     shadowColor: '#f59e0b',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -332,7 +330,6 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     fontWeight: '800',
-    color: '#1f2937',
     fontSize: 17,
   },
   signUpContainer: {
@@ -341,11 +338,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   signUpText: {
-    color: palette.muted,
     fontSize: 14,
   },
   signUpLink: {
-    color: palette.accentDark,
     fontWeight: '700',
     fontSize: 14,
   },
@@ -354,11 +349,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
     marginTop: spacing.lg,
-    backgroundColor: '#f1f5f9',
     borderRadius: radius.md,
   },
   guestText: {
-    color: palette.text,
     fontSize: 15,
     fontWeight: '600',
   },

@@ -15,6 +15,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 
@@ -22,6 +23,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const { signUp } = useAuth();
+  const { colors } = useTheme();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -83,7 +85,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const isLoading = loading;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -95,21 +97,21 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.logo}>LIFT</Text>
-            <Text style={styles.tagline}>Join the prayer community</Text>
+            <Text style={[styles.logo, { color: colors.text }]}>LIFT</Text>
+            <Text style={[styles.tagline, { color: colors.muted }]}>Join the prayer community</Text>
           </View>
 
           {/* Sign Up Card */}
-          <View style={styles.card}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Sign up to get started</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Sign up to get started</Text>
 
             {/* Display Name Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color={palette.muted} style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="person-outline" size={20} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 placeholder="Display name"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 autoCapitalize="words"
                 autoCorrect={false}
                 textContentType="name"
@@ -122,11 +124,11 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={palette.muted} style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="mail-outline" size={20} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 placeholder="Email address"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -140,11 +142,11 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={palette.muted} style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 placeholder="Password (min 6 characters)"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 secureTextEntry={!showPassword}
                 textContentType="newPassword"
                 autoComplete="password-new"
@@ -161,20 +163,20 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color={palette.muted}
+                  color={colors.muted}
                 />
               </TouchableOpacity>
             </View>
 
             {/* Confirm Password Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={palette.muted} style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 placeholder="Confirm password"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 secureTextEntry={!showConfirmPassword}
                 textContentType="newPassword"
-                style={[styles.input, styles.passwordInput]}
+                style={[styles.input, styles.passwordInput, { color: colors.text }]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 editable={!isLoading}
@@ -187,26 +189,26 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 <Ionicons
                   name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color={palette.muted}
+                  color={colors.muted}
                 />
               </TouchableOpacity>
             </View>
 
             {/* Password Requirements */}
             <View style={styles.requirements}>
-              <Text style={[styles.requirement, password.length >= 6 && styles.requirementMet]}>
+              <Text style={[styles.requirement, { color: colors.muted }, password.length >= 6 && styles.requirementMet]}>
                 <Ionicons
                   name={password.length >= 6 ? 'checkmark-circle' : 'ellipse-outline'}
                   size={14}
-                  color={password.length >= 6 ? '#22c55e' : palette.muted}
+                  color={password.length >= 6 ? colors.success : colors.muted}
                 />{' '}
                 At least 6 characters
               </Text>
-              <Text style={[styles.requirement, password === confirmPassword && password.length > 0 && styles.requirementMet]}>
+              <Text style={[styles.requirement, { color: colors.muted }, password === confirmPassword && password.length > 0 && styles.requirementMet]}>
                 <Ionicons
                   name={password === confirmPassword && password.length > 0 ? 'checkmark-circle' : 'ellipse-outline'}
                   size={14}
-                  color={password === confirmPassword && password.length > 0 ? '#22c55e' : palette.muted}
+                  color={password === confirmPassword && password.length > 0 ? colors.success : colors.muted}
                 />{' '}
                 Passwords match
               </Text>
@@ -214,28 +216,33 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Sign Up Button */}
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton, isLoading && styles.buttonDisabled]}
+              style={[
+                styles.button, 
+                styles.primaryButton, 
+                { backgroundColor: colors.accent },
+                isLoading && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
+              ]}
               onPress={handleSignUp}
               disabled={isLoading}
             >
               {loading ? (
-                <ActivityIndicator color="#1f2937" />
+                <ActivityIndicator color={colors.text} />
               ) : (
-                <Text style={styles.primaryButtonText}>Create Account</Text>
+                <Text style={[styles.primaryButtonText, { color: colors.text }]}>Create Account</Text>
               )}
             </TouchableOpacity>
 
             {/* Sign In Link */}
             <View style={styles.signInContainer}>
-              <Text style={styles.signInText}>Already have an account? </Text>
+              <Text style={[styles.signInText, { color: colors.muted }]}>Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignIn')} disabled={isLoading}>
-                <Text style={styles.signInLink}>Sign In</Text>
+                <Text style={[styles.signInLink, { color: colors.accent }]}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Terms */}
-          <Text style={styles.terms}>
+          <Text style={[styles.terms, { color: colors.muted }]}>
             By creating an account, you agree to our Terms of Service and Privacy Policy.
           </Text>
         </ScrollView>
@@ -264,15 +271,12 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '900',
     letterSpacing: 3,
-    color: palette.text,
   },
   tagline: {
-    color: palette.muted,
     marginTop: 4,
     fontSize: 14,
   },
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     shadowColor: palette.shadow,
@@ -286,12 +290,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: palette.muted,
     marginBottom: spacing.lg,
   },
   inputContainer: {
@@ -300,7 +302,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
     borderRadius: radius.md,
-    backgroundColor: '#f8fafc',
     marginBottom: spacing.lg,
   },
   inputIcon: {
@@ -310,7 +311,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
-    color: palette.text,
     fontSize: 16,
   },
   passwordInput: {
@@ -327,10 +327,9 @@ const styles = StyleSheet.create({
   },
   requirement: {
     fontSize: 12,
-    color: palette.muted,
   },
   requirementMet: {
-    color: '#22c55e',
+    fontWeight: '600',
   },
   button: {
     borderRadius: radius.md,
@@ -346,7 +345,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   primaryButton: {
-    backgroundColor: palette.accent,
     shadowColor: '#f59e0b',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -355,7 +353,6 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     fontWeight: '800',
-    color: '#1f2937',
     fontSize: 17,
   },
   signInContainer: {
@@ -364,17 +361,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   signInText: {
-    color: palette.muted,
     fontSize: 14,
   },
   signInLink: {
-    color: palette.accentDark,
     fontWeight: '700',
     fontSize: 14,
   },
   terms: {
     textAlign: 'center',
-    color: palette.muted,
     fontSize: 12,
     marginTop: spacing.lg,
     paddingHorizontal: spacing.lg,

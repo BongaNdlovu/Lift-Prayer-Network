@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
 import { hasAdminPermission } from '../../config/admins';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { pinRequest, unpinRequest } from '../../services/prayers';
 import { palette, radius, spacing } from '../../theme/colors';
 
@@ -18,6 +19,7 @@ type RequestItem = {
 
 export const PinnedRequestsScreen: React.FC = () => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [items, setItems] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,17 +89,17 @@ export const PinnedRequestsScreen: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="shield" size={32} color={palette.muted} />
-        <Text style={styles.denied}>Admin access required</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Ionicons name="shield" size={32} color={colors.muted} />
+        <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={palette.accent} />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
@@ -106,33 +108,33 @@ export const PinnedRequestsScreen: React.FC = () => {
     <FlatList
       data={items}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.listContent}
+      contentContainerStyle={[styles.listContent, { backgroundColor: colors.background }]}
       ListEmptyComponent={
-        <View style={styles.center}>
-          <Ionicons name="star-outline" size={32} color={palette.muted} />
-          <Text style={styles.emptyText}>No pinned requests</Text>
+        <View style={[styles.center, { backgroundColor: colors.background }]}>
+          <Ionicons name="star-outline" size={32} color={colors.muted} />
+          <Text style={[styles.emptyText, { color: colors.muted }]}>No pinned requests</Text>
         </View>
       }
       renderItem={({ item }) => (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title} numberOfLines={2}>
+            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
               {item.content}
             </Text>
             {item.userDisplayName ? (
-              <Text style={styles.subtitle}>By {item.userDisplayName}</Text>
+              <Text style={[styles.subtitle, { color: colors.muted }]}>By {item.userDisplayName}</Text>
             ) : null}
           </View>
           <TouchableOpacity
-            style={styles.pinButton}
+            style={[styles.pinButton, { backgroundColor: colors.surface }]}
             onPress={() => handleTogglePin(item)}
           >
             <Ionicons
               name={item.isPinned ? 'star' : 'star-outline'}
               size={20}
-              color={item.isPinned ? '#facc15' : palette.muted}
+              color={item.isPinned ? colors.accent : colors.muted}
             />
-            <Text style={styles.pinText}>{item.isPinned ? 'Unpin' : 'Pin'}</Text>
+            <Text style={[styles.pinText, { color: colors.muted }]}>{item.isPinned ? 'Unpin' : 'Pin'}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -144,13 +146,11 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.md,
     gap: spacing.md,
-    backgroundColor: palette.background,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    backgroundColor: '#ffffff',
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: palette.border,
@@ -159,12 +159,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: palette.text,
   },
   subtitle: {
     marginTop: 4,
     fontSize: 12,
-    color: palette.muted,
   },
   pinButton: {
     flexDirection: 'row',
@@ -175,27 +173,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: palette.border,
-    backgroundColor: '#f8fafc',
   },
   pinText: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.text,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.background,
   },
   emptyText: {
     marginTop: spacing.sm,
-    color: palette.muted,
     fontWeight: '600',
   },
   denied: {
     marginTop: spacing.sm,
-    color: palette.muted,
   },
 });
 

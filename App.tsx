@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/hooks/useAuth';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { BootScreen } from './src/screens/BootScreen';
 import { setupNotificationHandler } from './src/services/notifications';
 import { useAppFonts } from './src/hooks/useFonts';
@@ -38,8 +39,10 @@ function App() {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <StatusBar style="light" />
-          <BootScreen />
+          <ThemeProvider>
+            <StatusBar style="light" />
+            <BootScreen />
+          </ThemeProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     );
@@ -48,14 +51,27 @@ function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
-        <AuthProvider>
-          <ToastProvider>
-            <AppNavigator />
-          </ToastProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <ThemedApp />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+// Separate component to use theme context
+function ThemedApp() {
+  const { isDark } = useTheme();
+  
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <AuthProvider>
+        <ToastProvider>
+          <AppNavigator />
+        </ToastProvider>
+      </AuthProvider>
+    </>
   );
 }
 

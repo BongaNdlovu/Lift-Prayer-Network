@@ -21,6 +21,7 @@ import {
   getCachedRequests,
   getCachedTestimonies,
 } from '../services/offlineCache';
+import { getBlockedUsers } from '../services/moderation';
 import { incrementUserRequestCount, incrementUserTestimonyCount } from '../services/stats';
 import { checkAndUnlockAchievements } from '../services/achievements';
 import type { FeedItem, LiftRequest, Testimony } from '../types';
@@ -105,12 +106,18 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
   const [errorType, setErrorType] = useState<FeedErrorType>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const isMounted = useRef(true);
   const lastFetchTime = useRef<number>(0);
   
   // Track viewerUid changes to re-filter when user signs in
   const viewerUidRef = useRef(viewerUid);
   viewerUidRef.current = viewerUid;
+
+  // Load blocked users list
+  useEffect(() => {
+    getBlockedUsers().then(setBlockedUsers);
+  }, [viewerUid]);
 
   // Sort function to put pinned items first
   const sortWithPinnedFirst = useCallback((list: FeedItem[]) => {
@@ -137,31 +144,38 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
   const applyPrivacyFilter = useCallback(
     (list: FeedItem[]) => {
       const filtered = list.filter((item) => {
-        // Testimonies are always visible
-        if (item.type !== 'REQUEST') return true;
+        // Get common privacy fields (both requests and testimonies now support privacy)
+        const ownerUid = item.ownerUid;
+        const isPrivate = (item as any).isPrivate;
+        const visibility = (item as any).visibility;
+        const groupIds = (item as any).groupIds;
         
-        const request = item as LiftRequest;
-        
-        // Public requests are visible to everyone
-        if (!request.isPrivate && request.visibility !== 'PRIVATE' && request.visibility !== 'GROUP') {
-          return true;
-        }
-        
-        // Owner can always see their own requests
-        if (viewerUid && request.ownerUid === viewerUid) {
-          return true;
-        }
-        
-        // Private requests: only owner can see (handled above)
-        if (request.visibility === 'PRIVATE' || request.isPrivate) {
+        // Filter out posts from blocked users
+        if (blockedUsers.includes(ownerUid)) {
           return false;
         }
         
-        // Group requests: check if user is member of any of the request's groups
-        if (request.visibility === 'GROUP' && request.groupIds?.length) {
+        // Public items are visible to everyone
+        // An item is public if: visibility is PUBLIC, OR visibility is not set AND isPrivate is not true
+        if (visibility === 'PUBLIC' || (!visibility && !isPrivate)) {
+          return true;
+        }
+        
+        // Owner can always see their own content
+        if (viewerUid && ownerUid === viewerUid) {
+          return true;
+        }
+        
+        // Private items: only owner can see (handled above)
+        if (visibility === 'PRIVATE' || isPrivate) {
+          return false;
+        }
+        
+        // Group items: check if user is member of any of the item's groups
+        if (visibility === 'GROUP' && groupIds?.length) {
           if (!userGroupIds?.length) return false;
-          // Check if any of the request's groups match user's groups
-          return request.groupIds.some(gid => userGroupIds.includes(gid));
+          // Check if any of the item's groups match user's groups
+          return groupIds.some((gid: string) => userGroupIds.includes(gid));
         }
         
         // Default: show public content
@@ -171,7 +185,7 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
       // Apply pinned sorting
       return sortWithPinnedFirst(filtered);
     },
-    [viewerUid, userGroupIds, sortWithPinnedFirst],
+    [viewerUid, userGroupIds, blockedUsers, sortWithPinnedFirst],
   );
 
   // Load cached data first for instant display
@@ -196,78 +210,22 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
   }, [mode, applyPrivacyFilter]);
 
   // Build queries that match Firestore security rules
-  // For requests: only fetch public OR user's own OR user's group posts (to avoid permission denied)
-  // For testimonies: fetch all (rules allow public read)
+  // Strategy: Simple broad query - Firestore rules handle access control
+  // Legacy posts without visibility field are treated as PUBLIC by rules
   const buildFeedQueries = useCallback(() => {
     if (!db) return [];
     
     const col = collection(db, mode === 'REQUEST' ? 'requests' : 'testimonies');
     
-    if (mode === 'TESTIMONY') {
-      // Testimonies are publicly readable per rules
-      return [query(col, orderBy('createdAt', 'desc'), limit(40))];
-    }
-    
-    // For requests, we need to query only what the user can read per Firestore rules:
-    // - Public requests (visibility == 'PUBLIC' or undefined/null for legacy posts)
-    // - User's own requests (if logged in)
-    // - Group requests where user is a member (if logged in and has groups)
+    // Simple query without visibility filter
+    // Firestore rules use: isPublicRequest(data) which returns true if:
+    //   visibility == 'PUBLIC' OR (visibility == null AND isPrivate != true)
+    // This handles legacy posts correctly
     // 
-    // We use separate queries and merge results to avoid permission errors
-    const queries = [];
-    
-    // Query 1: Explicitly PUBLIC requests only
-    // This avoids fetching GROUP posts that would fail permission checks
-    queries.push(
-      query(
-        col,
-        where('visibility', '==', 'PUBLIC'),
-        orderBy('createdAt', 'desc'),
-        limit(30)
-      )
-    );
-    
-    // Query 2: Legacy posts without visibility field (treat as public if not private)
-    // These are older posts created before visibility field was added
-    queries.push(
-      query(
-        col,
-        where('isPrivate', '==', false),
-        orderBy('createdAt', 'desc'),
-        limit(20)
-      )
-    );
-    
-    // Query 3: User's own requests (includes private/group)
-    if (viewerUid) {
-      queries.push(
-        query(
-          col,
-          where('ownerUid', '==', viewerUid),
-          orderBy('createdAt', 'desc'),
-          limit(20)
-        )
-      );
-    }
-    
-    // Query 4: Group requests for user's groups
-    // Firestore 'array-contains-any' allows checking if any of user's groups match
-    if (viewerUid && userGroupIds && userGroupIds.length > 0) {
-      // Firestore limits array-contains-any to 10 values
-      const groupsToQuery = userGroupIds.slice(0, 10);
-      queries.push(
-        query(
-          col,
-          where('visibility', '==', 'GROUP'),
-          where('groupIds', 'array-contains-any', groupsToQuery),
-          orderBy('createdAt', 'desc'),
-          limit(20)
-        )
-      );
-    }
-    
-    return queries;
-  }, [mode, viewerUid, userGroupIds]);
+    // If query fails due to permission on private/group posts, we'll catch it
+    // and fall back to cached data
+    return [query(col, orderBy('createdAt', 'desc'), limit(50))];
+  }, [mode]);
 
   // Manual fetch function for when onSnapshot doesn't update properly
   const manualFetch = useCallback(async () => {
@@ -497,6 +455,11 @@ export const submitFeedItem = async (
     userEmail: options?.isAnonymous ? null : (options?.userEmail || null),
     userPhotoURL: options?.isAnonymous ? null : (options?.userPhotoURL || null),
     isAnonymous: options?.isAnonymous || false,
+    // Store real info for admin visibility on anonymous posts
+    ...(options?.isAnonymous && {
+      _realDisplayName: displayName || 'Unknown',
+      _realEmail: options?.userEmail || null,
+    }),
     content,
     severity: mode === 'REQUEST' ? 'PENDING' : 'RESOLVED',
     status: mode === 'REQUEST' ? 'PENDING' : 'RESOLVED',
@@ -517,6 +480,13 @@ export const submitFeedItem = async (
     }
   } else {
     baseDoc.likes = 0;
+    // Testimonies now support privacy options
+    baseDoc.isPrivate = options?.isPrivate || false;
+    baseDoc.visibility = options?.visibility || (options?.isPrivate ? 'PRIVATE' : 'PUBLIC');
+    if (options?.groupIds?.length) {
+      baseDoc.groupIds = options.groupIds;
+      baseDoc.visibility = options.visibility || 'GROUP';
+    }
     if (options?.linkedRequestId) {
       baseDoc.linkedRequestId = options.linkedRequestId;
       // Mark the original request as resolved

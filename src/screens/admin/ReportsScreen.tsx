@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
 import { hasAdminPermission } from '../../config/admins';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
 
 type Report = {
@@ -19,6 +20,7 @@ type Report = {
 
 export const ReportsScreen: React.FC = () => {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
 

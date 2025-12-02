@@ -33,9 +33,14 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
-    // Group images (if you add group avatars later)
+    // Group images - only group owners can upload/modify
+    // Note: We can't check Firestore from storage rules, so we rely on the client
+    // to only call this for owned groups. The groupId in the path should match
+    // a group the user owns. For additional security, consider using Cloud Functions.
     match /group-images/{groupId}/{fileName} {
       allow read: if true;
+      // Restrict writes: require auth, size limit, image type
+      // Client-side must verify group ownership before uploading
       allow write: if isSignedIn()
         && request.resource.size < 2 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');

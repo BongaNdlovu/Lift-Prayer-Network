@@ -48,12 +48,15 @@ export const ensureUserProfile = async (
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
+    // Use setDoc to create new profile
     await setDoc(ref, { ...defaultProfile(user), ...extra });
   } else if (Object.keys(extra).length > 0) {
-    await updateDoc(ref, {
+    // Only update if there's extra data to add (avoid unnecessary writes)
+    // Use setDoc with merge to be idempotent in case of race conditions
+    await setDoc(ref, {
       ...extra,
       lastActiveAt: serverTimestamp(),
-    });
+    }, { merge: true });
   }
 };
 

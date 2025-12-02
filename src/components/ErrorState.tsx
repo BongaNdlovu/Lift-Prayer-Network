@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 
 type Props = {
@@ -10,10 +11,12 @@ type Props = {
 };
 
 export const ErrorState: React.FC<Props> = ({ title = 'Something went wrong', message, onRetry }) => {
+  const { colors } = useTheme();
+  
   return (
-    <View style={styles.container}>
-      <Ionicons name="alert-circle-outline" size={40} color={palette.muted} />
-      <Text style={styles.title}>{title}</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Ionicons name="alert-circle-outline" size={40} color={colors.muted} />
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       {message ? <Text style={styles.message}>{message}</Text> : null}
       {onRetry && (
         <TouchableOpacity style={styles.button} onPress={onRetry}>

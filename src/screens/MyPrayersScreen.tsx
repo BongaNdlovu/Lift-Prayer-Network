@@ -9,11 +9,13 @@ import {
   RefreshControl,
   Alert,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import {
   collection,
   query,
@@ -24,6 +26,9 @@ import {
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
+import { logPrayer, logReaction, likeTestimony } from '../services/prayers';
+import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { SkeletonCard } from '../components/SkeletonCard';
 import { palette, radius, spacing } from '../theme/colors';
@@ -35,6 +40,7 @@ type StatusFilter = 'all' | 'PENDING' | 'ACTIVE' | 'RESOLVED';
 
 export const MyPrayersScreen: React.FC = () => {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,6 +187,31 @@ export const MyPrayersScreen: React.FC = () => {
     Alert.alert('Info', 'This is your own prayer request.');
   };
 
+  // Handler for amen/like button (testimonies)
+  const handleLike = async (id: string) => {
+    if (!user) return;
+    try {
+      await likeTestimony(user.uid, id);
+      if (Platform.OS !== 'web') {
+        try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+      }
+    } catch (err) {
+      console.error('[MyPrayers] Like error:', err);
+    }
+  };
+
+  // Handler for reactions
+  const handleReact = async (id: string, reactionType: ReactionType) => {
+    if (!user) return;
+    const target = items.find((i) => i.id === id);
+    if (!target) return;
+    try {
+      await logReaction(user.uid, id, target.type, reactionType);
+    } catch (err) {
+      console.error('[MyPrayers] Reaction error:', err);
+    }
+  };
+
   return (
     <LinearGradient colors={['#fefce8', '#f4f4f5']} style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
@@ -308,6 +339,8 @@ export const MyPrayersScreen: React.FC = () => {
               <FeedCard
                 item={item}
                 onPray={handlePray}
+                onLike={handleLike}
+                onReact={handleReact}
                 onPress={handleOpen}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

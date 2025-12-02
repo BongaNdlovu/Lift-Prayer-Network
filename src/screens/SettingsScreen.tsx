@@ -18,17 +18,28 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
-import { palette, radius, spacing } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
+import { radius, spacing } from '../theme/colors';
 import { updateUserSettings } from '../services/userProfile';
 import { getBlockedUsers, unblockUser, syncBlockedUsers } from '../services/moderation';
 import { deletePrayerHistory } from '../services/prayers';
 import { db, firebaseEnabled } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { hasAdminPermission } from '../config/admins';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { 
+  getPendingActionCounts, 
+  cleanupPendingActions,
+  clearAllCache,
+  type PendingActionCounts 
+} from '../services/offlineCache';
+import { syncPendingActions } from '../services/syncService';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user, deleteAccount, signOut } = useAuth();
+  const { isDark, themeMode, setThemeMode, colors } = useTheme();
+  const netInfo = useNetInfo();
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -37,12 +48,26 @@ export const SettingsScreen: React.FC = () => {
   
   // Privacy settings
   const [shareProfile, setShareProfile] = useState(false);
+  
+  // Sync state
+  const [pendingCounts, setPendingCounts] = useState<PendingActionCounts>({ 
+    prayers: 0, requests: 0, comments: 0, reactions: 0, total: 0 
+  });
+  const [syncing, setSyncing] = useState(false);
+
+  const isOnline = netInfo.isConnected !== false;
 
   useEffect(() => {
     loadBlockedUsers();
     loadPrivacySettings();
+    loadPendingCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadPendingCounts = async () => {
+    const counts = await getPendingActionCounts();
+    setPendingCounts(counts);
+  };
 
   const loadBlockedUsers = async () => {
     if (user) {
@@ -198,30 +223,137 @@ export const SettingsScreen: React.FC = () => {
     );
   };
 
+  const handleForceSync = async () => {
+    if (!user || !isOnline) {
+      Alert.alert('Offline', 'You need to be online to sync.');
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      
+      const result = await syncPendingActions(user.uid);
+      await loadPendingCounts();
+      
+      const totalSynced = result.synced.prayers + result.synced.requests + 
+                          result.synced.comments + result.synced.reactions;
+      
+      if (result.success && totalSynced > 0) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        Alert.alert('Synced!', `Successfully synced ${totalSynced} action${totalSynced !== 1 ? 's' : ''}.`);
+      } else if (totalSynced === 0) {
+        Alert.alert('All Synced', 'No pending actions to sync.');
+      } else {
+        Alert.alert('Partial Sync', `Synced ${totalSynced} actions. Some failed - will retry later.`);
+      }
+    } catch (err: any) {
+      Alert.alert('Sync Failed', err.message || 'Could not sync pending actions');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleClearCache = async () => {
+    Alert.alert(
+      'Clear Cache',
+      'This will clear all cached data. Pending actions will be lost. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await clearAllCache();
+            await loadPendingCounts();
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            Alert.alert('Cleared', 'Cache has been cleared.');
+          },
+        },
+      ]
+    );
+  };
+
+  // Dynamic styles based on theme
+  const dynamicStyles = {
+    container: { backgroundColor: colors.background },
+    header: { borderBottomColor: colors.border },
+    backButton: { backgroundColor: isDark ? colors.surface : '#f1f5f9' },
+    section: { backgroundColor: colors.surface, borderColor: colors.border },
+    heading: { color: colors.text },
+    headerTitle: { color: colors.text },
+    sectionTitle: { color: colors.muted },
+    settingLabel: { color: colors.text },
+    settingDesc: { color: colors.muted },
+    menuLabel: { color: colors.text },
+    menuDesc: { color: colors.muted },
+    blockedId: { color: colors.text },
+    blockedAvatar: { backgroundColor: isDark ? colors.surface : '#f1f5f9' },
+    emptyText: { color: colors.muted },
+    divider: { backgroundColor: colors.border },
+    modalContent: { backgroundColor: colors.surface },
+    modalTitle: { color: colors.text },
+    inputLabel: { color: colors.muted },
+    input: { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.text, borderColor: colors.border },
+    cancelBtnText: { color: colors.muted },
+    exitButton: { backgroundColor: isDark ? colors.surface : '#f1f5f9' },
+    exitButtonText: { color: colors.muted },
+    infoSection: { backgroundColor: isDark ? colors.accentLight : '#fef3c7' },
+    infoText: { color: isDark ? colors.accent : '#92400e' },
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, dynamicStyles.container]}>
       {/* Header with Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+      <View style={[styles.header, dynamicStyles.header]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, dynamicStyles.backButton]}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>Settings</Text>
         <View style={{ width: 40 }} />
       </View>
       
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.heading}>Settings & Privacy</Text>
+        <Text style={[styles.heading, dynamicStyles.heading]}>Settings & Privacy</Text>
+
+        {/* Appearance Section */}
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Appearance</Text>
+          
+          <View style={styles.themeSelector}>
+            <TouchableOpacity
+              style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'dark' && styles.themeOptionActive]}
+              onPress={() => setThemeMode('dark')}
+            >
+              <Ionicons name="moon" size={20} color={themeMode === 'dark' ? '#f59e0b' : colors.muted} />
+              <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'dark' && styles.themeOptionTextActive]}>Dark</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'system' && styles.themeOptionActive]}
+              onPress={() => setThemeMode('system')}
+            >
+              <Ionicons name="phone-portrait" size={20} color={themeMode === 'system' ? '#f59e0b' : colors.muted} />
+              <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'system' && styles.themeOptionTextActive]}>System</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Privacy Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Privacy</Text>
           
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Ionicons name="eye-outline" size={22} color={palette.text} />
+              <Ionicons name="eye-outline" size={22} color={colors.text} />
               <View style={styles.settingText}>
-                <Text style={styles.settingLabel}>Public Profile</Text>
-                <Text style={styles.settingDesc}>Allow others to see your prayer stats</Text>
+                <Text style={[styles.settingLabel, dynamicStyles.settingLabel]}>Public Profile</Text>
+                <Text style={[styles.settingDesc, dynamicStyles.settingDesc]}>Allow others to see your prayer stats</Text>
               </View>
             </View>
             <Switch
@@ -234,21 +366,21 @@ export const SettingsScreen: React.FC = () => {
         </View>
 
         {/* Blocked Users Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Blocked Users</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Blocked Users</Text>
           
           {blockedUsers.length === 0 ? (
             <View style={styles.emptyBlock}>
-              <Ionicons name="checkmark-circle-outline" size={32} color={palette.muted} />
-              <Text style={styles.emptyText}>No blocked users</Text>
+              <Ionicons name="checkmark-circle-outline" size={32} color={colors.muted} />
+              <Text style={[styles.emptyText, dynamicStyles.emptyText]}>No blocked users</Text>
             </View>
           ) : (
             blockedUsers.map((userId) => (
               <View key={userId} style={styles.blockedUser}>
-                <View style={styles.blockedAvatar}>
-                  <Ionicons name="person" size={18} color={palette.muted} />
+                <View style={[styles.blockedAvatar, dynamicStyles.blockedAvatar]}>
+                  <Ionicons name="person" size={18} color={colors.muted} />
                 </View>
-                <Text style={styles.blockedId} numberOfLines={1}>
+                <Text style={[styles.blockedId, dynamicStyles.blockedId]} numberOfLines={1}>
                   User {userId.slice(0, 8)}...
                 </Text>
                 <TouchableOpacity
@@ -264,54 +396,110 @@ export const SettingsScreen: React.FC = () => {
 
         {/* Admin Section */}
         {hasAdminPermission(user?.email) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Admin</Text>
+          <View style={[styles.section, dynamicStyles.section]}>
+            <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Admin</Text>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => navigation.navigate('AdminDashboard' as never)}
             >
-              <Ionicons name="shield-checkmark-outline" size={22} color={palette.text} />
+              <Ionicons name="shield-checkmark-outline" size={22} color={colors.text} />
               <View style={styles.settingText}>
-                <Text style={styles.settingLabel}>Admin Tools</Text>
-                <Text style={styles.settingDesc}>Access reports, pinned requests, and global stats</Text>
+                <Text style={[styles.settingLabel, dynamicStyles.settingLabel]}>Admin Tools</Text>
+                <Text style={[styles.settingDesc, dynamicStyles.settingDesc]}>Access reports, pinned requests, and global stats</Text>
               </View>
             </TouchableOpacity>
           </View>
         )}
 
+        {/* Sync & Cache Section */}
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Sync & Cache</Text>
+          
+          {/* Offline Status */}
+          {!isOnline && (
+            <View style={[styles.offlineBanner, { backgroundColor: isDark ? '#7f1d1d' : '#fef2f2' }]}>
+              <Ionicons name="cloud-offline-outline" size={18} color={isDark ? '#fecaca' : '#dc2626'} />
+              <Text style={[styles.offlineText, { color: isDark ? '#fecaca' : '#991b1b' }]}>
+                You're offline
+              </Text>
+            </View>
+          )}
+          
+          {/* Pending Actions Count */}
+          {pendingCounts.total > 0 && (
+            <View style={styles.pendingInfo}>
+              <Ionicons name="hourglass-outline" size={18} color={colors.accent} />
+              <Text style={[styles.pendingText, { color: colors.text }]}>
+                {pendingCounts.total} pending action{pendingCounts.total !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
+          
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={handleForceSync}
+            disabled={syncing || !isOnline}
+          >
+            <Ionicons name="sync-outline" size={22} color={isOnline ? colors.text : colors.muted} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.menuLabel, { color: isOnline ? colors.text : colors.muted }]}>Force Sync</Text>
+              <Text style={[styles.menuDesc, dynamicStyles.menuDesc]}>Sync all pending actions now</Text>
+            </View>
+            {syncing ? (
+              <ActivityIndicator size="small" color={colors.accent} />
+            ) : (
+              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+            )}
+          </TouchableOpacity>
+
+          <View style={[styles.divider, dynamicStyles.divider]} />
+
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={handleClearCache}
+          >
+            <Ionicons name="trash-bin-outline" size={22} color={colors.text} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.menuLabel, dynamicStyles.menuLabel]}>Clear Cache</Text>
+              <Text style={[styles.menuDesc, dynamicStyles.menuDesc]}>Clear cached data and pending actions</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </TouchableOpacity>
+        </View>
+
         {/* Data Management Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data Management</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Data Management</Text>
           
           <TouchableOpacity 
             style={styles.menuItem} 
             onPress={handleDeletePrayerHistory}
             disabled={deletingHistory}
           >
-            <Ionicons name="time-outline" size={22} color={palette.text} />
+            <Ionicons name="time-outline" size={22} color={colors.text} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.menuLabel}>Delete Prayer History</Text>
-              <Text style={styles.menuDesc}>Remove all your prayer records</Text>
+              <Text style={[styles.menuLabel, dynamicStyles.menuLabel]}>Delete Prayer History</Text>
+              <Text style={[styles.menuDesc, dynamicStyles.menuDesc]}>Remove all your prayer records</Text>
             </View>
             {deletingHistory ? (
-              <ActivityIndicator size="small" color={palette.muted} />
+              <ActivityIndicator size="small" color={colors.muted} />
             ) : (
-              <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
             )}
           </TouchableOpacity>
         </View>
 
         {/* Account Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Account</Text>
           
           <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
-            <Ionicons name="log-out-outline" size={22} color={palette.text} />
-            <Text style={styles.menuLabel}>Sign Out</Text>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="log-out-outline" size={22} color={colors.text} />
+            <Text style={[styles.menuLabel, dynamicStyles.menuLabel]}>Sign Out</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, dynamicStyles.divider]} />
 
           <TouchableOpacity style={styles.dangerItem} onPress={handleDeleteAccount}>
             <Ionicons name="trash-outline" size={22} color="#dc2626" />
@@ -321,41 +509,41 @@ export const SettingsScreen: React.FC = () => {
         </View>
 
         {/* Legal Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Legal</Text>
           
           <TouchableOpacity 
             style={styles.menuItem} 
             onPress={() => (navigation as any).navigate('PrivacyPolicy')}
           >
-            <Ionicons name="document-text-outline" size={22} color={palette.text} />
-            <Text style={styles.menuLabel}>Privacy Policy</Text>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="document-text-outline" size={22} color={colors.text} />
+            <Text style={[styles.menuLabel, dynamicStyles.menuLabel]}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, dynamicStyles.divider]} />
 
           <TouchableOpacity 
             style={styles.menuItem} 
             onPress={() => (navigation as any).navigate('TermsOfService')}
           >
-            <Ionicons name="reader-outline" size={22} color={palette.text} />
-            <Text style={styles.menuLabel}>Terms of Service</Text>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="reader-outline" size={22} color={colors.text} />
+            <Text style={[styles.menuLabel, dynamicStyles.menuLabel]}>Terms of Service</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
         </View>
 
         {/* Data & Privacy Info */}
-        <View style={styles.infoSection}>
-          <Ionicons name="shield-checkmark-outline" size={24} color={palette.accent} />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoSection, dynamicStyles.infoSection]}>
+          <Ionicons name="shield-checkmark-outline" size={24} color={colors.accent} />
+          <Text style={[styles.infoText, dynamicStyles.infoText]}>
             Your data is encrypted and stored securely. We never share your personal information with third parties.
           </Text>
         </View>
 
         {/* Exit App Button */}
         <TouchableOpacity 
-          style={styles.exitButton}
+          style={[styles.exitButton, dynamicStyles.exitButton]}
           onPress={() => {
             Alert.alert(
               'Exit App',
@@ -376,8 +564,8 @@ export const SettingsScreen: React.FC = () => {
             );
           }}
         >
-          <Ionicons name="exit-outline" size={22} color={palette.muted} />
-          <Text style={styles.exitButtonText}>Exit App</Text>
+          <Ionicons name="exit-outline" size={22} color={colors.muted} />
+          <Text style={[styles.exitButtonText, dynamicStyles.exitButtonText]}>Exit App</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -389,11 +577,11 @@ export const SettingsScreen: React.FC = () => {
         onRequestClose={() => setShowDeleteModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, dynamicStyles.modalContent]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Delete Account</Text>
+              <Text style={[styles.modalTitle, dynamicStyles.modalTitle]}>Delete Account</Text>
               <TouchableOpacity onPress={() => setShowDeleteModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
 
@@ -404,11 +592,11 @@ export const SettingsScreen: React.FC = () => {
               </Text>
             </View>
 
-            <Text style={styles.inputLabel}>Enter your password to confirm</Text>
+            <Text style={[styles.inputLabel, dynamicStyles.inputLabel]}>Enter your password to confirm</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, dynamicStyles.input]}
               placeholder="Password"
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
               secureTextEntry
               value={deletePassword}
               onChangeText={setDeletePassword}
@@ -428,7 +616,7 @@ export const SettingsScreen: React.FC = () => {
               style={styles.cancelBtn}
               onPress={() => setShowDeleteModal(false)}
             >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={[styles.cancelBtnText, dynamicStyles.cancelBtnText]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -440,7 +628,6 @@ export const SettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   header: {
     flexDirection: 'row',
@@ -449,20 +636,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   scrollContent: {
     paddingBottom: spacing.xl,
@@ -470,26 +654,49 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 24,
     fontWeight: '900',
-    color: palette.text,
     padding: spacing.lg,
     paddingBottom: spacing.md,
   },
   section: {
-    backgroundColor: '#fff',
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   sectionTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: palette.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.md,
+  },
+  themeSelector: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  themeOptionActive: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#f59e0b',
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  themeOptionTextActive: {
+    color: '#92400e',
   },
   settingRow: {
     flexDirection: 'row',
@@ -508,11 +715,9 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
   },
   settingDesc: {
     fontSize: 12,
-    color: palette.muted,
   },
   emptyBlock: {
     alignItems: 'center',
@@ -520,7 +725,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   emptyText: {
-    color: palette.muted,
     fontSize: 14,
   },
   blockedUser: {
@@ -540,7 +744,6 @@ const styles = StyleSheet.create({
   blockedId: {
     flex: 1,
     fontSize: 14,
-    color: palette.text,
   },
   unblockBtn: {
     backgroundColor: '#fef2f2',
@@ -562,16 +765,13 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
   },
   menuDesc: {
     fontSize: 12,
-    color: palette.muted,
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: palette.border,
     marginVertical: spacing.sm,
   },
   dangerItem: {
@@ -623,7 +823,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
   },
   warningBox: {
     flexDirection: 'row',
@@ -643,20 +842,16 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: palette.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   input: {
-    backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     fontSize: 16,
-    color: palette.text,
     borderWidth: 1,
-    borderColor: palette.border,
     marginBottom: spacing.lg,
   },
   deleteBtn: {
@@ -681,7 +876,6 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     fontSize: 16,
     fontWeight: '600',
-    color: palette.muted,
   },
   exitButton: {
     flexDirection: 'row',
@@ -691,13 +885,33 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.xl,
     paddingVertical: spacing.md,
-    backgroundColor: '#f1f5f9',
     borderRadius: radius.md,
   },
   exitButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: palette.muted,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    marginBottom: spacing.md,
+  },
+  offlineText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  pendingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  pendingText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

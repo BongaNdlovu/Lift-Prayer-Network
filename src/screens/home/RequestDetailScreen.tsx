@@ -18,6 +18,7 @@ import * as Notifications from 'expo-notifications';
 import { palette, radius, spacing } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import {
   deleteRequest,
   deleteTestimony,
@@ -49,6 +50,7 @@ const formatDate = (value?: any) => {
 export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id, type, item: initialItem } = route.params;
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [item, setItem] = useState<FeedItem | null>(initialItem || null);
   const [loading, setLoading] = useState(!initialItem);
   const [editMode, setEditMode] = useState(false);

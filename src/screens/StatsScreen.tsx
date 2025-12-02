@@ -7,11 +7,17 @@ import {
   View,
   ActivityIndicator,
   Animated,
+  TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { getUserStats, type UserStats } from '../services/stats';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { RootStackParamList } from '../navigation/types';
 
 type StatCardProps = {
   emoji: string;
@@ -59,7 +65,9 @@ const StatCard: React.FC<StatCardProps> = ({ emoji, value, label, color, delay =
 };
 
 export const StatsScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -75,20 +83,25 @@ export const StatsScreen: React.FC = () => {
     });
   }, [user]);
 
+  // Dynamic gradient colors
+  const gradientColors = isDark 
+    ? [colors.background, colors.surface] as const
+    : ['#fefce8', '#f4f4f5'] as const;
+
   if (!user) {
     return (
-      <SafeAreaView style={styles.center}>
+      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
         <Text style={styles.emoji}>📊</Text>
-        <Text style={styles.title}>Sign in to view your stats</Text>
-        <Text style={styles.subtitle}>Track your prayer journey</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Sign in to view your stats</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>Track your prayer journey</Text>
       </SafeAreaView>
     );
   }
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color={palette.accent} />
+      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </SafeAreaView>
     );
   }
@@ -100,11 +113,11 @@ export const StatsScreen: React.FC = () => {
     : `${stats?.streakDays} days strong! 💪`;
 
   return (
-    <LinearGradient colors={['#fefce8', '#f4f4f5']} style={{ flex: 1 }}>
+    <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={styles.heading}>Your Journey</Text>
-          <Text style={styles.subheading}>Prayer statistics & streaks</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>Your Journey</Text>
+          <Text style={[styles.subheading, { color: colors.muted }]}>Prayer statistics & streaks</Text>
 
           {/* Streak Banner */}
           <View style={styles.streakBanner}>
@@ -177,6 +190,28 @@ export const StatsScreen: React.FC = () => {
                 : '💫 Keep going! Every prayer counts and brings hope to someone.'}
             </Text>
           </View>
+
+          {/* Answered Prayers Gallery Link */}
+          <TouchableOpacity
+            style={styles.galleryLink}
+            onPress={() => navigation.navigate('AnsweredPrayers')}
+          >
+            <LinearGradient
+              colors={['#10b981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.galleryGradient}
+            >
+              <View style={styles.galleryContent}>
+                <Text style={styles.galleryEmoji}>🎉</Text>
+                <View style={styles.galleryText}>
+                  <Text style={styles.galleryTitle}>Answered Prayers Gallery</Text>
+                  <Text style={styles.gallerySubtitle}>Celebrate God's faithfulness</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
@@ -348,6 +383,37 @@ const styles = StyleSheet.create({
     color: '#166534',
     lineHeight: 22,
     textAlign: 'center',
+  },
+  galleryLink: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  galleryGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+  },
+  galleryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  galleryEmoji: {
+    fontSize: 32,
+  },
+  galleryText: {
+    gap: 2,
+  },
+  galleryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  gallerySubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
   },
 });
 

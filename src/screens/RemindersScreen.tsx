@@ -26,6 +26,7 @@ import {
   updateReminder,
   type PrayerReminder,
 } from '../services/reminders';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 
 const DAYS = [
@@ -40,6 +41,7 @@ const DAYS = [
 
 export const RemindersScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
   const [reminders, setReminders] = useState<PrayerReminder[]>([]);
   const [, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

@@ -19,9 +19,20 @@ module.exports = ({ config }) => {
       resizeMode: 'contain',
       backgroundColor: '#fef3c7',
     },
+    // Push notification configuration
+    notification: {
+      icon: './Lift.png',
+      color: '#f59e0b',
+      androidMode: 'default',
+      androidCollapsedTitle: 'Lift Prayer',
+    },
     ios: {
       supportsTablet: true,
       icon: './Lift.png',
+      bundleIdentifier: 'com.lift.prayer',
+      infoPlist: {
+        UIBackgroundModes: ['remote-notification'],
+      },
     },
     android: {
       package: 'Lift.Prayer.App',
@@ -32,6 +43,10 @@ module.exports = ({ config }) => {
       },
       edgeToEdgeEnabled: false,
       predictiveBackGestureEnabled: false,
+      permissions: [
+        'android.permission.RECEIVE_BOOT_COMPLETED',
+        'android.permission.VIBRATE',
+      ],
       intentFilters: [
         {
           action: 'VIEW',
@@ -40,6 +55,17 @@ module.exports = ({ config }) => {
         },
       ],
     },
+    plugins: [
+      [
+        'expo-notifications',
+        {
+          icon: './Lift.png',
+          color: '#f59e0b',
+          sounds: [],
+          defaultChannel: 'default',
+        },
+      ],
+    ],
     web: {
       favicon: './assets/favicon.png',
     },

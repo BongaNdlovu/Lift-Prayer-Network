@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing, fonts, shadows } from '../theme/colors';
 import {
   Achievement,
@@ -22,6 +23,7 @@ import {
 export const AchievementsScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const [userAchievements, setUserAchievements] = useState<UserAchievements>({
     unlockedIds: [],
     unlockedAt: {} as any,
@@ -92,15 +94,20 @@ export const AchievementsScreen: React.FC = () => {
     );
   };
 
+  // Dynamic gradient colors
+  const gradientColors = isDark 
+    ? [colors.background, colors.surface] as const
+    : colors.screenGradient;
+
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={palette.screenGradient} style={styles.gradient}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} style={styles.gradient}>
         {/* Header with Back Button */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Achievements</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Achievements</Text>
           <View style={{ width: 40 }} />
         </View>
         
@@ -114,19 +121,19 @@ export const AchievementsScreen: React.FC = () => {
             <>
 
               {/* Progress Card */}
-              <View style={styles.progressCard}>
+              <View style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.progressHeader}>
-                  <Text style={styles.progressTitle}>Your Progress</Text>
-                  <Text style={styles.progressCount}>
+                  <Text style={[styles.progressTitle, { color: colors.text }]}>Your Progress</Text>
+                  <Text style={[styles.progressCount, { color: colors.accent }]}>
                     {unlockedCount}/{totalCount}
                   </Text>
                 </View>
-                <View style={styles.progressBar}>
+                <View style={[styles.progressBar, { backgroundColor: isDark ? colors.border : '#e5e7eb' }]}>
                   <View
                     style={[styles.progressFill, { width: `${progress}%` }]}
                   />
                 </View>
-                <Text style={styles.progressHint}>
+                <Text style={[styles.progressHint, { color: colors.muted }]}>
                   {unlockedCount === 0
                     ? 'Start praying to unlock your first achievement!'
                     : `Keep going! ${totalCount - unlockedCount} more to unlock.`}
@@ -136,7 +143,7 @@ export const AchievementsScreen: React.FC = () => {
               {/* Recently Unlocked */}
               {unlockedCount > 0 && (
                 <View style={styles.recentSection}>
-                  <Text style={styles.sectionTitle}>🎉 Recently Unlocked</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>🎉 Recently Unlocked</Text>
                   <View style={styles.recentBadges}>
                     {userAchievements.unlockedIds.slice(0, 5).map((id) => {
                       const achievement = ACHIEVEMENTS.find((a) => a.id === id);
@@ -157,7 +164,7 @@ export const AchievementsScreen: React.FC = () => {
                 </View>
               )}
 
-              <Text style={styles.sectionTitle}>All Achievements</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>All Achievements</Text>
             </>
           }
         />

@@ -14,6 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 
 const SUPPORT_EMAIL = 'fanelesibonge50@gmail.com';
@@ -228,7 +229,8 @@ const CollapsibleSection: React.FC<{
   section: HelpSection;
   isExpanded: boolean;
   onToggle: () => void;
-}> = ({ section, isExpanded, onToggle }) => {
+  colors: any;
+}> = ({ section, isExpanded, onToggle, colors }) => {
   const rotateAnim = React.useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
 
   React.useEffect(() => {
@@ -251,9 +253,9 @@ const CollapsibleSection: React.FC<{
         <View style={[styles.sectionIcon, { backgroundColor: section.iconBg }]}>
           <Ionicons name={section.icon} size={22} color={section.iconColor} />
         </View>
-        <Text style={styles.sectionTitle}>{section.title}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
         <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Ionicons name="chevron-down" size={20} color={palette.muted} />
+          <Ionicons name="chevron-down" size={20} color={colors.muted} />
         </Animated.View>
       </TouchableOpacity>
       
@@ -261,11 +263,11 @@ const CollapsibleSection: React.FC<{
         <View style={styles.sectionContent}>
           {section.content.map((item, index) => (
             <View key={index} style={styles.helpItem}>
-              <Text style={styles.helpItemTitle}>{item.title}</Text>
-              <Text style={styles.helpItemDescription}>{item.description}</Text>
+              <Text style={[styles.helpItemTitle, { color: colors.text }]}>{item.title}</Text>
+              <Text style={[styles.helpItemDescription, { color: colors.muted }]}>{item.description}</Text>
               {item.tip && (
                 <View style={styles.tipContainer}>
-                  <Ionicons name="bulb-outline" size={16} color="#f59e0b" />
+                  <Ionicons name="bulb-outline" size={16} color={colors.accent} />
                   <Text style={styles.tipText}>{item.tip}</Text>
                 </View>
               )}
@@ -278,8 +280,9 @@ const CollapsibleSection: React.FC<{
 };
 
 export const HelpScreen: React.FC = () => {
+  const { colors, isDark } = useTheme();
   const navigation = useNavigation();
-  const [expandedSections, setExpandedSections] = useState<string[]>(['getting-started']);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
   const handleContactSupport = async () => {
     if (Platform.OS !== 'web') {
@@ -337,15 +340,15 @@ export const HelpScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Tutorial</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Tutorial</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -368,11 +371,11 @@ export const HelpScreen: React.FC = () => {
         {/* Expand/Collapse All */}
         <View style={styles.expandControls}>
           <TouchableOpacity style={styles.expandButton} onPress={expandAll}>
-            <Ionicons name="expand-outline" size={16} color={palette.accentDark} />
+            <Ionicons name="expand-outline" size={16} color={colors.accent} />
             <Text style={styles.expandButtonText}>Expand All</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.expandButton} onPress={collapseAll}>
-            <Ionicons name="contract-outline" size={16} color={palette.accentDark} />
+            <Ionicons name="contract-outline" size={16} color={colors.accent} />
             <Text style={styles.expandButtonText}>Collapse All</Text>
           </TouchableOpacity>
         </View>
@@ -384,13 +387,14 @@ export const HelpScreen: React.FC = () => {
             section={section}
             isExpanded={expandedSections.includes(section.id)}
             onToggle={() => toggleSection(section.id)}
+            colors={colors}
           />
         ))}
 
         {/* Quick Tips */}
         <View style={styles.quickTipsCard}>
           <View style={styles.quickTipsHeader}>
-            <Ionicons name="flash" size={20} color="#f59e0b" />
+            <Ionicons name="flash" size={20} color={colors.accent} />
             <Text style={styles.quickTipsTitle}>Quick Tips</Text>
           </View>
           <View style={styles.quickTipsList}>
@@ -424,37 +428,37 @@ export const HelpScreen: React.FC = () => {
         {/* Coming Soon */}
         <View style={styles.comingSoonCard}>
           <View style={styles.comingSoonHeader}>
-            <Ionicons name="rocket-outline" size={20} color="#8b5cf6" />
-            <Text style={styles.comingSoonTitle}>Coming Soon</Text>
+            <Ionicons name="rocket-outline" size={20} color={colors.accent} />
+            <Text style={[styles.comingSoonTitle, { color: colors.accentDark }]}>Coming Soon</Text>
           </View>
           <View style={styles.comingSoonList}>
             <View style={styles.comingSoonItem}>
               <Text style={styles.comingSoonBullet}>🚀</Text>
-              <Text style={styles.comingSoonText}>Swipe gestures for quick actions</Text>
+              <Text style={[styles.comingSoonText, { color: colors.accent }]}>Swipe gestures for quick actions</Text>
             </View>
             <View style={styles.comingSoonItem}>
               <Text style={styles.comingSoonBullet}>📤</Text>
-              <Text style={styles.comingSoonText}>Export your prayer data</Text>
+              <Text style={[styles.comingSoonText, { color: colors.accent }]}>Export your prayer data</Text>
             </View>
             <View style={styles.comingSoonItem}>
               <Text style={styles.comingSoonBullet}>🔔</Text>
-              <Text style={styles.comingSoonText}>Enhanced push notification controls</Text>
+              <Text style={[styles.comingSoonText, { color: colors.accent }]}>Enhanced push notification controls</Text>
             </View>
           </View>
         </View>
 
         {/* Contact Support */}
         <View style={styles.contactCard}>
-          <Ionicons name="chatbubble-ellipses-outline" size={24} color={palette.muted} />
-          <Text style={styles.contactTitle}>Still need help?</Text>
-          <Text style={styles.contactText}>
+          <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.muted} />
+          <Text style={[styles.contactTitle, { color: colors.text }]}>Still need help?</Text>
+          <Text style={[styles.contactText, { color: colors.muted }]}>
             If you have questions or feedback, we&apos;d love to hear from you. Reach out to our support team.
           </Text>
           <TouchableOpacity style={styles.contactButton} onPress={handleContactSupport}>
-            <Ionicons name="mail-outline" size={18} color="#fff" />
-            <Text style={styles.contactButtonText}>Contact Support</Text>
+            <Ionicons name="mail-outline" size={18} color={colors.text} />
+            <Text style={[styles.contactButtonText, { color: colors.text }]}>Contact Support</Text>
           </TouchableOpacity>
-          <Text style={styles.supportEmail}>{SUPPORT_EMAIL}</Text>
+          <Text style={[styles.supportEmail, { color: colors.muted }]}>{SUPPORT_EMAIL}</Text>
         </View>
 
         <View style={{ height: 40 }} />
@@ -481,7 +485,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -497,7 +501,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   welcomeBanner: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: palette.accentLight,
     borderRadius: radius.lg,
     padding: spacing.xl,
     alignItems: 'center',
@@ -507,7 +511,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#fff',
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
@@ -523,12 +527,12 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#92400e',
+    color: palette.accentDark,
     marginBottom: spacing.xs,
   },
   welcomeSubtitle: {
     fontSize: 14,
-    color: '#b45309',
+    color: palette.accent,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -544,7 +548,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    backgroundColor: '#fef3c7',
+    backgroundColor: palette.accentLight,
     borderRadius: radius.md,
   },
   expandButtonText: {
@@ -603,7 +607,7 @@ const styles = StyleSheet.create({
   tipContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#fef3c7',
+    backgroundColor: palette.accentLight,
     padding: spacing.sm,
     borderRadius: radius.sm,
     marginTop: spacing.sm,
@@ -612,15 +616,15 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: 13,
-    color: '#92400e',
+    color: palette.accentDark,
     lineHeight: 18,
   },
   quickTipsCard: {
-    backgroundColor: '#fffbeb',
+    backgroundColor: palette.accentLight,
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#fde68a',
+    borderColor: palette.accent,
     marginBottom: spacing.lg,
   },
   quickTipsHeader: {
@@ -632,7 +636,7 @@ const styles = StyleSheet.create({
   quickTipsTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#92400e',
+    color: palette.accentDark,
   },
   quickTipsList: {
     gap: spacing.sm,
@@ -643,14 +647,14 @@ const styles = StyleSheet.create({
   },
   quickTipBullet: {
     fontSize: 14,
-    color: '#f59e0b',
+    color: palette.accent,
     marginRight: spacing.sm,
     fontWeight: '700',
   },
   quickTipText: {
     flex: 1,
     fontSize: 14,
-    color: '#b45309',
+    color: palette.accent,
     lineHeight: 20,
   },
   contactCard: {
@@ -679,7 +683,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: palette.accentDark,
+    backgroundColor: palette.accent,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
@@ -695,11 +699,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   comingSoonCard: {
-    backgroundColor: '#f5f3ff',
+    backgroundColor: palette.accentLight,
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#ddd6fe',
+    borderColor: palette.accent,
     marginBottom: spacing.lg,
   },
   comingSoonHeader: {
@@ -711,7 +715,7 @@ const styles = StyleSheet.create({
   comingSoonTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#6d28d9',
+    color: palette.accentDark,
   },
   comingSoonList: {
     gap: spacing.sm,
@@ -727,7 +731,7 @@ const styles = StyleSheet.create({
   comingSoonText: {
     flex: 1,
     fontSize: 14,
-    color: '#7c3aed',
+    color: palette.accent,
     lineHeight: 20,
   },
 });

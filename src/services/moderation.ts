@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db, firebaseEnabled } from './firebase';
+import { checkRateLimit } from '../utils/security';
 
 const BLOCKED_USERS_KEY = '@lift_blocked_users';
 
@@ -32,6 +33,10 @@ export type Report = {
   createdAt: any;
 };
 
+export type ReportResult = 
+  | { success: true }
+  | { success: false; error: string };
+
 // Report content or user
 export const reportContent = async (
   reporterUid: string,
@@ -40,12 +45,23 @@ export const reportContent = async (
   targetOwnerUid: string,
   reason: ReportReason,
   details?: string
-): Promise<boolean> => {
-  if (!firebaseEnabled || !db) return false;
+): Promise<ReportResult> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  if (!reporterUid) {
+    return { success: false, error: 'Authentication required to report content' };
+  }
+
+  // Rate limit: max 5 reports per minute per user
+  if (!checkRateLimit(`report_${reporterUid}`, 5, 60000)) {
+    return { success: false, error: 'Too many reports. Please wait a minute before reporting again.' };
+  }
 
   try {
     await addDoc(collection(db, 'reports'), {
-      reporterUid,
+      actorUid: reporterUid, // Field name must match Firestore rules (actorUid)
       targetType,
       targetId,
       targetOwnerUid,
@@ -54,10 +70,10 @@ export const reportContent = async (
       status: 'pending',
       createdAt: serverTimestamp(),
     });
-    return true;
+    return { success: true };
   } catch (err) {
     console.warn('Error reporting content:', err);
-    return false;
+    return { success: false, error: 'Could not submit report. Please try again.' };
   }
 };
 
@@ -152,4 +168,84 @@ export const REPORT_REASONS: { id: ReportReason; label: string; emoji: string }[
   { id: 'misinformation', label: 'False information', emoji: '❌' },
   { id: 'other', label: 'Other concern', emoji: '📝' },
 ];
+
+// ============================================================================
+// Admin Ban Feature - Global app-wide ban
+// ============================================================================
+
+export type BanResult = 
+  | { success: true }
+  | { success: false; error: string };
+
+/**
+ * Admin: Ban a user from the app entirely
+ * Sets isBanned=true on the user's document
+ */
+export const banUser = async (
+  targetUserId: string,
+  reason?: string
+): Promise<BanResult> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const userRef = doc(db, 'users', targetUserId);
+    await updateDoc(userRef, {
+      isBanned: true,
+      bannedAt: serverTimestamp(),
+      banReason: reason || 'Violation of community guidelines',
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Error banning user:', err);
+    return { success: false, error: 'Could not ban user. Please try again.' };
+  }
+};
+
+/**
+ * Admin: Unban a user
+ */
+export const unbanUser = async (targetUserId: string): Promise<BanResult> => {
+  if (!firebaseEnabled || !db) {
+    return { success: false, error: 'Service unavailable' };
+  }
+
+  try {
+    const userRef = doc(db, 'users', targetUserId);
+    await updateDoc(userRef, {
+      isBanned: false,
+      unbannedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Error unbanning user:', err);
+    return { success: false, error: 'Could not unban user. Please try again.' };
+  }
+};
+
+/**
+ * Check if a user is banned (fetches from Firestore)
+ */
+export const checkUserBanned = async (userId: string): Promise<{ isBanned: boolean; reason?: string }> => {
+  if (!firebaseEnabled || !db || !userId) {
+    return { isBanned: false };
+  }
+
+  try {
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        isBanned: data?.isBanned === true,
+        reason: data?.banReason,
+      };
+    }
+    return { isBanned: false };
+  } catch (err) {
+    console.error('Error checking ban status:', err);
+    return { isBanned: false };
+  }
+};
 

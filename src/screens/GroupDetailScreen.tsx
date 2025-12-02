@@ -21,8 +21,12 @@ import * as Notifications from 'expo-notifications';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
-import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInviteCode, uploadGroupPhoto, deleteGroupPhoto } from '../services/groups';
-import { subscribeToGroupRequests, submitGroupRequest, logPrayer } from '../services/prayers';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInviteCode, uploadGroupPhoto, deleteGroupPhoto, approveJoinRequest, rejectJoinRequest, type GroupMember } from '../services/groups';
+import { subscribeToGroupRequests, submitGroupRequest, logPrayer, logReaction, likeTestimony } from '../services/prayers';
+import type { ReactionType } from '../services/prayers';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { FeedCard } from '../components/FeedCard';
 import { hasAdminPermission, getVerifiedBadge, BADGE_STYLES } from '../config/admins';
@@ -31,16 +35,10 @@ import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GroupDetail'>;
 
-type GroupMember = {
-  uid: string;
-  displayName: string;
-  email?: string;
-  photoURL?: string | null;
-};
-
 export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { groupId, groupName, groupEmoji } = route.params;
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const [group, setGroup] = useState<PrayerGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [prayers, setPrayers] = useState<LiftRequest[]>([]);
@@ -49,11 +47,15 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [pendingUsers, setPendingUsers] = useState<GroupMember[]>([]);
+  const [processingRequest, setProcessingRequest] = useState<string | null>(null);
   
   // Edit group state
   const [editName, setEditName] = useState(groupName);
   const [editDesc, setEditDesc] = useState('');
   const [editPhotoURL, setEditPhotoURL] = useState<string | null>(null);
+  const [editIsPrivate, setEditIsPrivate] = useState(true);
   const [saving, setSaving] = useState(false);
   const [photoNeedsUpload, setPhotoNeedsUpload] = useState(false);
   
@@ -76,6 +78,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         setEditName(groupData.name);
         setEditDesc(groupData.description || '');
         setEditPhotoURL(groupData.photoURL || null);
+        setEditIsPrivate(groupData.isPrivate);
         setPhotoNeedsUpload(false);
       }
     };
@@ -110,6 +113,98 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     setMembers(membersList);
     setRefreshing(false);
   }, [groupId]);
+
+  // Load pending request users when modal opens
+  const loadPendingUsers = useCallback(async () => {
+    if (!group?.pendingRequests?.length) {
+      setPendingUsers([]);
+      return;
+    }
+    
+    // Fetch user profiles for pending requests
+    const users: GroupMember[] = [];
+    for (const uid of group.pendingRequests) {
+      try {
+        if (db) {
+          const userDoc = await getDoc(doc(db, 'users', uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            users.push({
+              uid,
+              displayName: userData.displayName || 'Anonymous',
+              email: userData.email,
+              photoURL: userData.photoURL,
+            });
+          } else {
+            users.push({ uid, displayName: 'Unknown User' });
+          }
+        }
+      } catch {
+        users.push({ uid, displayName: 'Unknown User' });
+      }
+    }
+    setPendingUsers(users);
+  }, [group?.pendingRequests]);
+
+  // Handle approve join request
+  const handleApproveRequest = async (userId: string) => {
+    if (!user) return;
+    
+    setProcessingRequest(userId);
+    try {
+      const success = await approveJoinRequest(groupId, userId, user.uid);
+      if (success) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        // Remove from pending list
+        setPendingUsers(prev => prev.filter(u => u.uid !== userId));
+        // Update group state
+        setGroup(prev => prev ? {
+          ...prev,
+          pendingRequests: prev.pendingRequests?.filter(id => id !== userId),
+          memberUids: [...prev.memberUids, userId],
+        } : null);
+        // Refresh members list
+        const membersList = await getGroupMembers(groupId);
+        setMembers(membersList);
+      } else {
+        Alert.alert('Error', 'Could not approve request');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not approve request');
+    } finally {
+      setProcessingRequest(null);
+    }
+  };
+
+  // Handle reject join request
+  const handleRejectRequest = async (userId: string) => {
+    if (!user) return;
+    
+    setProcessingRequest(userId);
+    try {
+      const success = await rejectJoinRequest(groupId, userId, user.uid);
+      if (success) {
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        // Remove from pending list
+        setPendingUsers(prev => prev.filter(u => u.uid !== userId));
+        // Update group state
+        setGroup(prev => prev ? {
+          ...prev,
+          pendingRequests: prev.pendingRequests?.filter(id => id !== userId),
+        } : null);
+      } else {
+        Alert.alert('Error', 'Could not reject request');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not reject request');
+    } finally {
+      setProcessingRequest(null);
+    }
+  };
 
   const handleShareInvite = async () => {
     const code = getInviteCode(groupId);
@@ -174,17 +269,18 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       let finalPhotoURL = editPhotoURL;
 
       if (photoNeedsUpload && editPhotoURL && !editPhotoURL.startsWith('http')) {
-        finalPhotoURL = await uploadGroupPhoto(groupId, editPhotoURL);
+        finalPhotoURL = await uploadGroupPhoto(groupId, editPhotoURL, user!.uid);
       }
 
       if (!editPhotoURL && group?.photoURL && group.photoURL.startsWith('http')) {
-        await deleteGroupPhoto(groupId);
+        await deleteGroupPhoto(groupId, user!.uid);
       }
 
       await updateGroup(groupId, {
         name: editName.trim(),
         description: editDesc.trim(),
         photoURL: finalPhotoURL,
+        isPrivate: editIsPrivate,
       });
       
       if (Platform.OS !== 'web') {
@@ -192,7 +288,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       }
       
       setShowEditModal(false);
-      setGroup(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), photoURL: finalPhotoURL } : null);
+      setGroup(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), photoURL: finalPhotoURL, isPrivate: editIsPrivate } : null);
       setPhotoNeedsUpload(false);
       Alert.alert('Success', 'Group updated!');
     } catch (error) {
@@ -336,6 +432,34 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
+  // Handler for amen/like button (testimonies - if any in groups)
+  const handleLike = async (id: string) => {
+    if (!user) return;
+    setBusyPrayIds((prev) => new Set(prev).add(id));
+    try {
+      await likeTestimony(user.uid, id);
+      if (Platform.OS !== 'web') {
+        try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+      }
+    } catch (err) {
+      console.error('[GroupDetail] Like error:', err);
+    } finally {
+      setBusyPrayIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  };
+
+  // Handler for reactions
+  const handleReact = async (id: string, reactionType: ReactionType) => {
+    if (!user) return;
+    const target = prayers.find((p) => p.id === id);
+    if (!target) return;
+    try {
+      await logReaction(user.uid, id, 'REQUEST', reactionType);
+    } catch (err) {
+      console.error('[GroupDetail] Reaction error:', err);
+    }
+  };
+
   const renderPrayer = ({ item }: { item: LiftRequest }) => {
     const feedItem: FeedItem = { ...item, type: 'REQUEST' };
     return (
@@ -343,6 +467,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         item={feedItem}
         onPress={handlePrayerPress}
         onPray={handlePray}
+        onLike={handleLike}
+        onReact={handleReact}
         disabled={busyPrayIds.has(item.id)}
         currentUserId={user?.uid}
         currentUserEmail={user?.email}
@@ -446,6 +572,25 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         
         {group?.description && (
           <Text style={styles.groupDescription}>{group.description}</Text>
+        )}
+
+        {/* Pending Requests Banner (for owners of private groups) */}
+        {isOwner && group?.isPrivate && (group?.pendingRequests?.length ?? 0) > 0 && (
+          <TouchableOpacity 
+            style={styles.pendingBanner}
+            onPress={() => {
+              loadPendingUsers();
+              setShowPendingModal(true);
+            }}
+          >
+            <View style={styles.pendingBannerContent}>
+              <Ionicons name="person-add" size={20} color="#f59e0b" />
+              <Text style={styles.pendingBannerText}>
+                {group.pendingRequests!.length} pending join request{group.pendingRequests!.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#f59e0b" />
+          </TouchableOpacity>
         )}
 
         {/* Action Buttons */}
@@ -616,6 +761,50 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               maxLength={200}
             />
 
+            {/* Privacy Toggle */}
+            <Text style={styles.inputLabel}>Group Privacy</Text>
+            <View style={styles.privacyToggleContainer}>
+              <TouchableOpacity
+                style={[styles.privacyOption, !editIsPrivate && styles.privacyOptionActive]}
+                onPress={() => {
+                  setEditIsPrivate(false);
+                  if (Platform.OS !== 'web') Haptics.selectionAsync();
+                }}
+              >
+                <Ionicons 
+                  name="globe-outline" 
+                  size={20} 
+                  color={!editIsPrivate ? palette.accentDark : palette.muted} 
+                />
+                <View style={styles.privacyOptionContent}>
+                  <Text style={[styles.privacyOptionTitle, !editIsPrivate && styles.privacyOptionTitleActive]}>
+                    Public
+                  </Text>
+                  <Text style={styles.privacyOptionDesc}>Anyone can join</Text>
+                </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.privacyOption, editIsPrivate && styles.privacyOptionActive]}
+                onPress={() => {
+                  setEditIsPrivate(true);
+                  if (Platform.OS !== 'web') Haptics.selectionAsync();
+                }}
+              >
+                <Ionicons 
+                  name="lock-closed-outline" 
+                  size={20} 
+                  color={editIsPrivate ? palette.accentDark : palette.muted} 
+                />
+                <View style={styles.privacyOptionContent}>
+                  <Text style={[styles.privacyOptionTitle, editIsPrivate && styles.privacyOptionTitleActive]}>
+                    Private
+                  </Text>
+                  <Text style={styles.privacyOptionDesc}>Invite or approval required</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
               style={[styles.saveButton, !editName.trim() && styles.buttonDisabled]}
               onPress={handleEditGroup}
@@ -676,6 +865,84 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 {posting ? 'Posting...' : 'Post Prayer Request'}
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Pending Requests Modal */}
+      <Modal
+        visible={showPendingModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowPendingModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Pending Requests</Text>
+              <TouchableOpacity onPress={() => setShowPendingModal(false)}>
+                <Ionicons name="close" size={24} color={palette.muted} />
+              </TouchableOpacity>
+            </View>
+            
+            {pendingUsers.length === 0 ? (
+              <View style={styles.emptyPending}>
+                <Ionicons name="checkmark-circle" size={48} color={palette.muted} />
+                <Text style={styles.emptyPendingText}>No pending requests</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={pendingUsers}
+                keyExtractor={(item) => item.uid}
+                renderItem={({ item }) => (
+                  <View style={styles.pendingItem}>
+                    <View style={styles.pendingUserInfo}>
+                      {item.photoURL ? (
+                        <Image source={{ uri: item.photoURL }} style={styles.pendingAvatar} />
+                      ) : (
+                        <View style={[styles.pendingAvatarPlaceholder, { backgroundColor: getAvatarColor(item.displayName) }]}>
+                          <Text style={styles.pendingAvatarText}>
+                            {(item.displayName || '?')[0].toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.pendingUserDetails}>
+                        <Text style={styles.pendingUserName}>{item.displayName}</Text>
+                        {item.email && (
+                          <Text style={styles.pendingUserEmail} numberOfLines={1}>{item.email}</Text>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.pendingActions}>
+                      <TouchableOpacity
+                        style={styles.rejectButton}
+                        onPress={() => handleRejectRequest(item.uid)}
+                        disabled={processingRequest === item.uid}
+                      >
+                        {processingRequest === item.uid ? (
+                          <ActivityIndicator size="small" color="#dc2626" />
+                        ) : (
+                          <Ionicons name="close" size={20} color="#dc2626" />
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.approveButton}
+                        onPress={() => handleApproveRequest(item.uid)}
+                        disabled={processingRequest === item.uid}
+                      >
+                        {processingRequest === item.uid ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Ionicons name="checkmark" size={20} color="#fff" />
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                contentContainerStyle={styles.pendingList}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
           </View>
         </View>
       </Modal>
@@ -1113,6 +1380,146 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
     color: '#dc2626',
+  },
+  // Pending requests styles
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+  },
+  pendingBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  pendingBannerText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  emptyPending: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+  },
+  emptyPendingText: {
+    fontSize: 16,
+    color: palette.muted,
+    marginTop: spacing.md,
+  },
+  pendingList: {
+    paddingBottom: spacing.lg,
+  },
+  pendingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  pendingUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  pendingAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: spacing.md,
+    backgroundColor: '#f1f5f9',
+  },
+  pendingAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingAvatarText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  pendingUserDetails: {
+    flex: 1,
+  },
+  pendingUserName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: palette.text,
+  },
+  pendingUserEmail: {
+    fontSize: 12,
+    color: palette.muted,
+    marginTop: 2,
+  },
+  pendingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  rejectButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fef2f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  approveButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#10b981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Privacy toggle styles
+  privacyToggleContainer: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  privacyOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: palette.border,
+    gap: spacing.md,
+  },
+  privacyOptionActive: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#fcd34d',
+  },
+  privacyOptionContent: {
+    flex: 1,
+  },
+  privacyOptionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: palette.text,
+  },
+  privacyOptionTitleActive: {
+    color: palette.accentDark,
+  },
+  privacyOptionDesc: {
+    fontSize: 12,
+    color: palette.muted,
+    marginTop: 2,
   },
 });
 

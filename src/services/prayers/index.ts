@@ -19,7 +19,8 @@ export type {
 } from './types';
 
 // Core prayer functions
-export { hasUserPrayed, logPrayer } from './core';
+export { hasUserPrayed, logPrayer, logReaction, likeTestimony } from './core';
+export type { ReactionType } from './core';
 
 // Group functions
 export { subscribeToGroupRequests, submitGroupRequest } from './groups';

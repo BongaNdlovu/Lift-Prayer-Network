@@ -16,9 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing, fonts, shadows } from '../theme/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requestNotificationPermissions } from '../services/reminders';
+import { parseNaturalLanguage, formatParsedEvent, type ParsedEvent } from '../utils/naturalLanguageParser';
 
 const EVENTS_KEY = '@lift_prayer_events';
 
@@ -77,6 +79,7 @@ const parseTimeString = (timeStr: string): { hour: number; minute: number } => {
 
 export const CalendarScreen: React.FC = () => {
   useAuth();
+  const { colors, isDark } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [events, setEvents] = useState<PrayerEvent[]>([]);
@@ -91,6 +94,10 @@ export const CalendarScreen: React.FC = () => {
   const [showReminderPicker, setShowReminderPicker] = useState(false);
   // For editing events
   const [editingEvent, setEditingEvent] = useState<PrayerEvent | null>(null);
+  
+  // Quick add feature
+  const [quickAddText, setQuickAddText] = useState('');
+  const [parsedPreview, setParsedPreview] = useState<ParsedEvent | null>(null);
 
   useEffect(() => {
     loadEvents();
@@ -328,6 +335,55 @@ export const CalendarScreen: React.FC = () => {
     ]);
   };
 
+  // Quick add handlers
+  const handleQuickAddChange = (text: string) => {
+    setQuickAddText(text);
+    if (text.trim().length > 2) {
+      const parsed = parseNaturalLanguage(text);
+      setParsedPreview(parsed);
+    } else {
+      setParsedPreview(null);
+    }
+  };
+
+  const handleQuickAdd = async () => {
+    if (!parsedPreview) return;
+    
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    const dateKey = `${parsedPreview.date.getFullYear()}-${String(parsedPreview.date.getMonth() + 1).padStart(2, '0')}-${String(parsedPreview.date.getDate()).padStart(2, '0')}`;
+    
+    const newEvent: PrayerEvent = {
+      id: Date.now().toString(),
+      title: parsedPreview.title,
+      date: dateKey,
+      time: parsedPreview.hasTime && parsedPreview.time 
+        ? `${String(parsedPreview.time.hour).padStart(2, '0')}:${String(parsedPreview.time.minute).padStart(2, '0')}`
+        : undefined,
+      reminder: parsedPreview.hasTime,
+      reminderMinutesBefore: 15,
+      category: 'personal',
+      color: '#3b82f6',
+    };
+
+    // Schedule notification if has time
+    if (newEvent.reminder && newEvent.time) {
+      const notificationId = await scheduleEventNotification(newEvent);
+      if (notificationId) {
+        newEvent.notificationId = notificationId;
+      }
+    }
+
+    await saveEvents([...events, newEvent]);
+    setQuickAddText('');
+    setParsedPreview(null);
+    setSelectedDate(dateKey);
+    
+    Alert.alert('Added!', `"${parsedPreview.title}" added to ${formatParsedEvent(parsedPreview)}`);
+  };
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -393,6 +449,7 @@ export const CalendarScreen: React.FC = () => {
           <Text
             style={[
               styles.dayText,
+              { color: colors.text },
               isToday && styles.todayText,
               isSelected && styles.selectedText,
             ]}
@@ -418,41 +475,82 @@ export const CalendarScreen: React.FC = () => {
 
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
+  // Dynamic gradient colors based on theme
+  const gradientColors = isDark 
+    ? [colors.background, colors.surface] as const
+    : colors.screenGradient;
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={palette.screenGradient}
+        colors={gradientColors}
         style={styles.gradient}
       >
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.heading}>Prayer Calendar</Text>
-            <TouchableOpacity style={styles.todayButton} onPress={goToToday}>
+            <Text style={[styles.heading, { color: colors.text }]}>Prayer Calendar</Text>
+            <TouchableOpacity style={[styles.todayButton, { backgroundColor: colors.accent }]} onPress={goToToday}>
               <Text style={styles.todayButtonText}>Today</Text>
             </TouchableOpacity>
           </View>
 
+          {/* Quick Add */}
+          <View style={[styles.quickAddContainer, { backgroundColor: isDark ? colors.surface : 'rgba(255, 255, 255, 0.9)' }]}>
+            <View style={styles.quickAddInputRow}>
+              <Ionicons name="flash-outline" size={20} color={colors.accent} />
+              <TextInput
+                style={[styles.quickAddInput, { color: colors.text }]}
+                placeholder="Quick add: 'Pray for John tomorrow 7am'"
+                placeholderTextColor={colors.muted}
+                value={quickAddText}
+                onChangeText={handleQuickAddChange}
+                returnKeyType="done"
+                onSubmitEditing={parsedPreview ? handleQuickAdd : undefined}
+              />
+              {quickAddText.length > 0 && (
+                <TouchableOpacity onPress={() => { setQuickAddText(''); setParsedPreview(null); }}>
+                  <Ionicons name="close-circle" size={20} color={colors.muted} />
+                </TouchableOpacity>
+              )}
+            </View>
+            {parsedPreview && (
+              <TouchableOpacity style={styles.quickAddPreview} onPress={handleQuickAdd}>
+                <View style={styles.quickAddPreviewContent}>
+                  <Text style={[styles.quickAddPreviewTitle, { color: colors.text }]}>
+                    {parsedPreview.title}
+                  </Text>
+                  <Text style={[styles.quickAddPreviewDate, { color: colors.muted }]}>
+                    {formatParsedEvent(parsedPreview)}
+                  </Text>
+                </View>
+                <View style={[styles.quickAddButton, { backgroundColor: colors.accent }]}>
+                  <Ionicons name="add" size={18} color="#fff" />
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+
           {/* Month Navigation */}
           <View style={styles.monthNav}>
-            <TouchableOpacity onPress={goToPrevMonth} style={styles.navButton}>
-              <Ionicons name="chevron-back" size={24} color={palette.text} />
+            <TouchableOpacity onPress={goToPrevMonth} style={[styles.navButton, { backgroundColor: colors.surface }]}>
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.monthTitle}>
+            <Text style={[styles.monthTitle, { color: colors.text }]}>
               {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
             </Text>
-            <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
-              <Ionicons name="chevron-forward" size={24} color={palette.text} />
+            <TouchableOpacity onPress={goToNextMonth} style={[styles.navButton, { backgroundColor: colors.surface }]}>
+              <Ionicons name="chevron-forward" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {/* Calendar Grid */}
-          <View style={styles.calendarCard}>
+          <View style={[styles.calendarCard, { backgroundColor: isDark ? colors.surface : 'rgba(255, 255, 255, 0.8)' }]}>
             {/* Day Headers */}
             <View style={styles.dayHeaders}>
               {DAY_NAMES.map((day) => (
                 <View key={day} style={styles.dayHeaderCell}>
-                  <Text style={styles.dayHeaderText}>{day}</Text>
+                  <Text style={[styles.dayHeaderText, { color: colors.muted }]}>{day}</Text>
                 </View>
               ))}
             </View>
@@ -465,7 +563,7 @@ export const CalendarScreen: React.FC = () => {
           {selectedDate && (
             <View style={styles.eventsSection}>
               <View style={styles.eventsSectionHeader}>
-                <Text style={styles.eventsSectionTitle}>
+                <Text style={[styles.eventsSectionTitle, { color: colors.text }]}>
                   {selectedDate === todayKey ? 'Today' : selectedDate}
                 </Text>
                 <TouchableOpacity
@@ -477,9 +575,9 @@ export const CalendarScreen: React.FC = () => {
               </View>
 
               {selectedDateEvents.length === 0 ? (
-                <View style={styles.noEvents}>
+                <View style={[styles.noEvents, { backgroundColor: isDark ? colors.surface : 'rgba(255, 255, 255, 0.6)' }]}>
                   <Text style={styles.noEventsEmoji}>📅</Text>
-                  <Text style={styles.noEventsText}>No prayer events</Text>
+                  <Text style={[styles.noEventsText, { color: colors.muted }]}>No prayer events</Text>
                   <TouchableOpacity
                     style={styles.addFirstButton}
                     onPress={openAddModal}
@@ -492,10 +590,10 @@ export const CalendarScreen: React.FC = () => {
                 selectedDateEvents.map((event) => {
                   const eventTime = event.time ? parseTimeString(event.time) : null;
                   return (
-                    <View key={event.id} style={[styles.eventCard, { borderLeftColor: event.color }]}>
+                    <View key={event.id} style={[styles.eventCard, { borderLeftColor: event.color, backgroundColor: colors.surface }]}>
                       <View style={styles.eventContent}>
                         <View style={styles.eventTitleRow}>
-                          <Text style={styles.eventTitle}>{event.title}</Text>
+                          <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
                           {eventTime && (
                             <View style={styles.eventTimeBadge}>
                               <Ionicons name="time-outline" size={12} color={palette.muted} />
@@ -557,16 +655,16 @@ export const CalendarScreen: React.FC = () => {
       >
         <View style={styles.modalOverlay}>
           <ScrollView>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>
                   {editingEvent ? 'Edit Prayer Event' : 'Add Prayer Event'}
                 </Text>
                 <TouchableOpacity onPress={() => {
                   setShowAddModal(false);
                   setEditingEvent(null);
                 }}>
-                  <Ionicons name="close" size={24} color={palette.muted} />
+                  <Ionicons name="close" size={24} color={colors.muted} />
                 </TouchableOpacity>
               </View>
 
@@ -810,6 +908,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1f2937',
   },
+  quickAddContainer: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  quickAddInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  quickAddInput: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    paddingVertical: spacing.xs,
+  },
+  quickAddPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  quickAddPreviewContent: {
+    flex: 1,
+  },
+  quickAddPreviewTitle: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+  },
+  quickAddPreviewDate: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  quickAddButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   monthNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -858,10 +1002,11 @@ const styles = StyleSheet.create({
   },
   dayCell: {
     width: '14.28%',
-    aspectRatio: 1,
+    minHeight: 44, // WCAG 2.1 minimum tap target
+    minWidth: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 2,
+    padding: 4,
   },
   todayCell: {
     backgroundColor: palette.accentLight,
