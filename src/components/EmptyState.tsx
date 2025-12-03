@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { radius, spacing } from '../theme/colors';
+import { lightImpact } from '../utils/haptics';
 
 type EmptyStateType = 
   | 'no-prayers'
@@ -123,7 +124,10 @@ export const EmptyState: React.FC<Props> = ({
           {actionLabel && onAction && (
             <TouchableOpacity 
               style={[styles.actionButton, { backgroundColor: colors.accent }]} 
-              onPress={onAction}
+              onPress={() => {
+                lightImpact();
+                onAction();
+              }}
             >
               <Text style={styles.actionButtonText}>{actionLabel}</Text>
             </TouchableOpacity>
@@ -131,7 +135,10 @@ export const EmptyState: React.FC<Props> = ({
           {secondaryActionLabel && onSecondaryAction && (
             <TouchableOpacity 
               style={[styles.secondaryButton, { borderColor: colors.border }]} 
-              onPress={onSecondaryAction}
+              onPress={() => {
+                lightImpact();
+                onSecondaryAction();
+              }}
             >
               <Text style={[styles.secondaryButtonText, { color: colors.text }]}>
                 {secondaryActionLabel}

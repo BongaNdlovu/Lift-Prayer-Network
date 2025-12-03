@@ -8,6 +8,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { shadows, spacing } from '../theme/colors';
+import { selectionFeedback } from '../utils/haptics';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 // Icon mapping for tab routes
@@ -85,6 +86,8 @@ const TabBarContent: React.FC<{
         const isFocused = state.index === index;
 
         const onPress = () => {
+          selectionFeedback(); // Haptic feedback on tab switch
+          
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,

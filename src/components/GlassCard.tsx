@@ -7,6 +7,7 @@ import { View, StyleSheet, ViewStyle, StyleProp, Pressable, Animated, Platform }
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../contexts/ThemeContext';
 import { shadows, radius, fonts, fontSizes, spacing } from '../theme/colors';
+import { lightImpact, selectionFeedback } from '../utils/haptics';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -85,6 +86,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   
   const handlePressIn = () => {
     if (!animated || disabled) return;
+    lightImpact(); // Haptic feedback on press
     Animated.spring(scaleAnim, {
       toValue: 0.98,
       useNativeDriver: true,
@@ -237,7 +239,12 @@ export const GlassChip: React.FC<GlassChipProps> = ({
   
   if (onPress) {
     return (
-      <Pressable onPress={onPress}>
+      <Pressable 
+        onPress={() => {
+          selectionFeedback(); // Haptic feedback on chip tap
+          onPress();
+        }}
+      >
         {content}
       </Pressable>
     );
@@ -274,9 +281,14 @@ export const GlassIconButton: React.FC<GlassIconButtonProps> = ({
   
   const buttonSize = sizeMap[size];
   
+  const handlePress = () => {
+    lightImpact(); // Haptic feedback on icon button tap
+    onPress?.();
+  };
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       style={({ pressed }) => [
         styles.iconButton,
         {

@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { lightImpact } from '../utils/haptics';
 
 type Props = {
   title?: string;
@@ -19,7 +20,13 @@ export const ErrorState: React.FC<Props> = ({ title = 'Something went wrong', me
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       {message ? <Text style={styles.message}>{message}</Text> : null}
       {onRetry && (
-        <TouchableOpacity style={styles.button} onPress={onRetry}>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => {
+            lightImpact();
+            onRetry();
+          }}
+        >
           <Text style={styles.buttonText}>Try Again</Text>
         </TouchableOpacity>
       )}
