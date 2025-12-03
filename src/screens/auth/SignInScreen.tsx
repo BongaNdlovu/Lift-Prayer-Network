@@ -17,7 +17,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
-import { fonts, palette, radius, spacing } from '../../theme/colors';
+import { fonts, fontSizes, palette, radius, spacing } from '../../theme/colors';
 import { CinematicBackground } from '../../components/CinematicBackground';
 import { RootStackParamList } from '../../navigation/types';
 
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   logo: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 48,
     fontWeight: '500',
     letterSpacing: -1,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontFamily: fonts.body,
     marginTop: 4,
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   card: {
     borderRadius: radius.lg,
@@ -282,13 +282,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fonts.heading,
-    fontSize: 24,
+    fontSize: fontSizes.xxl,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
     fontFamily: fonts.body,
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     marginBottom: spacing.lg,
   },
   inputContainer: {
@@ -303,10 +303,11 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.md,
   },
   input: {
+    fontFamily: fonts.body,
     flex: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   passwordInput: {
     paddingRight: 44,
@@ -317,10 +318,11 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   forgotText: {
+    fontFamily: fonts.bodyMedium,
     fontWeight: '600',
     textAlign: 'right',
     marginBottom: spacing.lg,
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   button: {
     borderRadius: radius.md,
@@ -343,8 +345,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   primaryButtonText: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '800',
-    fontSize: 17,
+    fontSize: fontSizes.lg,
   },
   signUpContainer: {
     flexDirection: 'row',
@@ -352,11 +355,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   signUpText: {
-    fontSize: 14,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
   },
   signUpLink: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   guestButton: {
     alignItems: 'center',
@@ -366,7 +371,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   guestText: {
-    fontSize: 15,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.md,
     fontWeight: '600',
   },
 });

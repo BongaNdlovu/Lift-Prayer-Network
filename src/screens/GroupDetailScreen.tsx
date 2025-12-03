@@ -29,7 +29,7 @@ import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInv
 import { subscribeToGroupRequests, submitGroupRequest, logPrayer, logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, fontSizes, palette, radius, spacing } from '../theme/colors';
 import { FeedCard } from '../components/FeedCard';
 import { hasAdminPermission, getVerifiedBadge, BADGE_STYLES } from '../config/admins';
 import type { PrayerGroup, FeedItem, LiftRequest } from '../types';
@@ -1217,16 +1217,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef3c7',
   },
   actionButtonText: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: fontSizes.sm,
     color: palette.accentDark,
   },
   leaveButton: {
     backgroundColor: '#fef2f2',
   },
   leaveButtonText: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: fontSizes.sm,
     color: '#dc2626',
   },
   postButton: {
@@ -1245,7 +1247,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   postButtonText: {
-    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '800',
     color: '#1f2937',
   },
@@ -1256,12 +1259,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.lg,
     fontWeight: '800',
     color: palette.text,
   },
   sectionCount: {
-    fontSize: 13,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
     color: palette.muted,
   },
   emptyState: {
@@ -1273,13 +1278,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.lg,
     fontWeight: '800',
     color: palette.text,
     marginBottom: spacing.xs,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
     color: palette.muted,
     textAlign: 'center',
   },
@@ -1303,12 +1310,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   modalTitle: {
-    fontSize: 20,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xl,
     fontWeight: '800',
     color: palette.text,
   },
   inputLabel: {
-    fontSize: 12,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
     color: palette.muted,
     marginBottom: spacing.xs,
@@ -1316,11 +1325,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   input: {
+    fontFamily: fonts.body,
     backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    fontSize: 16,
+    fontSize: fontSizes.md,
     color: palette.text,
     borderWidth: 1,
     borderColor: palette.border,
@@ -1332,8 +1342,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   charCount: {
+    fontFamily: fonts.body,
     textAlign: 'right',
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     color: palette.muted,
     marginTop: -spacing.sm,
     marginBottom: spacing.md,
@@ -1346,7 +1357,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '800',
     color: '#1f2937',
   },
@@ -1373,7 +1385,8 @@ const styles = StyleSheet.create({
     borderColor: '#ef4444',
   },
   urgentToggleText: {
-    fontSize: 15,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.md,
     fontWeight: '600',
     color: palette.text,
   },
@@ -1384,7 +1397,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   postSubmitButtonText: {
-    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '800',
     color: '#1f2937',
   },
@@ -1429,7 +1443,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   memberName: {
-    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     color: palette.text,
   },
@@ -1442,7 +1457,8 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   memberBadgeText: {
-    fontSize: 10,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
   },
   memberRoleRow: {
@@ -1462,16 +1478,19 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   ownerBadgeText: {
-    fontSize: 10,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
     color: '#92400e',
   },
   memberEmail: {
-    fontSize: 12,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
     color: palette.muted,
   },
   memberRole: {
-    fontSize: 12,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
     color: palette.accent,
     fontWeight: '600',
   },
@@ -1489,7 +1508,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   memberActionText: {
-    fontSize: 11,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
   // Photo picker styles
@@ -1531,8 +1551,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   photoButtonText: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     color: palette.accentDark,
   },
   photoButtonRemove: {
@@ -1546,8 +1567,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   photoButtonRemoveText: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     color: '#dc2626',
   },
   // Pending requests styles
@@ -1569,7 +1591,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   pendingBannerText: {
-    fontSize: 14,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
     color: '#92400e',
   },
@@ -1579,7 +1602,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   emptyPendingText: {
-    fontSize: 16,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
     color: palette.muted,
     marginTop: spacing.md,
   },
@@ -1623,12 +1647,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pendingUserName: {
-    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     color: palette.text,
   },
   pendingUserEmail: {
-    fontSize: 12,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
     color: palette.muted,
     marginTop: 2,
   },
@@ -1678,7 +1704,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   privacyOptionTitle: {
-    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     color: palette.text,
   },
@@ -1686,7 +1713,8 @@ const styles = StyleSheet.create({
     color: palette.accentDark,
   },
   privacyOptionDesc: {
-    fontSize: 12,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
     color: palette.muted,
     marginTop: 2,
   },
@@ -1699,11 +1727,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   privacyInfoTitle: {
-    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   privacyInfoDesc: {
-    fontSize: 12,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
     marginTop: 2,
   },
 });

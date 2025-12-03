@@ -30,7 +30,7 @@ import {
 import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, palette, radius, spacing, shadows } from '../theme/colors';
+import { fonts, fontSizes, palette, radius, spacing, shadows } from '../theme/colors';
 import { SkeletonGroups } from '../components/SkeletonCard';
 import { CinematicBackground, RoundedPage, GlassHeader } from '../components/CinematicBackground';
 import { GlassCard, GlassIconButton } from '../components/GlassCard';
@@ -553,7 +553,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   kicker: {
-    fontSize: 10,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -561,8 +562,8 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
-    fontSize: 32,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xxxl,
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
@@ -612,14 +613,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   groupName: {
-    fontSize: 18,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
     letterSpacing: -0.3,
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     marginBottom: 2,
   },
   groupMembers: {
-    fontSize: 13,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
     fontWeight: '500',
   },
   groupRightSection: {
@@ -633,16 +635,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   ownerBadgeText: {
-    fontSize: 10,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   groupDesc: {
-    fontSize: 14,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
     lineHeight: 22,
     marginBottom: spacing.md,
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
   },
   groupActions: {
     flexDirection: 'row',
@@ -660,14 +663,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   actionBtnText: {
-    fontSize: 13,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   leaveBtn: {
     // Custom bg set inline
   },
   leaveBtnText: {
-    fontSize: 13,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   
@@ -683,13 +688,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xl,
     fontWeight: '600',
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
-    fontSize: 15,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
     textAlign: 'center',
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
@@ -708,8 +714,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   emptyBtnText: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   
   // Notifications
@@ -738,11 +745,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificationTitle: {
-    fontSize: 14,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   notificationMessage: {
-    fontSize: 13,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
     marginTop: 2,
   },
   notificationDismiss: {
@@ -769,22 +778,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   modalTitle: {
-    fontSize: 24,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xxl,
     fontWeight: '700',
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
   },
   inputLabel: {
-    fontSize: 12,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   input: {
+    fontFamily: fonts.body,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    fontSize: 16,
+    fontSize: fontSizes.md,
     borderWidth: 1,
     marginBottom: spacing.lg,
   },
@@ -794,7 +805,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   codeInput: {
-    fontSize: 24,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.xxl,
     fontWeight: '800',
     letterSpacing: 4,
     textAlign: 'center',
@@ -832,7 +844,8 @@ const styles = StyleSheet.create({
     
   },
   createButtonText: {
-    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
 });

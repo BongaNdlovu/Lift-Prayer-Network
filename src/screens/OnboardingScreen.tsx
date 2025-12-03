@@ -19,9 +19,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { palette, radius, spacing, fonts, fontSizes } from '../theme/colors';
 import { recordOnboardingAnalytics, type OnboardingAnswers } from '../services/userProfile';
 import { validateDisplayName } from '../utils/security';
+import { CinematicBackground } from '../components/CinematicBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -37,27 +38,27 @@ type OnboardingSlide = {
 };
 
 // Tutorial slides with cross emoji as requested
-const getSlides = (isDark: boolean): OnboardingSlide[] => [
+const getSlides = (colors: any): OnboardingSlide[] => [
   {
     id: '1',
     emoji: '✝️',
     title: 'Welcome to Lift',
     description: 'A live network where prayers meet purpose. Share your needs, lift others up.',
-    color: isDark ? '#4a4a00' : '#fef3c7',
+    color: colors.accentLight,
   },
   {
     id: '2',
     emoji: '📡',
     title: 'Transmit Your Need',
     description: 'Post prayer requests and let the community rally around you in support.',
-    color: isDark ? '#003366' : '#dbeafe',
+    color: colors.amber100,
   },
   {
     id: '3',
     emoji: '✨',
     title: 'Verify & Celebrate',
     description: 'When prayers are answered, share your testimony and inspire others.',
-    color: isDark ? '#004d00' : '#dcfce7',
+    color: colors.successLight,
   },
 ];
 
@@ -129,7 +130,7 @@ type Props = {
 export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
   const { colors, isDark } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const slides = getSlides(isDark);
+  const slides = getSlides(colors);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -276,7 +277,14 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
         return (
           <Animated.View
             key={index}
-            style={[styles.dot, { width: dotWidth, opacity }]}
+            style={[
+              styles.dot, 
+              { 
+                width: dotWidth, 
+                opacity,
+                backgroundColor: colors.accent
+              }
+            ]}
           />
         );
       })}
@@ -309,6 +317,9 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
                 key={idx}
                 style={[
                   styles.progressDot,
+                  {
+                    backgroundColor: idx <= questionIndex ? colors.accent : colors.border
+                  },
                   idx <= questionIndex && styles.progressDotActive,
                 ]}
               />
@@ -402,8 +413,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <CinematicBackground>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <View style={styles.skipContainer}>
         {currentIndex < slides.length - 1 && (
           <TouchableOpacity onPress={() => setShowQuestionnaire(true)}>
@@ -438,8 +449,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
-    </LinearGradient>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
@@ -456,7 +467,6 @@ export const getOnboardingAnswers = async (): Promise<Record<string, any> | null
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   skipContainer: {
     alignItems: 'flex-end',
@@ -464,9 +474,9 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   skipText: {
-    color: palette.muted,
+    fontFamily: fonts.bodyMedium,
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   slide: {
     flex: 1,
@@ -491,13 +501,16 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '900',
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xxl,
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: spacing.md,
+    letterSpacing: -0.5,
   },
   description: {
-    fontSize: 16,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: spacing.lg,
@@ -511,7 +524,6 @@ const styles = StyleSheet.create({
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: palette.accent,
     marginHorizontal: 4,
   },
   buttonContainer: {
@@ -532,8 +544,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.lg,
+    fontWeight: '700',
   },
   // Question styles
   questionHeader: {
@@ -558,10 +571,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: palette.border,
   },
   progressDotActive: {
-    backgroundColor: palette.accent,
     width: 20,
   },
   questionContent: {
@@ -570,12 +581,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   questionText: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xxl,
+    fontWeight: '700',
     marginBottom: spacing.sm,
+    letterSpacing: -0.5,
   },
   questionSubtitle: {
-    fontSize: 14,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
     marginBottom: spacing.xl,
   },
   optionsContainer: {
@@ -588,30 +602,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: palette.border,
     gap: spacing.sm,
   },
   optionButtonSelected: {
-    borderColor: palette.accent,
   },
   optionEmoji: {
     fontSize: 24,
   },
   optionLabel: {
+    fontFamily: fonts.bodyMedium,
     flex: 1,
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '600',
   },
   optionLabelSelected: {
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
   },
   textInput: {
+    fontFamily: fonts.body,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: palette.border,
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     marginTop: spacing.md,
   },
   skipButton: {
@@ -619,7 +633,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipButtonText: {
-    fontSize: 14,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
 });
