@@ -17,6 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 
 const SUPPORT_EMAIL = 'fanelesibonge50@gmail.com';
 
@@ -414,22 +416,25 @@ export const HelpScreen: React.FC = () => {
     setExpandedSections([]);
   };
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Tutorial</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>LEARN MORE</Text>
+            <Text style={styles.heading}>
+              Help<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       <ScrollView
         style={styles.scrollView}
@@ -540,18 +545,59 @@ export const HelpScreen: React.FC = () => {
           <Text style={[styles.supportEmail, { color: colors.muted }]}>{SUPPORT_EMAIL}</Text>
         </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+        <View style={{ height: 140 }} />
+        </ScrollView>
+      </RoundedPage>
     </SafeAreaView>
-    </LinearGradient>
+  </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -583,7 +629,7 @@ const styles = StyleSheet.create({
   welcomeBanner: {
     backgroundColor: palette.accentLight,
     borderRadius: radius.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
@@ -595,10 +641,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 4,
   },
   emojiText: {

@@ -28,6 +28,8 @@ import {
 } from '../services/reminders';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 
 const DAYS = [
   { id: 0, short: 'S', full: 'Sunday' },
@@ -41,7 +43,7 @@ const DAYS = [
 
 export const RemindersScreen: React.FC = () => {
   const navigation = useNavigation();
-  useTheme();
+  const { colors } = useTheme();
   const [reminders, setReminders] = useState<PrayerReminder[]>([]);
   const [, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -227,16 +229,29 @@ export const RemindersScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
-        </TouchableOpacity>
-        <Text style={styles.heading}>Prayer Reminders</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={handleAddReminder}>
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>SCHEDULE</Text>
+            <Text style={styles.heading}>
+              Reminders<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <GlassIconButton
+            onPress={handleAddReminder}
+            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+          >
+            <Ionicons name="add" size={24} color={colors.amber700} />
+          </GlassIconButton>
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       {reminders.length === 0 ? (
         <View style={styles.emptyState}>
@@ -342,16 +357,58 @@ export const RemindersScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+        </Modal>
+      </RoundedPage>
     </SafeAreaView>
+  </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1,
+    lineHeight: 36,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   center: {
     flex: 1,
     alignItems: 'center',
@@ -372,11 +429,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: palette.text,
   },
   addBtn: {
     width: 44,
@@ -427,10 +479,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
   emptyEmoji: {
-    fontSize: 64,
+    fontSize: 48,
     marginBottom: spacing.md,
   },
   emptyTitle: {

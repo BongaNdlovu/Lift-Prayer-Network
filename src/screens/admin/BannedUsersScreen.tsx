@@ -22,6 +22,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { hasAdminPermission } from '../../config/admins';
 import { palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
+import { GlassIconButton } from '../../components/GlassCard';
 
 type BannedUser = {
   id: string;
@@ -113,33 +115,38 @@ export const BannedUsersScreen: React.FC = () => {
     });
   };
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   if (!isAdmin) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <View style={styles.center}>
-          <Ionicons name="lock-closed" size={48} color={colors.muted} />
-          <Text style={[styles.noAccessText, { color: colors.text }]}>Admin access required</Text>
-        </View>
-      </SafeAreaView>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.center}>
+            <Ionicons name="lock-closed" size={48} color={colors.muted} />
+            <Text style={[styles.noAccessText, { color: colors.text }]}>Admin access required</Text>
+          </View>
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Banned Users</Text>
-        <View style={styles.headerRight} />
-      </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>MODERATION</Text>
+            <Text style={styles.heading}>
+              Banned<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       {loading ? (
         <View style={styles.center}>
@@ -207,10 +214,11 @@ export const BannedUsersScreen: React.FC = () => {
               ))}
             </>
           )}
-        </ScrollView>
-      )}
-    </SafeAreaView>
-    </LinearGradient>
+          </ScrollView>
+        )}
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
@@ -218,6 +226,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -275,10 +322,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: '#fecaca',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    
+    
+    
+    
     elevation: 1,
   },
   userAvatar: {

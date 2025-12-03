@@ -35,10 +35,12 @@ import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import { SkeletonNotifications } from '../components/SkeletonCard';
 import { RootStackParamList } from '../navigation/types';
 
-type NotificationType = 'prayer_received' | 'comment' | 'reaction' | 'testimony' | 'group_request';
+type NotificationType = 'prayer_received' | 'amen_received' | 'comment' | 'reaction' | 'testimony' | 'group_request';
 
 type Notification = {
   id: string;
@@ -46,6 +48,7 @@ type Notification = {
   actorDisplayName: string;
   actorPhotoURL?: string;
   targetRequestId?: string;
+  targetTestimonyId?: string;
   targetSummary?: string;
   groupName?: string;
   reactionType?: string;
@@ -59,6 +62,8 @@ const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionic
   switch (type) {
     case 'prayer_received':
       return { name: 'hand-left', color: '#f59e0b' };
+    case 'amen_received':
+      return { name: 'sparkles', color: '#10b981' };
     case 'comment':
       return { name: 'chatbubble', color: '#3b82f6' };
     case 'reaction':
@@ -76,6 +81,8 @@ const getNotificationMessage = (notification: Notification): string => {
   switch (notification.type) {
     case 'prayer_received':
       return `prayed for your request`;
+    case 'amen_received':
+      return `said Amen to your testimony 🙌`;
     case 'comment':
       return `commented on your ${notification.targetSummary ? 'request' : 'post'}`;
     case 'reaction':
@@ -140,6 +147,7 @@ export const NotificationsInboxScreen: React.FC = () => {
           actorDisplayName: data.actorDisplayName || 'Someone',
           actorPhotoURL: data.actorPhotoURL,
           targetRequestId: data.targetRequestId,
+          targetTestimonyId: data.targetTestimonyId,
           targetSummary: data.targetSummary,
           groupName: data.groupName,
           reactionType: data.reactionType,
@@ -175,7 +183,12 @@ export const NotificationsInboxScreen: React.FC = () => {
     }
 
     // Navigate to the relevant screen
-    if (notification.targetRequestId) {
+    if (notification.type === 'amen_received' && notification.targetTestimonyId) {
+      navigation.navigate('RequestDetail', {
+        id: notification.targetTestimonyId,
+        type: 'TESTIMONY',
+      });
+    } else if (notification.targetRequestId) {
       navigation.navigate('RequestDetail', {
         id: notification.targetRequestId,
         type: notification.type === 'testimony' ? 'TESTIMONY' : 'REQUEST',
@@ -339,31 +352,36 @@ export const NotificationsInboxScreen: React.FC = () => {
     );
   };
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
-        <View style={styles.headerActions}>
-          {unreadCount > 0 && (
-            <TouchableOpacity onPress={markAllAsRead} style={[styles.headerActionButton, { backgroundColor: colors.surfaceSecondary }]}>
-              <Ionicons name="checkmark-done-outline" size={20} color={colors.accentDark} />
-            </TouchableOpacity>
-          )}
-          {notifications.length > 0 && (
-            <TouchableOpacity onPress={handleDeleteAll} style={[styles.headerActionButton, { backgroundColor: colors.surfaceSecondary }]}>
-              <Ionicons name="trash-outline" size={20} color={colors.danger} />
-            </TouchableOpacity>
-          )}
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>UPDATES</Text>
+            <Text style={styles.heading}>
+              Inbox<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={styles.headerActions}>
+            {unreadCount > 0 && (
+              <GlassIconButton onPress={markAllAsRead}>
+                <Ionicons name="checkmark-done-outline" size={20} color={colors.amber700} />
+              </GlassIconButton>
+            )}
+            {notifications.length > 0 && (
+              <GlassIconButton onPress={handleDeleteAll}>
+                <Ionicons name="trash-outline" size={20} color={colors.rose600} />
+              </GlassIconButton>
+            )}
+          </View>
         </View>
-      </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       {loading ? (
         <View style={styles.list}>
@@ -425,16 +443,57 @@ export const NotificationsInboxScreen: React.FC = () => {
           ListFooterComponent={<View style={{ height: 40 }} />}
         />
       )}
-    </SafeAreaView>
-    </LinearGradient>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -496,7 +555,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   emptyIcon: {
     width: 80,

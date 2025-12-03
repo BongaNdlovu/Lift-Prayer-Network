@@ -21,6 +21,8 @@ import { useAuth } from '../hooks/useAuth';
 import { editPrayerRequest, editTestimony, deletePrayerRequest, deleteTestimony } from '../services/prayers';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { canEditContent, canDeleteContent, hasAdminPermission } from '../config/admins';
 import { validateContent } from '../utils/security';
@@ -31,7 +33,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EditRequest'>;
 export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id, type, item } = route.params;
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
   const isRequest = type === 'REQUEST';
   
   // Form state
@@ -174,34 +176,42 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (!canEdit) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={palette.accent} />
-      </SafeAreaView>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={palette.accent} />
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={['#fefce8', '#f4f4f5']} style={{ flex: 1 }}>
+    <CinematicBackground useOuterBackground>
       <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>MODIFY</Text>
+            <Text style={styles.heading}>
+              Edit<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardView}
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={24} color={palette.text} />
-              </TouchableOpacity>
-              <Text style={styles.title}>
-                Edit {isRequest ? 'Prayer Request' : 'Testimony'}
-              </Text>
-              <View style={styles.placeholder} />
-            </View>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
 
             {/* Admin Badge */}
             {isAdmin && !isOwner && (
@@ -365,10 +375,11 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 )}
               </TouchableOpacity>
             )}
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </RoundedPage>
       </SafeAreaView>
-    </LinearGradient>
+    </CinematicBackground>
   );
 };
 
@@ -380,14 +391,54 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: 140,
   },
   header: {
     flexDirection: 'row',
@@ -551,10 +602,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.sm,
     marginBottom: spacing.md,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 4,
   },
   saveButtonText: {

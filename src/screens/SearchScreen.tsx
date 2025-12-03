@@ -32,6 +32,8 @@ import { logPrayer, logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import { RootStackParamList } from '../navigation/types';
 import { PRAYER_CATEGORIES, type PrayerCategory, type FeedItem } from '../types';
 
@@ -270,20 +272,25 @@ export const SearchScreen: React.FC = () => {
     (filters.type !== 'all' ? 1 : 0) +
     (filters.timeRange !== 'all' ? 1 : 0);
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Search</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>FIND PRAYERS</Text>
+            <Text style={styles.heading}>
+              Search<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -498,16 +505,56 @@ export const SearchScreen: React.FC = () => {
           }
         />
       )}
+      </RoundedPage>
     </SafeAreaView>
-    </LinearGradient>
+  </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -543,10 +590,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
     gap: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 2,
   },
   searchInput: {
@@ -676,7 +723,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   emptyIcon: {
     width: 80,

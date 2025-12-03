@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { Alert, FlatList, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -14,14 +14,17 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { FeedCard } from '../../components/FeedCard';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { Confetti } from '../../components/Confetti';
+import { CinematicBackground, RoundedPage, GlassHeader } from '../../components/CinematicBackground';
+import { GlassStatCard, GlassChip, GlassIconButton } from '../../components/GlassCard';
 import { queuePendingPrayer } from '../../services/offlineCache';
 import { subscribeToUserGroups } from '../../services/groups';
 import { prefetchFeedAvatars } from '../../utils/imagePrefetch';
-import { fonts, radius, spacing } from '../../theme/colors';
+import { fonts, fontSizes, radius, spacing, shadows } from '../../theme/colors';
 import type { FeedItem, PrayerCategory } from '../../types';
 import { PRAYER_CATEGORIES } from '../../types';
 import type { RootStackParamList } from '../../navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getVerseOfDay } from '../../services/verseOfDay';
 
 export const FeedScreen: React.FC = () => {
   const [mode, setMode] = useState<'REQUEST' | 'TESTIMONY'>('REQUEST');
@@ -46,6 +49,7 @@ export const FeedScreen: React.FC = () => {
   
   const { items, loading, error, errorType, isOffline, refresh } = useFeed(mode, user?.uid, userGroupIds);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [searchQuery] = useState('');
@@ -151,6 +155,8 @@ export const FeedScreen: React.FC = () => {
       
       if (!result.success) {
         if (result.alreadyPrayed) {
+          // Mark as prayed locally so button shows correct state
+          setPrayedIds((prev) => new Set(prev).add(id));
           Alert.alert('Already Prayed', 'You have already prayed for this request. Thank you for your prayer! 🙏');
         } else if (result.isSelfPrayer) {
           Alert.alert('Your Request', 'You cannot pray on your own request. Share it with others to receive prayers!');
@@ -158,7 +164,8 @@ export const FeedScreen: React.FC = () => {
           Alert.alert('Unable to pray', result.error || 'Please try again.');
         }
       } else {
-        // Success! Provide haptic feedback
+        // Success! Mark as prayed and provide haptic feedback
+        setPrayedIds((prev) => new Set(prev).add(id));
         if (Platform.OS !== 'web') {
           try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -315,538 +322,549 @@ export const FeedScreen: React.FC = () => {
     }
   };
 
-  // Dynamic bold diagonal gradient colors based on theme
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+  // FAB pulse animation
+  const fabPulseAnim = useRef(new Animated.Value(1)).current;
+  
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fabPulseAnim, {
+          toValue: 1.05,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fabPulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [fabPulseAnim]);
 
   return (
-    <LinearGradient 
-      colors={gradientColors} 
-      start={{ x: 0, y: 0 }} 
-      end={{ x: 1, y: 1 }} 
-      style={{ flex: 1 }}
-    >
+    <CinematicBackground useOuterBackground>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        {offline && (
-          <View style={styles.offlineBanner}>
-            <Text style={styles.offlineText}>Offline — viewing cached data</Text>
-          </View>
-        )}
-        <View style={styles.topRow}>
-          <View style={styles.topRowLeft}>
-            <Text style={[styles.kicker, { color: colors.muted }]}>Live Network</Text>
-            <View style={styles.headingRow}>
-              <Text style={[styles.heading, { color: colors.text }]}>Lift</Text>
-              {/* Notification Bell */}
-              <TouchableOpacity
-                style={[styles.notificationBell, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }]}
+      <SafeAreaView style={styles.container}>
+        {/* === CINEMATIC HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          {/* Offline Banner */}
+          {offline && (
+            <View style={styles.offlineBanner}>
+              <Ionicons name="cloud-offline" size={14} color="#b91c1c" />
+              <Text style={styles.offlineText}>Offline — viewing cached data</Text>
+            </View>
+          )}
+          
+          {/* Top Row: Logo + Actions */}
+          <View style={styles.topRow}>
+            <View style={styles.topRowLeft}>
+              <Text style={[styles.heading, { color: colors.stone900 }]}>
+                Lift<Text style={styles.headingDot}>.</Text>
+              </Text>
+            </View>
+            <View style={styles.topRowRight}>
+              <GlassIconButton
                 onPress={() => navigation.navigate('NotificationsInbox')}
+                badge={unreadCount}
               >
-                <Ionicons name="notifications-outline" size={22} color={colors.text} />
-                {unreadCount > 0 && (
-                  <View style={styles.notificationBadge}>
-                    <Text style={styles.notificationBadgeText}>
-                      {unreadCount > 99 ? '99+' : unreadCount}
+                <Ionicons name="notifications-outline" size={20} color={colors.stone700} />
+              </GlassIconButton>
+              <GlassIconButton onPress={() => navigation.navigate('Search')}>
+                <Ionicons name="search-outline" size={20} color={colors.stone700} />
+              </GlassIconButton>
+            </View>
+          </View>
+
+          {/* Quick Access: Announcements & Devotions */}
+          <View style={styles.quickAccessRow}>
+            <TouchableOpacity
+              style={[styles.quickAccessButton, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}
+              onPress={() => navigation.navigate('Announcements')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="megaphone-outline" size={18} color={colors.amber600} />
+              <Text style={[styles.quickAccessText, { color: colors.stone700 }]}>Announcements</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.quickAccessButton, styles.quickAccessLocked, { backgroundColor: colors.glassWhiteLight, borderColor: colors.glassBorderLight }]}
+              activeOpacity={1}
+              onPress={() => {}}
+            >
+              <Ionicons name="book-outline" size={18} color={colors.stone400} />
+              <Text style={[styles.quickAccessText, { color: colors.stone400 }]}>Devotions</Text>
+              <View style={[styles.comingSoonBadge, { backgroundColor: colors.amber100 }]}>
+                <Text style={[styles.comingSoonText, { color: colors.amber700 }]}>Soon</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Stats Strip - Compact */}
+          <View style={styles.statsRow}>
+            <GlassStatCard value={headerCounts.items} label="Requests" />
+            <GlassStatCard value={headerCounts.totalPrayers} label="Prayers" accent />
+            <GlassStatCard value={user ? '🔥' : '—'} label="Streak" />
+          </View>
+        </View>
+
+        {/* === MAIN CONTENT AREA - Rounded "Page" Effect === */}
+        <RoundedPage style={styles.mainContent}>
+          {/* Sticky Nav with Glass Effect */}
+          <GlassHeader style={styles.stickyHeader}>
+            {/* Tab Navigation */}
+            <View style={styles.tabRow}>
+              {(['For You', 'Requests', 'Answered'] as const).map((tab) => {
+                const tabKey = tab === 'For You' ? 'REQUEST' : tab === 'Requests' ? 'REQUEST' : 'TESTIMONY';
+                const isActive = (tab === 'For You' && mode === 'REQUEST') || 
+                                 (tab === 'Requests' && mode === 'REQUEST') ||
+                                 (tab === 'Answered' && mode === 'TESTIMONY');
+                // Only show "For You" and "Answered" for simplicity
+                if (tab === 'Requests') return null;
+                return (
+                  <TouchableOpacity
+                    key={tab}
+                    onPress={() => setMode(tab === 'Answered' ? 'TESTIMONY' : 'REQUEST')}
+                    style={styles.tabButton}
+                  >
+                    <Text style={[
+                      styles.tabText,
+                      { color: colors.stone400 },
+                      isActive && styles.tabTextActive,
+                      isActive && { color: colors.stone900 },
+                    ]}>
+                      {tab === 'For You' ? 'Prayer Requests' : 'Answered Prayers'}
                     </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-              {/* Search Button */}
-              <TouchableOpacity
-                style={[styles.searchButton, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }]}
-                onPress={() => navigation.navigate('Search')}
-              >
-                <Ionicons name="search-outline" size={22} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.topRowRight}>
-          {mode === 'REQUEST' && headerCounts.urgentCount > 0 && (
-            <TouchableOpacity
-              style={[styles.urgentPill, showUrgentOnly && styles.urgentPillActive]}
-              onPress={() => setShowUrgentOnly(!showUrgentOnly)}
-            >
-              <Text style={styles.urgentEmoji}>🚨</Text>
-              <Text style={[styles.urgentText, showUrgentOnly && styles.urgentTextActive]}>
-                {headerCounts.urgentCount}
-              </Text>
-            </TouchableOpacity>
-          )}
-          <View style={styles.statPill}>
-            <Text style={styles.statNumber}>{headerCounts.items}</Text>
-            <Text style={styles.statLabel}>{mode === 'REQUEST' ? 'Requests' : 'Testimonies'}</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statNumber}>{headerCounts.totalPrayers}</Text>
-            <Text style={styles.statLabel}>Prayers</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Quick Access Bar - Devotions & Announcements */}
-        <View style={styles.quickAccessBar}>
-          <TouchableOpacity
-            style={[styles.quickAccessButton, { backgroundColor: colors.accentLight }]}
-            onPress={() => navigation.navigate('Devotions')}
-          >
-            <Ionicons name="book" size={18} color={colors.accent} />
-            <Text style={[styles.quickAccessText, { color: colors.accent }]}>Daily Devotion</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickAccessButton, { backgroundColor: isDark ? '#7f1d1d' : '#fef2f2' }]}
-            onPress={() => navigation.navigate('Announcements')}
-          >
-            <Ionicons name="megaphone" size={18} color="#dc2626" />
-            <Text style={[styles.quickAccessText, { color: '#dc2626' }]}>Announcements</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={[styles.modeSwitch, { backgroundColor: colors.surfaceSecondary }]}>
-          {(['REQUEST', 'TESTIMONY'] as const).map((m) => (
-            <TouchableOpacity
-              key={m}
-              style={[styles.modeButton, mode === m && [styles.modeButtonActive, { backgroundColor: colors.surface }]]}
-              onPress={() => setMode(m)}
-            >
-              <Text style={[styles.modeText, { color: colors.muted }, mode === m && { color: colors.text }]}>
-                {m === 'REQUEST' ? 'Prayer Requests' : 'Answered Prayers'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Category Filter */}
-        {mode === 'REQUEST' && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.categoryScroll}
-            contentContainerStyle={styles.categoryContainer}
-          >
-            <TouchableOpacity
-              style={[styles.categoryChip, { backgroundColor: colors.surface, borderColor: colors.border }, selectedCategory === 'all' && styles.categoryChipActive]}
-              onPress={() => setSelectedCategory('all')}
-            >
-              <Text style={[styles.categoryText, { color: colors.muted }, selectedCategory === 'all' && styles.categoryTextActive]}>
-                All
-              </Text>
-            </TouchableOpacity>
-            {PRAYER_CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.categoryChip, { backgroundColor: colors.surface, borderColor: colors.border }, selectedCategory === cat.id && styles.categoryChipActive]}
-                onPress={() => setSelectedCategory(selectedCategory === cat.id ? 'all' : cat.id)}
-              >
-                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-                <Text style={[styles.categoryText, { color: colors.muted }, selectedCategory === cat.id && styles.categoryTextActive]}>
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* Error/Offline Banner */}
-        {(error || isOffline) && !loading && (
-          <View style={[
-            styles.errorBanner,
-            errorType === 'permission' && styles.errorBannerPermission
-          ]}>
-            <Ionicons 
-              name={isOffline ? "cloud-offline" : errorType === 'permission' ? "lock-closed" : "warning"} 
-              size={18} 
-              color={errorType === 'permission' ? "#dc2626" : "#b45309"} 
-            />
-            <Text style={[
-              styles.errorBannerText,
-              errorType === 'permission' && styles.errorBannerTextPermission
-            ]}>
-              {isOffline 
-                ? "You're offline. Showing cached data." 
-                : errorType === 'permission'
-                  ? "Some prayers couldn't be loaded due to privacy settings. Showing available content."
-                  : "Couldn't load latest prayers. Pull to refresh."}
-            </Text>
-            <TouchableOpacity onPress={onRefresh} style={styles.errorRetryButton}>
-              <Ionicons name="refresh" size={16} color={errorType === 'permission' ? "#dc2626" : "#b45309"} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-          {loading ? (
-            <View style={styles.loading}>
-              {[...Array(4)].map((_, idx) => (
-                <SkeletonCard key={idx} />
-              ))}
-            </View>
-          ) : filteredItems.length === 0 && !error ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>{mode === 'REQUEST' ? '🙏' : '✨'}</Text>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                {searchQuery || selectedCategory !== 'all' 
-                  ? 'No matching prayers found'
-                  : mode === 'REQUEST' 
-                    ? 'No prayer requests yet' 
-                    : 'No testimonies yet'}
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                {searchQuery || selectedCategory !== 'all'
-                  ? 'Try adjusting your filters'
-                  : mode === 'REQUEST'
-                    ? 'Be the first to share a prayer request!'
-                    : 'Share how God has answered your prayers!'}
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredItems}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <FeedCard
-                  item={item}
-                  onPray={handlePray}
-                  onLike={handleLike}
-                  onReact={handleReact}
-                  disabled={busyIds.has(item.id)}
-                  onPress={handleOpen}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onPin={handlePin}
-                  currentUserId={user?.uid}
-                  currentUserEmail={user?.email}
-                />
-              )}
-              ListHeaderComponent={
-                mostPrayedItems.length > 0 ? (
-                  <View style={styles.mostPrayedSection}>
-                    <View style={styles.mostPrayedHeader}>
-                      <Text style={styles.mostPrayedEmoji}>🔥</Text>
-                      <Text style={[styles.mostPrayedTitle, { color: colors.text }]}>Most Prayed</Text>
-                    </View>
-                    <ScrollView 
-                      horizontal 
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.mostPrayedScroll}
-                    >
-                      {mostPrayedItems.map((item, index) => (
-                        <TouchableOpacity
-                          key={item.id}
-                          style={[
-                            styles.mostPrayedCard,
-                            { backgroundColor: isDark ? colors.surface : '#fff', borderColor: colors.border }
-                          ]}
-                          onPress={() => handleOpen(item)}
-                          activeOpacity={0.8}
-                        >
-                          <View style={styles.mostPrayedRank}>
-                            <Text style={styles.mostPrayedRankText}>#{index + 1}</Text>
-                          </View>
-                          <Text 
-                            style={[styles.mostPrayedContent, { color: colors.text }]} 
-                            numberOfLines={2}
-                          >
-                            {item.content}
-                          </Text>
-                          <View style={styles.mostPrayedFooter}>
-                            <Text style={styles.mostPrayedPrayers}>
-                              🙏 {(item as any).prayers ?? 0} prayers
-                            </Text>
-                            <Text style={[styles.mostPrayedAuthor, { color: colors.muted }]} numberOfLines={1}>
-                              by {item.userDisplayName}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                ) : null
-              }
-              contentContainerStyle={{ paddingBottom: 120 }}
-              showsVerticalScrollIndicator={false}
-              initialNumToRender={8}
-              windowSize={8}
-              maxToRenderPerBatch={8}
-              updateCellsBatchingPeriod={50}
-              removeClippedSubviews
-              getItemLayout={(_, index) => ({
-                length: 200,
-                offset: 200 * index,
-                index,
+                    {isActive && <View style={styles.tabIndicator} />}
+                  </TouchableOpacity>
+                );
               })}
-              refreshControl={
-                <RefreshControl 
-                  refreshing={refreshing} 
-                  onRefresh={onRefresh}
-                  colors={['#f59e0b', '#eab308', '#d97706']}
-                  tintColor="#f59e0b"
-                  title="Refreshing prayers..."
-                  titleColor={colors.muted}
-                  progressBackgroundColor="#fef3c7"
-                />
-              }
-            />
+            </View>
+
+            {/* Filter Chips */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterScroll}
+              contentContainerStyle={styles.filterContainer}
+            >
+              <GlassChip
+                active={selectedCategory === 'all'}
+                onPress={() => setSelectedCategory('all')}
+              >
+                <Text style={[
+                  styles.chipText,
+                  { color: colors.stone500 },
+                  selectedCategory === 'all' && styles.chipTextActive,
+                ]}>
+                  All
+                </Text>
+              </GlassChip>
+              {PRAYER_CATEGORIES.map((cat) => (
+                <GlassChip
+                  key={cat.id}
+                  active={selectedCategory === cat.id}
+                  onPress={() => setSelectedCategory(selectedCategory === cat.id ? 'all' : cat.id)}
+                  icon={<Text style={styles.chipEmoji}>{cat.emoji}</Text>}
+                >
+                  <Text style={[
+                    styles.chipText,
+                    { color: colors.stone500 },
+                    selectedCategory === cat.id && styles.chipTextActive,
+                  ]}>
+                    {cat.label}
+                  </Text>
+                </GlassChip>
+              ))}
+              {/* Urgent filter */}
+              {mode === 'REQUEST' && headerCounts.urgentCount > 0 && (
+                <GlassChip
+                  active={showUrgentOnly}
+                  onPress={() => setShowUrgentOnly(!showUrgentOnly)}
+                  icon={<Text style={styles.chipEmoji}>🚨</Text>}
+                >
+                  <Text style={[
+                    styles.chipText,
+                    { color: showUrgentOnly ? '#fff' : '#dc2626' },
+                  ]}>
+                    Urgent ({headerCounts.urgentCount})
+                  </Text>
+                </GlassChip>
+              )}
+            </ScrollView>
+          </GlassHeader>
+
+          {/* Verse of the Day */}
+          <View style={styles.verseCard}>
+            <View style={styles.verseHeader}>
+              <Text style={styles.verseLabel}>VERSE OF THE DAY</Text>
+              <Text style={styles.verseReference}>{getVerseOfDay().reference}</Text>
+            </View>
+            <Text style={[styles.verseText, { color: colors.stone700 }]}>
+              "{getVerseOfDay().text}"
+            </Text>
+          </View>
+
+          {/* Error/Offline Banner */}
+          {(error || isOffline) && !loading && (
+            <View style={[
+              styles.errorBanner,
+              { backgroundColor: colors.glassWhiteLight, borderColor: colors.glassBorder },
+              errorType === 'permission' && styles.errorBannerPermission
+            ]}>
+              <Ionicons 
+                name={isOffline ? "cloud-offline" : errorType === 'permission' ? "lock-closed" : "warning"} 
+                size={18} 
+                color={errorType === 'permission' ? "#dc2626" : colors.amber600} 
+              />
+              <Text style={[
+                styles.errorBannerText,
+                { color: colors.stone700 },
+                errorType === 'permission' && styles.errorBannerTextPermission
+              ]}>
+                {isOffline 
+                  ? "You're offline. Showing cached data." 
+                  : errorType === 'permission'
+                    ? "Some prayers couldn't be loaded due to privacy settings."
+                    : "Couldn't load latest prayers. Pull to refresh."}
+              </Text>
+              <TouchableOpacity onPress={onRefresh} style={styles.errorRetryButton}>
+                <Ionicons name="refresh" size={16} color={colors.amber600} />
+              </TouchableOpacity>
+            </View>
           )}
 
-        {/* Floating Action Button */}
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.accent }, mode === 'TESTIMONY' && styles.fabTestimony]}
-          onPress={navigateToCreate}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
+          {/* Feed Content */}
+          <View style={styles.feedContainer}>
+            {loading ? (
+              <View style={styles.loading}>
+                {[...Array(4)].map((_, idx) => (
+                  <SkeletonCard key={idx} />
+                ))}
+              </View>
+            ) : filteredItems.length === 0 && !error ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>{mode === 'REQUEST' ? '🙏' : '✨'}</Text>
+                <Text style={[styles.emptyTitle, { color: colors.stone900 }]}>
+                  {searchQuery || selectedCategory !== 'all' 
+                    ? 'No matching prayers found'
+                    : mode === 'REQUEST' 
+                      ? 'No prayer requests yet' 
+                      : 'No testimonies yet'}
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: colors.stone500 }]}>
+                  {searchQuery || selectedCategory !== 'all'
+                    ? 'Try adjusting your filters'
+                    : mode === 'REQUEST'
+                      ? 'Be the first to share a prayer request!'
+                      : 'Share how God has answered your prayers!'}
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredItems}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <FeedCard
+                    item={item}
+                    onPray={handlePray}
+                    onLike={handleLike}
+                    onReact={handleReact}
+                    disabled={busyIds.has(item.id)}
+                    hasPrayed={prayedIds.has(item.id)}
+                    onPress={handleOpen}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onPin={handlePin}
+                    currentUserId={user?.uid}
+                    currentUserEmail={user?.email}
+                  />
+                )}
+                ListHeaderComponent={
+                  mostPrayedItems.length > 0 ? (
+                    <View style={styles.mostPrayedSection}>
+                      <View style={styles.mostPrayedHeader}>
+                        <Text style={styles.mostPrayedEmoji}>🔥</Text>
+                        <Text style={[styles.mostPrayedTitle, { color: colors.stone900 }]}>Most Prayed</Text>
+                      </View>
+                      <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.mostPrayedScroll}
+                      >
+                        {mostPrayedItems.map((item, index) => (
+                          <TouchableOpacity
+                            key={item.id}
+                            style={[
+                              styles.mostPrayedCard,
+                              { 
+                                backgroundColor: colors.glassWhite, 
+                                borderColor: colors.glassBorder 
+                              }
+                            ]}
+                            onPress={() => handleOpen(item)}
+                            activeOpacity={0.8}
+                          >
+                            <View style={styles.mostPrayedRank}>
+                              <Text style={styles.mostPrayedRankText}>#{index + 1}</Text>
+                            </View>
+                            <Text 
+                              style={[styles.mostPrayedContent, { color: colors.stone800 }]} 
+                              numberOfLines={2}
+                            >
+                              {item.content}
+                            </Text>
+                            <View style={styles.mostPrayedFooter}>
+                              <Text style={styles.mostPrayedPrayers}>
+                                🙏 {(item as any).prayers ?? 0}
+                              </Text>
+                              <Text style={[styles.mostPrayedAuthor, { color: colors.stone400 }]} numberOfLines={1}>
+                                {item.userDisplayName}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  ) : null
+                }
+                ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+                contentContainerStyle={styles.feedList}
+                showsVerticalScrollIndicator={false}
+                initialNumToRender={8}
+                windowSize={8}
+                maxToRenderPerBatch={8}
+                updateCellsBatchingPeriod={50}
+                removeClippedSubviews
+                getItemLayout={(_, index) => ({
+                  length: 200,
+                  offset: 200 * index,
+                  index,
+                })}
+                refreshControl={
+                  <RefreshControl 
+                    refreshing={refreshing} 
+                    onRefresh={onRefresh}
+                    colors={[colors.amber500, colors.amber400, colors.amber600]}
+                    tintColor={colors.amber500}
+                    title="Refreshing prayers..."
+                    titleColor={colors.stone400}
+                    progressBackgroundColor={colors.amber100}
+                  />
+                }
+              />
+            )}
+          </View>
+        </RoundedPage>
+
+        {/* === CINEMATIC FAB - Glowing Orb === */}
+        <View style={styles.fabContainer}>
+          <Animated.View style={[
+            styles.fabGlow,
+            { transform: [{ scale: fabPulseAnim }] }
+          ]} />
+          <TouchableOpacity
+            style={styles.fab}
+            onPress={navigateToCreate}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={mode === 'TESTIMONY' 
+                ? ['#22c55e', '#16a34a'] 
+                : [colors.amber400, colors.orange500]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.fabGradient}
+            >
+              <Ionicons name="add" size={32} color="#fff" strokeWidth={2.5} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
-    </LinearGradient>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  // === MAIN CONTAINER ===
   container: {
     flex: 1,
+  },
+  
+  // === HEADER SECTION ===
+  headerSection: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    zIndex: 20,
   },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   topRowLeft: {
-    flexShrink: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   topRowRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-  },
-  kicker: {
-    fontFamily: fonts.bodyMedium,
-    textTransform: 'uppercase',
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  headingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   heading: {
     fontFamily: fonts.heading,
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: fontSizes.xxl,
+    fontWeight: '600',
     letterSpacing: -0.5,
   },
-  notificationBell: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f1f5f9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: spacing.sm,
-    position: 'relative' as const,
+  headingDot: {
+    color: '#f59e0b',
   },
-  notificationBadge: {
-    position: 'absolute' as const,
-    top: -4,
-    right: -4,
-    backgroundColor: '#ef4444',
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  notificationBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  searchButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f1f5f9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statPill: {
-    backgroundColor: '#fff7d6',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#fef08a',
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#92400e',
-  },
-  statLabel: {
-    fontSize: 9,
-    color: '#92400e',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginTop: 1,
-  },
-  quickAccessBar: {
+  
+  // === QUICK ACCESS ROW ===
+  quickAccessRow: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   quickAccessButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.lg,
-    gap: 8,
+    borderWidth: 1,
+  },
+  quickAccessLocked: {
+    opacity: 0.7,
   },
   quickAccessText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
   },
-  modeSwitch: {
-    flexDirection: 'row',
-    borderRadius: radius.md,
-    backgroundColor: '#f1f5f9',
-    padding: 5,
-    marginBottom: spacing.md,
-  },
-  modeButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    borderRadius: radius.md,
-  },
-  modeButtonActive: {
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  modeText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  comingSoonBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
     borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
+    marginLeft: spacing.xs,
+  },
+  comingSoonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  
+  // === STATS ROW ===
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
     marginBottom: spacing.xs,
-    borderWidth: 1,
-    minHeight: 36,
   },
-  searchIcon: {
-    marginRight: spacing.xs,
-  },
-  searchInput: {
+  
+  // === MAIN CONTENT AREA ===
+  mainContent: {
     flex: 1,
-    paddingVertical: spacing.xs,
-    fontSize: 13,
+    zIndex: 10,
   },
-  clearButton: {
-    padding: spacing.xs,
+  
+  // === STICKY HEADER ===
+  stickyHeader: {
+    zIndex: 30,
   },
-  categoryScroll: {
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
-    minHeight: 44,
-    maxHeight: 44,
-  },
-  categoryContainer: {
+  
+  // === TAB NAVIGATION ===
+  tabRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    paddingBottom: spacing.xs,
   },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    gap: 4,
-    minHeight: 32,
+  tabButton: {
+    position: 'relative',
   },
-  categoryChipActive: {
-    backgroundColor: '#eab308',
-    borderColor: '#eab308',
+  tabText: {
+    fontSize: fontSizes.md,
+    fontWeight: '500',
+    fontFamily: fonts.body,
   },
-  categoryEmoji: {
-    fontSize: 12,
-  },
-  categoryText: {
-    fontSize: 11,
+  tabTextActive: {
+    fontFamily: fonts.heading,
     fontWeight: '600',
+    letterSpacing: -0.3,
   },
-  categoryTextActive: {
-    color: '#1f2937',
+  tabIndicator: {
+    position: 'absolute',
+    bottom: -8,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#fbbf24',
+    // Glow effect
+    
+    
+    
+    
   },
-  urgentPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    gap: 6,
+  
+  // === FILTER CHIPS ===
+  filterScroll: {
+    marginTop: spacing.sm,
+    paddingBottom: spacing.sm,
   },
-  urgentPillActive: {
-    backgroundColor: '#ef4444',
-    borderColor: '#ef4444',
+  filterContainer: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.xs,
   },
-  urgentEmoji: {
-    fontSize: 14,
+  chipText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '500',
+    fontFamily: fonts.body,
   },
-  urgentText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#dc2626',
-  },
-  urgentTextActive: {
+  chipTextActive: {
     color: '#fff',
   },
-  loading: {
-    marginTop: spacing.md,
+  chipEmoji: {
+    fontSize: 14,
   },
+  
+  // === FEED CONTAINER ===
+  feedContainer: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+  },
+  feedList: {
+    paddingBottom: 120,
+    paddingTop: spacing.sm,
+  },
+  
+  // === ERROR BANNER ===
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef3c7',
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.md,
+    marginHorizontal: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#fcd34d',
     gap: spacing.sm,
   },
   errorBannerText: {
     flex: 1,
     fontSize: 13,
-    color: '#b45309',
-    fontWeight: '600',
+    fontWeight: '500',
   },
   errorBannerPermission: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
+    backgroundColor: 'rgba(254,242,242,0.8)',
+    borderColor: 'rgba(254,205,211,0.6)',
   },
   errorBannerTextPermission: {
     color: '#dc2626',
@@ -854,110 +872,140 @@ const styles = StyleSheet.create({
   errorRetryButton: {
     padding: spacing.xs,
   },
+  
+  // === LOADING STATE ===
+  loading: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  
+  // === EMPTY STATE ===
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   emptyEmoji: {
-    fontSize: 48,
+    fontSize: 40,
     marginBottom: spacing.md,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xl,
+    fontWeight: '600',
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
     textAlign: 'center',
     lineHeight: 20,
   },
+  
+  // === OFFLINE BANNER ===
   offlineBanner: {
-    backgroundColor: '#fee2e2',
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: '#fecdd3',
-  },
-  offlineText: {
-    fontSize: 14,
-    color: '#b91c1c',
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 90,
-    right: spacing.md,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#eab308',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    backgroundColor: 'rgba(254,226,226,0.8)',
+    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
   },
-  fabTestimony: {
-    backgroundColor: '#22c55e',
-    shadowColor: '#22c55e',
+  offlineText: {
+    fontSize: 12,
+    color: '#b91c1c',
+    fontWeight: '600',
   },
-  // Most Prayed Section Styles
+  
+  // === FAB (Floating Action Button) ===
+  fabContainer: {
+    position: 'absolute',
+    bottom: 100,
+    right: spacing.lg,
+    zIndex: 40,
+  },
+  fabGlow: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 36,
+    backgroundColor: 'rgba(245,158,11,0.4)',
+  },
+  fab: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    overflow: 'hidden',
+    ...shadows.fabGlow,
+  },
+  fabGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  // === MOST PRAYED SECTION ===
   mostPrayedSection: {
     marginBottom: spacing.md,
+    marginTop: spacing.xs,
   },
   mostPrayedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   mostPrayedEmoji: {
     fontSize: 16,
   },
   mostPrayedTitle: {
-    fontSize: 14,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.md,
     fontWeight: '600',
   },
   mostPrayedScroll: {
-    paddingRight: spacing.lg,
-    gap: spacing.sm,
+    paddingRight: spacing.md,
+    gap: spacing.xs,
   },
   mostPrayedCard: {
-    width: 160,
-    padding: spacing.sm,
-    borderRadius: radius.md,
+    width: 180,
+    padding: spacing.md,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.cinematicCard,
   },
   mostPrayedRank: {
     position: 'absolute',
-    top: -6,
-    left: 8,
+    top: -8,
+    left: 12,
     backgroundColor: '#f59e0b',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    
+    
+    
+    
+    elevation: 3,
   },
   mostPrayedRankText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: fontSizes.xs - 2,
     fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   mostPrayedContent: {
-    fontSize: 11,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xs,
     lineHeight: 16,
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
@@ -968,12 +1016,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mostPrayedPrayers: {
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: fontSizes.xs - 1,
+    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: '#f59e0b',
   },
   mostPrayedAuthor: {
-    fontSize: 9,
-    maxWidth: 60,
+    fontSize: fontSizes.xs - 2,
+    fontFamily: fonts.body,
+    maxWidth: 70,
+  },
+  
+  // === VERSE OF THE DAY ===
+  verseCard: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: 'rgba(254,243,199,0.4)',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.2)',
+  },
+  verseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  verseLabel: {
+    fontSize: fontSizes.xs - 3,
+    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 1,
+    color: '#b45309',
+    opacity: 0.8,
+  },
+  verseReference: {
+    fontSize: fontSizes.xs - 1,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
+    color: '#b45309',
+  },
+  verseText: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xs,
+    lineHeight: 18,
+    fontStyle: 'italic',
   },
 });

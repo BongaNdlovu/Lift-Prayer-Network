@@ -19,6 +19,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import { db, firebaseEnabled } from '../services/firebase';
 import { registerForPushNotifications, storePushToken, sendTestNotification, getPushTokenStatus } from '../services/notifications';
 import { updateUserSettings } from '../services/userProfile';
@@ -55,7 +57,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 
 export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  useTheme(); // Theme context for potential future use
+  const { colors } = useTheme();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<string>('unknown');
@@ -180,30 +182,40 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centerContent}>
-          <Ionicons name="notifications-off" size={64} color={palette.muted} />
-          <Text style={styles.emptyTitle}>Sign in Required</Text>
-          <Text style={styles.emptySubtitle}>
-            Please sign in to manage your notification preferences.
-          </Text>
-        </View>
-      </SafeAreaView>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.centerContent}>
+            <Ionicons name="notifications-off" size={64} color={palette.muted} />
+            <Text style={styles.emptyTitle}>Sign in Required</Text>
+            <Text style={styles.emptySubtitle}>
+              Please sign in to manage your notification preferences.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header with Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 40 }} />
-      </View>
-      
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>PREFERENCES</Text>
+            <Text style={styles.heading}>
+              Alerts<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Permission Status Banner */}
         {permissionStatus !== 'granted' && (
           <TouchableOpacity style={styles.permissionBanner} onPress={requestPermission}>
@@ -432,8 +444,10 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
             You can customize which notifications you receive. Disabled settings will not send any notifications for that category.
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+          </ScrollView>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
@@ -477,8 +491,48 @@ const SettingRow: React.FC<SettingRowProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -509,7 +563,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
   emptyTitle: {
     fontSize: 20,

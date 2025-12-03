@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // Light theme palette
 export const lightPalette = {
   // Core colors
@@ -18,6 +20,61 @@ export const lightPalette = {
   success: '#10b981',
   successLight: '#f0fdf4',
   shadow: 'rgba(0,0,0,0.08)',
+
+  // Cinematic Design System - Warm & Glassmorphism
+  cinematicBackground: '#F5F2EA',
+  cinematicBackgroundOuter: '#F0EFEB',
+  
+  // Glass effects
+  glassWhite: 'rgba(255,255,255,0.7)',
+  glassWhiteLight: 'rgba(255,255,255,0.4)',
+  glassWhiteStrong: 'rgba(255,255,255,0.8)',
+  glassBorder: 'rgba(255,255,255,0.6)',
+  glassBorderLight: 'rgba(255,255,255,0.4)',
+  
+  // Stone palette (warm grays)
+  stone900: '#1c1917',
+  stone800: '#292524',
+  stone700: '#44403c',
+  stone600: '#57534e',
+  stone500: '#78716c',
+  stone400: '#a8a29e',
+  stone300: '#d6d3d1',
+  stone200: '#e7e5e4',
+  stone100: '#f5f5f4',
+  
+  // Amber palette
+  amber700: '#b45309',
+  amber600: '#d97706',
+  amber500: '#f59e0b',
+  amber400: '#fbbf24',
+  amber300: '#fcd34d',
+  amber200: '#fde68a',
+  amber100: '#fef3c7',
+  
+  // Orange palette
+  orange600: '#ea580c',
+  orange500: '#f97316',
+  orange400: '#fb923c',
+  orange300: '#fdba74',
+  
+  // Rose palette
+  rose500: '#f43f5e',
+  rose400: '#fb7185',
+  rose300: '#fda4af',
+  rose200: '#fecdd3',
+  rose100: '#ffd7e0',
+  rose600: '#e11d48',
+  
+  // Indigo palette (for badges)
+  indigo700: '#4338ca',
+  indigo100: 'rgba(199,210,254,0.5)',
+  
+  // Cinematic glow colors
+  warmGlowTop: 'rgba(251,146,60,0.3)',
+  warmGlowTopLight: 'rgba(251,191,36,0.2)',
+  warmGlowBottom: 'rgba(251,113,133,0.3)',
+  warmGlowBottomLight: 'rgba(251,146,60,0.2)',
 
   // Gradient colors - 3 color
   gradientWarm: ['#fef3c7', '#fde68a', '#fcd34d'] as const,
@@ -63,6 +120,61 @@ export const darkPalette = {
   successLight: '#052e16',
   shadow: 'rgba(0,0,0,0.3)',
 
+  // Cinematic Design System - Dark Mode
+  cinematicBackground: '#0f172a',
+  cinematicBackgroundOuter: '#0a0f1a',
+  
+  // Glass effects (dark mode)
+  glassWhite: 'rgba(30,41,59,0.8)',
+  glassWhiteLight: 'rgba(30,41,59,0.5)',
+  glassWhiteStrong: 'rgba(30,41,59,0.9)',
+  glassBorder: 'rgba(51,65,85,0.6)',
+  glassBorderLight: 'rgba(51,65,85,0.4)',
+  
+  // Stone palette (dark mode - inverted)
+  stone900: '#fafaf9',
+  stone800: '#f5f5f4',
+  stone700: '#e7e5e4',
+  stone600: '#d6d3d1',
+  stone500: '#a8a29e',
+  stone400: '#78716c',
+  stone300: '#57534e',
+  stone200: '#44403c',
+  stone100: '#292524',
+  
+  // Amber palette (same in dark)
+  amber700: '#b45309',
+  amber600: '#d97706',
+  amber500: '#f59e0b',
+  amber400: '#fbbf24',
+  amber300: '#fcd34d',
+  amber200: '#fde68a',
+  amber100: '#422006',
+  
+  // Orange palette
+  orange600: '#ea580c',
+  orange500: '#f97316',
+  orange400: '#fb923c',
+  orange300: '#fdba74',
+  
+  // Rose palette
+  rose500: '#f43f5e',
+  rose400: '#fb7185',
+  rose300: '#fda4af',
+  rose200: '#fecdd3',
+  rose100: '#ffd7e0',
+  rose600: '#e11d48',
+  
+  // Indigo palette (for badges)
+  indigo700: '#818cf8',
+  indigo100: 'rgba(99,102,241,0.3)',
+  
+  // Cinematic glow colors (dark mode)
+  warmGlowTop: 'rgba(120,53,15,0.4)',
+  warmGlowTopLight: 'rgba(146,64,14,0.3)',
+  warmGlowBottom: 'rgba(120,53,15,0.3)',
+  warmGlowBottomLight: 'rgba(146,64,14,0.2)',
+
   // Gradient colors - 3 color
   gradientWarm: ['#422006', '#451a03', '#431407'] as const,
   gradientSunrise: ['#1c1917', '#292524', '#44403c'] as const,
@@ -105,6 +217,52 @@ export type ThemePalette = {
   success: string;
   successLight: string;
   shadow: string;
+  // Cinematic colors
+  cinematicBackground: string;
+  cinematicBackgroundOuter: string;
+  glassWhite: string;
+  glassWhiteLight: string;
+  glassWhiteStrong: string;
+  glassBorder: string;
+  glassBorderLight: string;
+  // Stone palette
+  stone900: string;
+  stone800: string;
+  stone700: string;
+  stone600: string;
+  stone500: string;
+  stone400: string;
+  stone300: string;
+  stone200: string;
+  stone100: string;
+  // Amber palette
+  amber700: string;
+  amber600: string;
+  amber500: string;
+  amber400: string;
+  amber300: string;
+  amber200: string;
+  amber100: string;
+  // Orange palette
+  orange600: string;
+  orange500: string;
+  orange400: string;
+  orange300: string;
+  // Rose palette
+  rose600: string;
+  rose500: string;
+  rose400: string;
+  rose300: string;
+  rose200: string;
+  rose100: string;
+  // Indigo palette
+  indigo700: string;
+  indigo100: string;
+  // Glow colors
+  warmGlowTop: string;
+  warmGlowTopLight: string;
+  warmGlowBottom: string;
+  warmGlowBottomLight: string;
   // 3-color gradients
   gradientWarm: readonly [string, string, string];
   gradientSunrise: readonly [string, string, string];
@@ -146,6 +304,8 @@ export const radius = {
   md: 10,
   lg: 16,
   xl: 24,
+  xxl: 32,
+  xxxl: 40,
   full: 9999,
 };
 
@@ -167,11 +327,13 @@ export const glass = {
 
 // Typography
 export const fonts = {
-  heading: 'PlayfairDisplay_700Bold',
-  headingItalic: 'PlayfairDisplay_700Bold_Italic',
+  heading: Platform.select({ ios: 'Georgia', android: 'serif' }) as string,
+  headingItalic: Platform.select({ ios: 'Georgia-Italic', android: 'serif' }) as string,
   body: 'Nunito_400Regular',
   bodyMedium: 'Nunito_600SemiBold',
   bodyBold: 'Nunito_700Bold',
+  // Cinematic content font (serif)
+  content: Platform.select({ ios: 'Georgia', android: 'serif' }) as string,
 };
 
 export const typography = {
@@ -270,34 +432,46 @@ export const accessibleColors = {
   darkAccent: '#fbbf24',          // 8.2:1 contrast (passes AA)
 };
 
-// Shadow presets
+// Shadow presets - Clean minimal look (shadows removed for classy appearance)
 export const shadows = {
   sm: {
-    shadowColor: 'rgb(15, 23, 42)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    // Clean look - no shadow
+    elevation: 0,
   },
   md: {
-    shadowColor: 'rgb(15, 23, 42)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
+    // Clean look - no shadow
+    elevation: 0,
   },
   lg: {
-    shadowColor: 'rgb(15, 23, 42)',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    elevation: 10,
+    // Clean look - no shadow
+    elevation: 0,
   },
   glow: {
+    // Clean look - no shadow
+    elevation: 0,
+  },
+  glowStrong: {
+    // Clean look - no shadow
+    elevation: 0,
+  },
+  cinematicCard: {
+    // Clean look - no shadow
+    elevation: 0,
+  },
+  cinematicCardHover: {
+    // Clean look - no shadow
+    elevation: 0,
+  },
+  glassNav: {
+    // Clean look - no shadow
+    elevation: 0,
+  },
+  fabGlow: {
+    // Subtle glow for FAB only
     shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
   },
 };

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Animated,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,9 +17,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { getUserStats, type UserStats } from '../services/stats';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { palette, radius, spacing, shadows } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
 import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassStatCard } from '../components/GlassCard';
 
 type StatCardProps = {
   emoji: string;
@@ -84,28 +87,25 @@ export const StatsScreen: React.FC = () => {
     });
   }, [user]);
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   if (!user) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.center, { backgroundColor: 'transparent' }]}>
-        <Text style={styles.emoji}>📊</Text>
-        <Text style={[styles.title, { color: colors.text }]}>Sign in to view your stats</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>Track your prayer journey</Text>
-      </SafeAreaView>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.center}>
+          <Text style={styles.emoji}>📊</Text>
+          <Text style={[styles.title, { color: colors.stone900 }]}>Sign in to view your stats</Text>
+          <Text style={[styles.subtitle, { color: colors.stone500 }]}>Track your prayer journey</Text>
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   if (loading) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.center, { backgroundColor: 'transparent' }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </SafeAreaView>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.center}>
+          <ActivityIndicator size="large" color={colors.amber500} />
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
@@ -116,11 +116,20 @@ export const StatsScreen: React.FC = () => {
     : `${stats?.streakDays} days strong! 💪`;
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={[styles.heading, { color: colors.text }]}>Your Journey</Text>
-          <Text style={[styles.subheading, { color: colors.muted }]}>Prayer statistics & streaks</Text>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR JOURNEY</Text>
+          <Text style={styles.heading}>
+            Stats<Text style={styles.headingDot}>.</Text>
+          </Text>
+          <Text style={[styles.subheading, { color: colors.stone500 }]}>Prayer statistics & streaks</Text>
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
           <PrayerStreakWidget
             currentStreak={stats?.streakDays || 0}
@@ -222,47 +231,77 @@ export const StatsScreen: React.FC = () => {
               <Ionicons name="chevron-forward" size={24} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
-        </ScrollView>
+          </ScrollView>
+        </RoundedPage>
       </SafeAreaView>
-    </LinearGradient>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: spacing.lg,
   },
+  
+  // Header styles
+  headerSection: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  subheading: {
+    fontSize: 14,
+    marginTop: spacing.xs,
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: 140,
+  },
+  
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.background,
     padding: spacing.lg,
   },
   emoji: {
-    fontSize: 64,
+    fontSize: 48,
     marginBottom: spacing.md,
   },
   title: {
     fontSize: 20,
-    fontWeight: '800',
-    color: palette.text,
+    fontWeight: '600',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: 14,
-    color: palette.muted,
-  },
-  heading: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: palette.text,
-  },
-  subheading: {
-    fontSize: 14,
-    color: palette.muted,
-    marginBottom: spacing.lg,
   },
   streakBanner: {
     flexDirection: 'row',
@@ -271,12 +310,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#fef3c7',
   },
   streakEmoji: {
@@ -323,11 +357,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: radius.lg,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
   },
   statEmoji: {
     fontSize: 32,

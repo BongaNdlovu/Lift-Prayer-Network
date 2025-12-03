@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 
 // Bank Details
 const BANK_DETAILS = {
@@ -65,23 +67,27 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
     copyToClipboard(allDetails, 'All details');
   };
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Support Lift</Text>
-          <View style={{ width: 40 }} />
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <View style={styles.headerLeft}>
+            <GlassIconButton onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+            </GlassIconButton>
+          </View>
+          <View>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>GIVE BACK</Text>
+            <Text style={styles.heading}>
+              Support<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
         </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
         <ScrollView
           style={styles.scrollView}
@@ -290,46 +296,58 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
             <Text style={[styles.verseReference, { color: colors.muted }]}>— 2 Corinthians 9:7</Text>
           </View>
 
-          <View style={{ height: 40 }} />
+          <View style={{ height: 140 }} />
         </ScrollView>
-    </SafeAreaView>
-    </LinearGradient>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
-  gradient: {
-    flex: 1,
-  },
-  header: {
+  
+  // Header styles
+  headerSection: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  headerLeft: {
+    width: 44,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: palette.text,
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+    textAlign: 'center',
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+    textAlign: 'center',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
   },
   scrollView: {
     flex: 1,
@@ -348,10 +366,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
-    shadowColor: '#ec4899',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    
+    
+    
+    
     elevation: 8,
   },
   heartEmoji: {
@@ -391,10 +409,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 2,
   },
   reasonIcon: {
@@ -423,10 +441,10 @@ const styles = StyleSheet.create({
   bankCard: {
     borderRadius: radius.lg,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    
+    
+    
+    
     elevation: 4,
   },
   bankHeader: {
@@ -526,10 +544,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 2,
   },
   methodText: {
@@ -542,7 +560,7 @@ const styles = StyleSheet.create({
   thankYouSection: {
     backgroundColor: '#fef3c7',
     borderRadius: radius.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
     alignItems: 'center',
   },
   thankYouEmoji: {

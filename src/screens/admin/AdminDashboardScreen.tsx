@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { hasAdminPermission, hasModeratorPermission } from '../../config/admins'
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
+import { GlassIconButton } from '../../components/GlassCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
 
@@ -19,34 +21,37 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
   const isModerator = hasModeratorPermission(user?.email);
 
   // Must be at least a moderator to access
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   if (!isModerator) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.center, { backgroundColor: 'transparent' }]}>
-        <Ionicons name="shield" size={40} color={colors.muted} />
-        <Text style={[styles.denied, { color: colors.text }]}>Moderator access required</Text>
-      </SafeAreaView>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.center}>
+          <Ionicons name="shield" size={40} color={colors.muted} />
+          <Text style={[styles.denied, { color: colors.text }]}>Moderator access required</Text>
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {isAdmin ? 'Admin Tools' : 'Moderator Tools'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>MANAGEMENT</Text>
+            <Text style={styles.heading}>
+              Admin<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
 
-      <View style={styles.content}>
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <View style={styles.content}>
         {/* Reports - Available to Moderators and Admins */}
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -118,17 +123,58 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           </View>
         )}
-      </View>
-    </SafeAreaView>
-    </LinearGradient>
+          </View>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -23,6 +23,8 @@ import { subscribeToUserGroups } from '../services/groups';
 import { Confetti } from '../components/Confetti';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import { checkUserBlockedFromPosting } from '../services/moderation';
 import type { RootStackParamList } from '../navigation/types';
@@ -155,14 +157,8 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
-    // Require linking to a prayer request when the user has requests to tie it to
-    if (userRequests.length > 0 && !linkedRequestId) {
-      Alert.alert(
-        'Link your prayer request',
-        'Select the prayer request this testimony answers so we can notify everyone who prayed for you.'
-      );
-      return;
-    }
+    // Linking to a prayer request is optional - just encourage it if they have requests
+    // No longer blocking submission without a linked request
 
     // Show warnings if any
     if (validation.warnings && validation.warnings.length > 0) {
@@ -212,26 +208,34 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <CinematicBackground useOuterBackground>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>CELEBRATE</Text>
+            <Text style={styles.heading}>
+              Testimony<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardView}
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={24} color={palette.text} />
-              </TouchableOpacity>
-              <Text style={styles.title}>Share Testimony</Text>
-              <View style={styles.placeholder} />
-            </View>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
 
             {/* Celebration Banner */}
             <View style={styles.celebrationBanner}>
@@ -264,9 +268,9 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
             {/* Link to Original Request */}
             {userRequests.length > 0 && (
               <View style={styles.card}>
-                <Text style={styles.label}>Link to Prayer Request</Text>
+                <Text style={styles.label}>Link to Prayer Request (Optional)</Text>
                 <Text style={styles.hint}>
-                  Required to notify people who prayed for you. Choose the request this testimony answers.
+                  Link your testimony to a prayer request to notify everyone who prayed for you.
                 </Text>
 
                 {linkedRequestId ? (
@@ -448,10 +452,11 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.encouragement}>
               &quot;Come and hear, all you who fear God; let me tell you what he has done for me.&quot; — Psalm 66:16
             </Text>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </RoundedPage>
       </SafeAreaView>
-    </LinearGradient>
+    </CinematicBackground>
   );
 };
 
@@ -459,12 +464,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1,
+    lineHeight: 36,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: 140,
   },
   header: {
     flexDirection: 'row',

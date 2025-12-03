@@ -26,7 +26,9 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, palette, radius, spacing, shadows } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassCard, GlassIconButton } from '../components/GlassCard';
 import { db, firebaseEnabled, storage } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
 import { updateUserSettings, updateUserProfile } from '../services/userProfile';
@@ -288,22 +290,30 @@ export const ProfileScreen: React.FC = () => {
     }
   };
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.heading, { color: colors.text }]}>Profile</Text>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <View>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR ACCOUNT</Text>
+            <Text style={styles.heading}>
+              Profile<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
           {user && (
-            <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-              <Ionicons name="pencil" size={18} color={palette.accentDark} />
-              <Text style={styles.editButtonText}>Edit</Text>
-            </TouchableOpacity>
+            <GlassIconButton
+              onPress={handleEditProfile}
+              style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+            >
+              <Ionicons name="pencil" size={20} color={colors.amber700} />
+            </GlassIconButton>
           )}
         </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
         {/* Profile Avatar */}
         {user && (
@@ -698,84 +708,97 @@ export const ProfileScreen: React.FC = () => {
           <Text style={styles.signOutText}>Sign out</Text>
         </TouchableOpacity>
       )}
-      </ScrollView>
+          </ScrollView>
+        </RoundedPage>
 
-      {/* Edit Profile Modal */}
-      <Modal
-        visible={showEditModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Profile</Text>
-              <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+        {/* Edit Profile Modal */}
+        <Modal
+          visible={showEditModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowEditModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.stone900 }]}>Edit Profile</Text>
+                <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                  <Ionicons name="close" size={24} color={colors.stone400} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.inputLabel, { color: colors.stone500 }]}>Display Name</Text>
+              <TextInput
+                style={[styles.modalInput, { color: colors.stone900, backgroundColor: colors.stone100, borderColor: colors.stone200 }]}
+                placeholder="Your name"
+                placeholderTextColor={colors.stone400}
+                value={editName}
+                onChangeText={setEditName}
+                autoFocus
+                maxLength={50}
+              />
+
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: colors.stone900 }, !editName.trim() && styles.saveButtonDisabled]}
+                onPress={handleSaveProfile}
+                disabled={!editName.trim() || saving}
+              >
+                <Text style={styles.saveButtonText}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Text>
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.inputLabel}>Display Name</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Your name"
-              placeholderTextColor={palette.muted}
-              value={editName}
-              onChangeText={setEditName}
-              autoFocus
-              maxLength={50}
-            />
-
-            <TouchableOpacity
-              style={[styles.saveButton, !editName.trim() && styles.saveButtonDisabled]}
-              onPress={handleSaveProfile}
-              disabled={!editName.trim() || saving}
-            >
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
-    </LinearGradient>
+        </Modal>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
+  },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
   },
   scrollContent: {
     padding: spacing.lg,
-    gap: spacing.md,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: palette.text,
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.md,
-  },
-  editButtonText: {
-    fontWeight: '700',
-    color: palette.accentDark,
-    fontSize: 14,
+    paddingBottom: 140,
+    gap: spacing.lg,
   },
   avatarSection: {
     alignItems: 'center',
@@ -817,10 +840,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    
+    
+    
+    
     elevation: 4,
   },
   nameRowProfile: {
@@ -830,8 +853,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   displayName: {
+    fontFamily: fonts.heading,
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     color: palette.text,
   },
   verifiedBadgeProfile: {
@@ -949,11 +973,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuTitle: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: palette.text,
+    marginBottom: 2,
   },
   menuSubtitle: {
+    fontFamily: fonts.body,
     fontSize: 12,
     color: palette.muted,
   },

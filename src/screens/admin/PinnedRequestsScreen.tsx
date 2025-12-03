@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { collection, doc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { pinRequest, unpinRequest } from '../../services/prayers';
 import { palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
 
 type RequestItem = {
   id: string;
@@ -88,33 +89,40 @@ export const PinnedRequestsScreen: React.FC = () => {
     }
   };
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   if (!isAdmin) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
-        <Ionicons name="shield" size={32} color={colors.muted} />
-        <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
-      </View>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.center}>
+          <Ionicons name="shield" size={32} color={colors.muted} />
+          <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   if (loading) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.center}>
+          <ActivityIndicator color={colors.accent} />
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <FlatList
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerSection}>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>FEATURED</Text>
+            <Text style={styles.heading}>
+              Pinned<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+        </View>
+        <RoundedPage style={styles.mainContent}>
+          <FlatList
       data={items}
       keyExtractor={(item) => item.id}
       contentContainerStyle={[styles.listContent, { backgroundColor: colors.background }]}
@@ -147,12 +155,55 @@ export const PinnedRequestsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-    />
-    </LinearGradient>
+          />
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   listContent: {
     padding: spacing.md,
     gap: spacing.md,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { hasAdminPermission } from '../../config/admins';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
 
 type Report = {
   id: string;
@@ -24,9 +25,6 @@ export const ReportsScreen: React.FC = () => {
   const { colors } = useTheme();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
 
   useEffect(() => {
     if (!db) return;
@@ -52,12 +50,12 @@ export const ReportsScreen: React.FC = () => {
 
   if (!hasAdminPermission(user?.email)) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <View style={styles.center}>
-        <Ionicons name="shield" size={32} color={colors.muted} />
-        <Text style={[styles.denied, { color: colors.text }]}>Access Denied</Text>
-      </View>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.center}>
+          <Ionicons name="shield" size={32} color={colors.muted} />
+          <Text style={[styles.denied, { color: colors.text }]}>Access Denied</Text>
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
@@ -97,17 +95,27 @@ export const ReportsScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.center}>
+          <ActivityIndicator color={colors.accent} />
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <FlatList
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerSection}>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>MODERATION</Text>
+            <Text style={styles.heading}>
+              Reports<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+        </View>
+        <RoundedPage style={styles.mainContent}>
+          <FlatList
       data={reports}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.listContent}
@@ -139,16 +147,58 @@ export const ReportsScreen: React.FC = () => {
           </View>
         </View>
       )}
-    />
-    </LinearGradient>
+          />
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   listContent: {
     padding: spacing.md,
     gap: spacing.md,
-    backgroundColor: palette.background,
   },
   center: {
     flex: 1,

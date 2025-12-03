@@ -27,7 +27,9 @@ import {
 import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, fontSizes, palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import { RootStackParamList } from '../navigation/types';
 import { Testimony, PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { Confetti } from '../components/Confetti';
@@ -241,29 +243,32 @@ export const AnsweredPrayersScreen: React.FC = () => {
     ? [colors.successLight, colors.surface] as const
     : ['#f0fdf4', '#dcfce7'] as const;
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {showConfetti && <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />}
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {showConfetti && <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />}
 
-      {/* Header */}
-      <LinearGradient
-        colors={headerGradient}
-        style={styles.header}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: isDark ? colors.surface : 'rgba(255,255,255,0.8)' }]}>
-          <Ionicons name="arrow-back" size={24} color={colors.success} />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerEmoji}>🎉</Text>
-          <Text style={[styles.headerTitle, { color: isDark ? colors.success : '#065f46' }]}>Answered Prayers</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.success }]}>Celebrate God&apos;s faithfulness</Text>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>CELEBRATE</Text>
+            <Text style={styles.heading}>
+              Answered<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <GlassIconButton
+            onPress={() => navigation.navigate('CreateTestimony')}
+            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+          >
+            <Ionicons name="add" size={24} color={colors.amber700} />
+          </GlassIconButton>
         </View>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       {/* Stats Banner */}
       <View style={[styles.statsBanner, { backgroundColor: colors.surface }]}>
@@ -385,16 +390,57 @@ export const AnsweredPrayersScreen: React.FC = () => {
           }
         />
       )}
+      </RoundedPage>
     </SafeAreaView>
-    </LinearGradient>
+  </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: fontSizes.xs - 3,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xxl,
+    fontWeight: '600',
+    letterSpacing: -0.5,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -418,11 +464,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   headerTitle: {
+    fontFamily: fonts.heading,
     fontSize: 24,
-    fontWeight: '900',
+    fontWeight: '700',
     color: '#065f46',
   },
   headerSubtitle: {
+    fontFamily: fonts.body,
     fontSize: 14,
     color: '#059669',
     marginTop: 2,
@@ -431,26 +479,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#fff',
     marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: spacing.sm,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    elevation: 0,
   },
   statBox: {
     flex: 1,
     alignItems: 'center',
   },
   statBoxValue: {
-    fontSize: 28,
-    fontWeight: '900',
+    fontSize: fontSizes.xl,
+    fontWeight: '700',
+    fontFamily: fonts.heading,
     color: '#10b981',
   },
   statBoxLabel: {
-    fontSize: 12,
+    fontSize: fontSizes.xs - 1,
+    fontFamily: fonts.body,
     color: palette.muted,
     marginTop: 2,
   },
@@ -460,34 +506,35 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
   },
   categoryScroll: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     marginHorizontal: spacing.md,
-    minHeight: 44,
-    maxHeight: 44,
+    minHeight: 36,
+    maxHeight: 36,
   },
   categoryContainer: {
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
     borderWidth: 1,
-    gap: 4,
-    minHeight: 32,
+    gap: 3,
+    minHeight: 28,
   },
   categoryChipActive: {
     backgroundColor: '#10b981',
     borderColor: '#10b981',
   },
   categoryEmoji: {
-    fontSize: 12,
+    fontSize: 11,
   },
   categoryText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: fontSizes.xs,
+    fontWeight: '500',
+    fontFamily: fonts.body,
   },
   categoryTextActive: {
     color: '#fff',
@@ -498,53 +545,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: spacing.md,
-    fontSize: 14,
+    marginTop: spacing.sm,
+    fontSize: fontSizes.sm,
+    fontFamily: fonts.body,
     color: '#059669',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   emptyIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#dcfce7',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   emptyEmoji: {
-    fontSize: 48,
+    fontSize: 36,
   },
   emptyTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: fontSizes.xl,
+    fontWeight: '600',
+    fontFamily: fonts.heading,
     color: '#065f46',
     marginBottom: spacing.xs,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
+    fontFamily: fonts.body,
     color: '#059669',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#10b981',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
     gap: spacing.xs,
   },
   createButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#fff',
   },
   list: {
@@ -552,11 +603,11 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   cardContainer: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   card: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: radius.md,
+    padding: spacing.md,
     borderWidth: 1,
     borderColor: '#86efac',
     position: 'relative',
@@ -564,61 +615,66 @@ const styles = StyleSheet.create({
   },
   celebrationBadge: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
+    top: spacing.xs,
+    right: spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#10b981',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
     borderRadius: radius.full,
-    gap: 4,
+    gap: 3,
   },
   celebrationEmoji: {
-    fontSize: 12,
+    fontSize: 10,
   },
   celebrationText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: fontSizes.xs - 3,
+    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: '#fff',
     letterSpacing: 0.5,
   },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#10b981',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#fff',
   },
   userInfo: {
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#065f46',
   },
   dateText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs - 1,
+    fontFamily: fonts.body,
     color: '#059669',
-    marginTop: 2,
+    marginTop: 1,
   },
   content: {
-    fontSize: 15,
+    fontSize: fontSizes.sm,
+    fontFamily: fonts.heading,
     color: '#065f46',
-    lineHeight: 22,
-    marginBottom: spacing.md,
+    lineHeight: 20,
+    marginBottom: spacing.sm,
   },
   statsRow: {
     flexDirection: 'row',
@@ -628,64 +684,68 @@ const styles = StyleSheet.create({
   stat: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   statEmoji: {
-    fontSize: 16,
+    fontSize: 14,
   },
   statValue: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#065f46',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
+    fontFamily: fonts.body,
     color: '#059669',
   },
   linkedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
     borderRadius: radius.full,
-    gap: 4,
+    gap: 3,
   },
   linkedText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: fontSizes.xs - 1,
+    fontWeight: '500',
+    fontFamily: fonts.body,
     color: '#059669',
   },
   sparkle1: {
     position: 'absolute',
-    top: 60,
-    right: 20,
+    top: 50,
+    right: 16,
     opacity: 0.3,
   },
   sparkle2: {
     position: 'absolute',
-    bottom: 40,
-    left: 20,
+    bottom: 30,
+    left: 16,
     opacity: 0.3,
   },
   sparkleEmoji: {
-    fontSize: 20,
+    fontSize: 16,
   },
   shareTestimonyButton: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
   },
   shareTestimonyGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
     gap: spacing.xs,
   },
   shareTestimonyText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#fff',
   },
 });

@@ -17,6 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground } from '../../components/CinematicBackground';
+import { GlassIconButton } from '../../components/GlassCard';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
@@ -60,10 +62,10 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
   if (emailSent) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <View style={styles.content}>
-          <View style={[styles.successCard, { backgroundColor: colors.surface }]}>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.content}>
+            <View style={[styles.successCard, { backgroundColor: colors.surface }]}>
             <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
               <Ionicons name="mail" size={48} color={colors.accent} />
             </View>
@@ -89,32 +91,32 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
-      </SafeAreaView>
-      </LinearGradient>
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          {/* Back Button */}
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <View style={styles.content}>
+            {/* Back Button */}
+            <GlassIconButton
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+            </GlassIconButton>
 
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.logo, { color: colors.text }]}>LIFT</Text>
-            <Text style={[styles.tagline, { color: colors.muted }]}>Reset your password</Text>
-          </View>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.logo}>LIFT</Text>
+              <Text style={[styles.tagline, { color: colors.stone500 }]}>Reset your password</Text>
+            </View>
 
           {/* Reset Card */}
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -171,16 +173,15 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-    </LinearGradient>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   keyboardView: {
     flex: 1,
@@ -201,9 +202,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   logo: {
-    fontSize: 36,
-    fontWeight: '900',
-    letterSpacing: 3,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 48,
+    fontWeight: '500',
+    letterSpacing: -1,
+    color: '#1c1917',
   },
   tagline: {
     marginTop: 4,
@@ -212,10 +215,10 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     padding: spacing.lg,
-    shadowColor: palette.shadow,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
+    
+    
+    
+    
     elevation: 4,
     borderWidth: 1,
     borderColor: palette.border,
@@ -278,11 +281,11 @@ const styles = StyleSheet.create({
   // Success state styles
   successCard: {
     borderRadius: radius.lg,
-    padding: spacing.xl,
-    shadowColor: palette.shadow,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
+    padding: spacing.lg,
+    
+    
+    
+    
     elevation: 4,
     borderWidth: 1,
     borderColor: palette.border,

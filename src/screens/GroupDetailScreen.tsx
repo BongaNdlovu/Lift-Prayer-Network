@@ -34,6 +34,8 @@ import { FeedCard } from '../components/FeedCard';
 import { hasAdminPermission, getVerifiedBadge, BADGE_STYLES } from '../config/admins';
 import type { PrayerGroup, FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GroupDetail'>;
 
@@ -739,30 +741,35 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     </View>
   );
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   if (loading) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: 'transparent' }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </SafeAreaView>
-      </LinearGradient>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </SafeAreaView>
+      </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>{group?.name || groupName}</Text>
-        <View style={styles.placeholder} />
-      </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>COMMUNITY</Text>
+            <Text style={styles.headingTitle} numberOfLines={1}>
+              {group?.name || groupName}<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       <FlatList
         data={prayers}
@@ -1050,23 +1057,62 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             )}
           </View>
         </View>
-      </Modal>
-    </SafeAreaView>
-    </LinearGradient>
+        </Modal>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  headingTitle: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5,
+    lineHeight: 32,
+    color: '#1c1917',
+    textAlign: 'center',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1091,19 +1137,19 @@ const styles = StyleSheet.create({
     width: 32,
   },
   listContent: {
-    padding: spacing.md,
+    padding: spacing.sm,
     paddingBottom: 40,
   },
   headerContainer: {
     marginBottom: spacing.md,
   },
   infoCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: 'rgba(255,255,255,0.6)',
   },
   infoHeader: {
     flexDirection: 'row',
@@ -1111,23 +1157,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   groupIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#fef3c7',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   groupIconImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginRight: spacing.md,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: spacing.sm,
     backgroundColor: '#f1f5f9',
   },
   groupIconText: {
-    fontSize: 28,
+    fontSize: 22,
   },
   groupTitleContainer: {
     flex: 1,
@@ -1192,10 +1238,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
     marginBottom: spacing.md,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 4,
   },
   postButtonText: {
@@ -1223,7 +1269,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl * 2,
   },
   emptyEmoji: {
-    fontSize: 64,
+    fontSize: 48,
     marginBottom: spacing.md,
   },
   emptyTitle: {
@@ -1344,7 +1390,7 @@ const styles = StyleSheet.create({
   },
   // Members list
   membersList: {
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   memberItem: {
     flexDirection: 'row',
@@ -1530,7 +1576,7 @@ const styles = StyleSheet.create({
   emptyPending: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   emptyPendingText: {
     fontSize: 16,
@@ -1538,7 +1584,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   pendingList: {
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   pendingItem: {
     flexDirection: 'row',

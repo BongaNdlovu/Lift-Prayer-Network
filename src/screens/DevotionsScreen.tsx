@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -18,6 +19,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { hasAdminPermission } from '../config/admins';
 import { radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import {
   Devotion,
   subscribeToDevotions,
@@ -160,26 +163,30 @@ export const DevotionsScreen: React.FC = () => {
     });
   };
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   // Detail view for a selected devotion
   if (selectedDevotion) {
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => setSelectedDevotion(null)} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Daily Devotion</Text>
-          {isAdmin && (
-            <TouchableOpacity onPress={() => handleOpenEdit(selectedDevotion)} style={styles.addButton}>
-              <Ionicons name="create-outline" size={24} color={colors.accent} />
-            </TouchableOpacity>
-          )}
-          {!isAdmin && <View style={{ width: 40 }} />}
-        </View>
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.headerSection}>
+            <GlassIconButton onPress={() => setSelectedDevotion(null)}>
+              <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+            </GlassIconButton>
+            <View style={styles.headerCenter}>
+              <Text style={[styles.kicker, { color: colors.stone500 }]}>DAILY</Text>
+              <Text style={styles.heading}>
+                Devotion<Text style={styles.headingDot}>.</Text>
+              </Text>
+            </View>
+            {isAdmin ? (
+              <GlassIconButton onPress={() => handleOpenEdit(selectedDevotion)}>
+                <Ionicons name="create-outline" size={22} color={colors.stone700} />
+              </GlassIconButton>
+            ) : (
+              <View style={{ width: 44 }} />
+            )}
+          </View>
+          <RoundedPage style={styles.mainContent}>
 
         <ScrollView style={styles.detailContent} contentContainerStyle={styles.detailContainer}>
           <Text style={[styles.detailDate, { color: colors.muted }]}>
@@ -238,28 +245,38 @@ export const DevotionsScreen: React.FC = () => {
           <Text style={[styles.authorText, { color: colors.muted }]}>
             Written by {selectedDevotion.authorName}
           </Text>
-        </ScrollView>
+          </ScrollView>
+        </RoundedPage>
       </SafeAreaView>
-      </LinearGradient>
+    </CinematicBackground>
     );
   }
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Daily Devotions</Text>
-        {isAdmin && (
-          <TouchableOpacity onPress={handleOpenCreate} style={styles.addButton}>
-            <Ionicons name="add-circle" size={28} color={colors.accent} />
-          </TouchableOpacity>
-        )}
-        {!isAdmin && <View style={{ width: 40 }} />}
-      </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>SPIRITUAL</Text>
+            <Text style={styles.heading}>
+              Devotions<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          {isAdmin ? (
+            <GlassIconButton onPress={handleOpenCreate}>
+              <Ionicons name="add" size={22} color={colors.stone700} />
+            </GlassIconButton>
+          ) : (
+            <View style={{ width: 44 }} />
+          )}
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -437,9 +454,10 @@ export const DevotionsScreen: React.FC = () => {
             </View>
           </View>
         </View>
-      </Modal>
-    </SafeAreaView>
-    </LinearGradient>
+        </Modal>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
@@ -447,6 +465,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1,
+    lineHeight: 36,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -474,7 +531,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
   emptyText: {
     fontSize: 16,

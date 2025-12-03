@@ -41,6 +41,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { startOfflineSyncListener } from '../services/offlineSync';
 import { validateAndRepairCache } from '../services/offlineCache';
 import { LazyScreen } from '../components/LazyScreen';
+import { GlassTabBar } from '../components/GlassTabBar';
 
 const HAS_EVER_SIGNED_IN_KEY = '@lift_has_ever_signed_in';
 
@@ -52,24 +53,27 @@ const MainTabs = () => {
   
   return (
     <Tab.Navigator
+      tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.accentDark,
         tabBarInactiveTintColor: colors.muted,
+        // Hide default tab bar styling since we use custom GlassTabBar
         tabBarStyle: { 
-          paddingVertical: 6, 
-          height: 64,
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          height: 0,
         },
         tabBarIcon: ({ color, size }) => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-            Feed: 'radio-outline',
-            Groups: 'people-circle-outline',
+            Feed: 'home-outline',
+            Groups: 'people-outline',
             Calendar: 'calendar-outline',
-            Stats: 'stats-chart-outline',
-            Donate: 'hand-left-outline',
-            Profile: 'person-circle-outline',
+            Stats: 'bar-chart-outline',
+            Donate: 'heart-outline',
+            Profile: 'person-outline',
           };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },

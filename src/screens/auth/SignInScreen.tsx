@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { fonts, palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground } from '../../components/CinematicBackground';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
@@ -127,22 +128,22 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.logo, { color: colors.text }]}>LIFT</Text>
-            <Text style={[styles.tagline, { color: colors.muted }]}>Live network of prayer</Text>
-          </View>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.logo}>LIFT</Text>
+              <Text style={[styles.tagline, { color: colors.stone500 }]}>Live network of prayer</Text>
+            </View>
 
           {/* Sign In Card */}
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -234,17 +235,16 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
           >
             <Text style={[styles.guestText, { color: colors.muted }]}>Continue as guest</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-    </LinearGradient>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   keyboardView: {
     flex: 1,
@@ -258,10 +258,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   logo: {
-    fontFamily: fonts.heading,
-    fontSize: 36,
-    fontWeight: '700',
-    letterSpacing: 3,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 48,
+    fontWeight: '500',
+    letterSpacing: -1,
+    color: '#1c1917',
   },
   tagline: {
     fontFamily: fonts.body,
@@ -271,10 +272,10 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     padding: spacing.lg,
-    shadowColor: palette.shadow,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
+    
+    
+    
+    
     elevation: 4,
     borderWidth: 1,
     borderColor: palette.border,
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: radius.md,
     paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -335,10 +336,10 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   primaryButton: {
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 4,
   },
   primaryButtonText: {
@@ -360,7 +361,7 @@ const styles = StyleSheet.create({
   guestButton: {
     alignItems: 'center',
     paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     marginTop: spacing.lg,
     borderRadius: radius.md,
   },

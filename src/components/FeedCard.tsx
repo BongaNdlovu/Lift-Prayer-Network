@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing, shadows } from '../theme/colors';
+import { palette, radius, spacing, shadows, fonts, fontSizes } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
 import { reportContent, blockUser, banUser, blockUserFromPosting, REPORT_REASONS, ReportReason } from '../services/moderation';
 import { getVerifiedBadge, BADGE_STYLES, canEditContent, canDeleteContent, hasAdminPermission, hasModeratorPermission } from '../config/admins';
@@ -71,6 +71,7 @@ type Props = {
   onLike?: (id: string) => void;
   onReact?: (id: string, reaction: ReactionType) => void;
   disabled?: boolean;
+  hasPrayed?: boolean;
   onPress?: (item: FeedItem) => void;
   onEdit?: (item: FeedItem) => void;
   onDelete?: (item: FeedItem) => void;
@@ -85,6 +86,7 @@ export const FeedCard: React.FC<Props> = ({
   onLike, 
   onReact, 
   disabled, 
+  hasPrayed = false,
   onPress, 
   onEdit,
   onDelete,
@@ -482,6 +484,9 @@ export const FeedCard: React.FC<Props> = ({
   };
 
   const handleAmenPress = () => {
+    // Prevent amening own testimony
+    if (isOwner) return;
+    
     // Haptic feedback for Amen (wrapped in try-catch to prevent crashes on some devices)
     if (Platform.OS !== 'web') {
       try {
@@ -524,14 +529,14 @@ export const FeedCard: React.FC<Props> = ({
   const realDisplayName = (item as any)._realDisplayName;
   const realEmail = (item as any)._realEmail;
 
-  // Different gradient for urgent prayers - with dark mode support
+  // Cinematic card colors - glassmorphism style
   const cardColors: [string, string] = isDark
-    ? (isUrgent ? ['#450a0a', '#7f1d1d'] : [colors.surface, colors.surfaceSecondary])
-    : (isUrgent ? ['#fef2f2', '#fee2e2'] : ['#ffffff', '#fef3c7']);
+    ? (isUrgent ? ['rgba(127,29,29,0.8)', 'rgba(69,10,10,0.8)'] : [colors.glassWhite, colors.glassWhiteLight])
+    : (isUrgent ? ['rgba(254,242,242,0.9)', 'rgba(254,226,226,0.9)'] : ['rgba(255,255,255,0.7)', 'rgba(255,255,255,0.5)']);
   
   const pinnedColors: [string, string] = isDark 
-    ? ['#422006', '#713f12'] 
-    : ['#fef3c7', '#fde68a'];
+    ? ['rgba(120,53,15,0.6)', 'rgba(113,63,18,0.6)'] 
+    : ['rgba(254,243,199,0.9)', 'rgba(253,230,138,0.9)'];
 
   return (
     <Pressable onPress={() => onPress?.(item)} style={isPinned && styles.pinnedCardWrapper}>
@@ -649,17 +654,18 @@ export const FeedCard: React.FC<Props> = ({
         <View style={styles.footer}>
           {isRequest ? (
             <View style={styles.reactionsRow}>
-              {/* Main Pray Button - disabled for own requests */}
+              {/* Main Pray Button - disabled for own requests or already prayed */}
               <TouchableOpacity
                 onPress={handlePrayPress}
-                onLongPress={() => !isOwner && setShowReactions(!showReactions)}
+                onLongPress={() => !isOwner && !hasPrayed && setShowReactions(!showReactions)}
                 style={[
                   styles.actionButton, 
                   styles.prayButtonWrapper, 
-                  (disabled || isOwner || isPraying) && styles.disabled,
+                  (disabled || isOwner || isPraying || hasPrayed) && styles.disabled,
                   isPraying && styles.prayingActive,
+                  hasPrayed && styles.prayedButton,
                 ]}
-                disabled={disabled || isOwner || isPraying}
+                disabled={disabled || isOwner || isPraying || hasPrayed}
                 activeOpacity={0.7}
               >
                 {isPraying && (
@@ -676,10 +682,10 @@ export const FeedCard: React.FC<Props> = ({
                     isPraying && { transform: [{ scale: pulseAnim }] }
                   ]}
                 >
-                  🙏
+                  {hasPrayed ? '✓' : '🙏'}
                 </Animated.Text>
-                <Text style={[styles.actionText, isPraying && styles.prayingText]}>
-                  {isOwner ? 'Your Request' : isPraying ? 'Praying...' : 'Pray'}
+                <Text style={[styles.actionText, isPraying && styles.prayingText, hasPrayed && styles.prayedText]}>
+                  {isOwner ? 'Your Request' : isPraying ? 'Praying...' : hasPrayed ? 'Prayed' : 'Pray'}
                 </Text>
                 <Text style={styles.counter}>{item.prayers ?? 0}</Text>
               </TouchableOpacity>
@@ -730,13 +736,13 @@ export const FeedCard: React.FC<Props> = ({
                 style={({ pressed }) => [
                   styles.actionButton,
                   styles.amenButton,
-                  pressed && styles.amenButtonPressed,
-                  disabled && styles.disabled,
+                  pressed && !isOwner && styles.amenButtonPressed,
+                  (disabled || isOwner) && styles.disabled,
                 ]}
-                disabled={disabled}
+                disabled={disabled || isOwner}
               >
                 <Text style={styles.amenEmoji}>🙌</Text>
-                <Text style={styles.actionText}>Amen</Text>
+                <Text style={styles.actionText}>{isOwner ? 'Your Testimony' : 'Amen'}</Text>
                 <Text style={styles.counter}>{item.likes ?? 0}</Text>
               </Pressable>
 
@@ -917,25 +923,21 @@ export const FeedCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.md,
-    marginVertical: spacing.sm,
-    ...shadows.sm,
+    marginVertical: spacing.xs,
+    elevation: 0,
     borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: '#fff', // Fallback
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.7)',
   },
   cardUrgent: {
-    borderColor: '#fca5a5',
-    borderWidth: 2,
-    shadowColor: '#ef4444',
-    shadowOpacity: 0.15,
+    borderColor: 'rgba(252,165,165,0.5)',
+    borderWidth: 1,
   },
   cardPinned: {
-    borderColor: '#f59e0b',
-    borderWidth: 2,
-    shadowColor: '#f59e0b',
-    shadowOpacity: 0.2,
+    borderColor: 'rgba(245,158,11,0.4)',
+    borderWidth: 1,
   },
   pinnedCardWrapper: {
     marginTop: 4,
@@ -945,25 +947,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 10,
-    ...shadows.sm,
-    shadowColor: '#f59e0b',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginBottom: spacing.xs,
   },
   pinnedBadgeText: {
     color: '#fff',
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: fontSizes.xs - 2,
+    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 0.5,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     gap: spacing.xs,
   },
   userInfo: {
@@ -979,23 +980,21 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
     flexShrink: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.8)',
   },
   avatarImage: {
     width: 36,
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: palette.accent,
+    borderColor: 'rgba(255,255,255,0.8)',
   },
   avatarText: {
-    fontSize: 10,
+    fontSize: fontSizes.xs - 2,
     fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: '#fff',
   },
   userTextInfo: {
@@ -1003,10 +1002,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    fontSize: 13,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
-    color: palette.text,
+    fontFamily: fonts.bodyMedium,
+    color: '#1c1917',
     flexShrink: 1,
+    letterSpacing: -0.2,
   },
   nameRow: {
     flexDirection: 'row',
@@ -1023,12 +1024,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   verifiedBadgeText: {
-    fontSize: 9,
+    fontSize: fontSizes.xs - 3,
     fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 0.2,
   },
   meta: {
-    fontSize: 11,
+    fontSize: fontSizes.xs - 1,
+    fontFamily: fonts.body,
     color: palette.muted,
     marginTop: 1,
   },
@@ -1052,8 +1055,9 @@ const styles = StyleSheet.create({
     // Removed border
   },
   statusText: {
-    fontSize: 9,
-    fontWeight: '600', // Reduced from 700
+    fontSize: fontSizes.xs - 3,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
@@ -1067,13 +1071,15 @@ const styles = StyleSheet.create({
     color: '#16a34a',
   },
   content: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#1f2937',
-    marginBottom: spacing.sm,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.md,
+    lineHeight: 22,
+    color: '#1c1917',
+    marginBottom: spacing.md,
+    letterSpacing: 0.1,
   },
   footer: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   footerInfo: {
     flexDirection: 'row',
@@ -1090,23 +1096,24 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   commentCount: {
-    fontSize: 10,
+    fontSize: fontSizes.xs - 2,
+    fontFamily: fonts.body,
     color: palette.muted,
     fontWeight: '500',
   },
   prayButtonWrapper: {
-    borderRadius: radius.md,
-    ...shadows.glow,
+    borderRadius: radius.full,
+    overflow: 'hidden',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: radius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    gap: 4,
-    backgroundColor: palette.accent,
-    minHeight: 32,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+    backgroundColor: '#1c1917',
+    minHeight: 36,
   },
   amenButton: {
     backgroundColor: '#facc15',
@@ -1115,7 +1122,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#d97706',
   },
   prayEmoji: {
-    fontSize: 12,
+    fontSize: 16,
   },
   prayingActive: {
     backgroundColor: '#fde68a',
@@ -1135,18 +1142,30 @@ const styles = StyleSheet.create({
     color: '#92400e',
     fontWeight: '800',
   },
+  prayedButton: {
+    backgroundColor: '#10b981',
+    opacity: 1,
+  },
+  prayedText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
   amenEmoji: {
     fontSize: 12,
   },
   actionText: {
-    fontSize: 11,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
-    color: '#1f2937',
+    fontFamily: fonts.bodyMedium,
+    color: '#fffbeb',
+    letterSpacing: 0.2,
   },
   counter: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: fontSizes.xs,
+    fontWeight: '500',
+    fontFamily: fonts.body,
+    color: 'rgba(255,251,235,0.6)',
+    marginLeft: 2,
   },
   footerSpacer: {
     flex: 1,
@@ -1161,7 +1180,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.03)',
   },
   shareButtonText: {
-    fontSize: 11,
+    fontSize: fontSizes.xs - 1,
+    fontFamily: fonts.body,
     color: palette.muted,
     fontWeight: '500',
   },
@@ -1170,23 +1190,19 @@ const styles = StyleSheet.create({
   },
   urgentBadge: {
     position: 'absolute',
-    top: -8,
-    right: 12,
+    top: -6,
+    right: 10,
     backgroundColor: '#ef4444',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
     zIndex: 10,
-    shadowColor: '#ef4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 3,
   },
   urgentBadgeText: {
     color: '#fff',
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: fontSizes.xs - 2,
+    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 0.4,
   },
   headerRight: {
@@ -1210,8 +1226,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   linkedBadgeText: {
-    fontSize: 10,
+    fontSize: fontSizes.xs - 2,
     fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: '#166534',
   },
   reactionsRow: {
@@ -1249,8 +1266,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   reactionCount: {
-    fontSize: 10,
+    fontSize: fontSizes.xs - 2,
     fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#6b7280',
     marginLeft: 2,
   },
@@ -1273,12 +1291,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: palette.text,
   },
   modalSubtitle: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
+    fontFamily: fonts.body,
     color: palette.muted,
     marginBottom: spacing.md,
   },
@@ -1302,8 +1322,9 @@ const styles = StyleSheet.create({
   },
   reasonLabel: {
     flex: 1,
-    fontSize: 13,
+    fontSize: fontSizes.sm - 1,
     fontWeight: '500',
+    fontFamily: fonts.body,
     color: palette.text,
   },
   reasonLabelSelected: {
@@ -1320,8 +1341,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fca5a5',
   },
   reportButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: fontSizes.sm - 1,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#fff',
   },
   // Privacy badge styles
@@ -1339,8 +1361,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ede9fe',
   },
   privacyBadgeText: {
-    fontSize: 10,
+    fontSize: fontSizes.xs - 2,
     fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#6b7280',
   },
   privacyBadgeTextGroup: {
@@ -1365,8 +1388,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   adminRevealText: {
-    fontSize: 10,
+    fontSize: fontSizes.xs - 2,
     fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: '#7c3aed',
   },
   // Options ActionSheet Modal styles
@@ -1395,12 +1419,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   optionsTitle: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: palette.text,
   },
   optionsSubtitle: {
-    fontSize: 11,
+    fontSize: fontSizes.xs - 1,
+    fontFamily: fonts.body,
     color: palette.muted,
     marginTop: 2,
   },
@@ -1418,8 +1444,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef2f2',
   },
   optionText: {
-    fontSize: 13,
+    fontSize: fontSizes.sm - 1,
     fontWeight: '500',
+    fontFamily: fonts.body,
     color: palette.text,
   },
   optionTextDestructive: {
@@ -1434,8 +1461,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionsCancelText: {
-    fontSize: 13,
+    fontSize: fontSizes.sm - 1,
     fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
     color: palette.muted,
   },
 });

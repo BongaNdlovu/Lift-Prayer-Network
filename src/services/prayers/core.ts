@@ -289,7 +289,8 @@ export const logReaction = async (
 export const likeTestimony = async (
   actorUid: string,
   testimonyId: string,
-): Promise<{ success: boolean; error?: string; liked?: boolean }> => {
+  testimonyOwnerUid?: string,
+): Promise<{ success: boolean; error?: string; liked?: boolean; isOwnTestimony?: boolean }> => {
   if (!firebaseEnabled || !db) {
     return { success: false, error: 'Firebase not initialized' };
   }
@@ -306,6 +307,20 @@ export const likeTestimony = async (
     let liked = false;
     
     await runTransaction(db, async (txn) => {
+      // First check if this is the user's own testimony
+      const testimonySnap = await txn.get(testimonyRef);
+      if (!testimonySnap.exists()) {
+        throw new Error('Testimony not found');
+      }
+      
+      const testimonyData = testimonySnap.data();
+      const ownerUid = testimonyOwnerUid || testimonyData?.ownerUid;
+      
+      // Prevent users from liking their own testimony
+      if (actorUid === ownerUid) {
+        throw new Error('SELF_AMEN');
+      }
+      
       const likeSnap = await txn.get(likeRef);
       
       if (likeSnap.exists()) {
@@ -328,13 +343,37 @@ export const likeTestimony = async (
           likes: increment(1),
         });
         liked = true;
+        
+        // Create notification for testimony owner
+        if (ownerUid && ownerUid !== 'anon' && db) {
+          const notificationRef = doc(collection(db, 'notifications'));
+          txn.set(notificationRef, {
+            type: 'amen_received',
+            recipientUid: ownerUid,
+            actorUid,
+            targetTestimonyId: testimonyId,
+            targetSummary: (testimonyData?.content as string)?.slice(0, 100) || 'your testimony',
+            createdAt: serverTimestamp(),
+            read: false,
+          });
+        }
       }
     });
 
     return { success: true, liked };
   } catch (err: unknown) {
-    console.error('[Testimonies] Error liking testimony:', err);
     const errorMessage = err instanceof Error ? err.message : 'Could not like testimony';
+    
+    // Handle self-amen error specifically
+    if (errorMessage === 'SELF_AMEN') {
+      return { 
+        success: false, 
+        error: 'You cannot amen your own testimony',
+        isOwnTestimony: true,
+      };
+    }
+    
+    console.error('[Testimonies] Error liking testimony:', err);
     return { success: false, error: errorMessage };
   }
 };

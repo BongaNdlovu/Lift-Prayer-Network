@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   emojiContainer: {
     width: 140,
@@ -481,14 +481,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    
+    
+    
+    
     elevation: 8,
   },
   emoji: {
-    fontSize: 64,
+    fontSize: 48,
   },
   title: {
     fontSize: 28,
@@ -522,10 +522,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 4,
   },
   buttonDisabled: {
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   questionContent: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.md,
   },
   questionText: {
     fontSize: 24,

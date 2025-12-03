@@ -18,6 +18,8 @@ import * as Notifications from 'expo-notifications';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing, fonts, shadows } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requestNotificationPermissions } from '../services/reminders';
 import { parseNaturalLanguage, formatParsedEvent, type ParsedEvent } from '../utils/naturalLanguageParser';
@@ -475,20 +477,28 @@ export const CalendarScreen: React.FC = () => {
 
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.heading, { color: colors.text }]}>Prayer Calendar</Text>
-            <TouchableOpacity style={[styles.todayButton, { backgroundColor: colors.accent }]} onPress={goToToday}>
-              <Text style={styles.todayButtonText}>Today</Text>
-            </TouchableOpacity>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <View>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>PLAN YOUR PRAYERS</Text>
+            <Text style={styles.heading}>
+              Calendar<Text style={styles.headingDot}>.</Text>
+            </Text>
           </View>
+          <GlassIconButton
+            onPress={goToToday}
+            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+          >
+            <Text style={{ fontWeight: '700', color: colors.amber700, fontSize: 12 }}>TODAY</Text>
+          </GlassIconButton>
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
           {/* Quick Add */}
           <View style={[styles.quickAddContainer, { backgroundColor: isDark ? colors.surface : 'rgba(255, 255, 255, 0.9)' }]}>
@@ -638,10 +648,11 @@ export const CalendarScreen: React.FC = () => {
               )}
             </View>
           )}
-        </ScrollView>
+          </ScrollView>
+        </RoundedPage>
 
-      {/* Add Event Modal */}
-      <Modal
+        {/* Add Event Modal */}
+        <Modal
         visible={showAddModal}
         animationType="slide"
         transparent
@@ -867,41 +878,55 @@ export const CalendarScreen: React.FC = () => {
         </View>
       </Modal>
     </SafeAreaView>
-    </LinearGradient>
+  </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
+  },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  scrollContent: {
+    paddingBottom: 140,
   },
   gradient: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  heading: {
-    fontFamily: fonts.heading,
-    fontSize: 28,
-    color: palette.text,
-  },
-  todayButton: {
-    backgroundColor: palette.accent,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.md,
-  },
-  todayButtonText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: '#1f2937',
   },
   quickAddContainer: {
     marginHorizontal: spacing.lg,
@@ -1060,7 +1085,7 @@ const styles = StyleSheet.create({
   },
   noEvents: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.lg,
   },

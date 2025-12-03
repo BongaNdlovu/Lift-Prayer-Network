@@ -22,7 +22,9 @@ import { useAuth } from '../hooks/useAuth';
 import { submitFeedItem } from '../hooks/useFeed';
 import { queuePendingRequest } from '../services/offlineCache';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
 import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import { checkUserBlockedFromPosting } from '../services/moderation';
@@ -201,28 +203,36 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>SHARE YOUR HEART</Text>
+            <Text style={styles.heading}>
+              New Request<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardView}
           >
-            {errorMessage && (
-              <InlineError message={errorMessage} onDismiss={() => setErrorMessage(null)} />
-            )}
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={24} color={palette.text} />
-              </TouchableOpacity>
-              <Text style={styles.title}>New Prayer Request</Text>
-              <View style={styles.placeholder} />
-            </View>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {errorMessage && (
+                <InlineError message={errorMessage} onDismiss={() => setErrorMessage(null)} />
+              )}
 
             {/* Offline Banner */}
             {offline && (
@@ -422,10 +432,11 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.encouragement}>
               &quot;Therefore I tell you, whatever you ask for in prayer, believe that you have received it, and it will be yours.&quot; — Mark 11:24
             </Text>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </RoundedPage>
       </SafeAreaView>
-    </LinearGradient>
+    </CinematicBackground>
   );
 };
 
@@ -433,12 +444,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1,
+    lineHeight: 36,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: 140,
   },
   header: {
     flexDirection: 'row',
@@ -451,7 +503,8 @@ const styles = StyleSheet.create({
     marginLeft: -spacing.sm,
   },
   title: {
-    fontSize: 18,
+    fontFamily: fonts.heading,
+    fontSize: 20,
     fontWeight: '700',
     color: palette.text,
   },
@@ -484,15 +537,18 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
   },
   label: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 14,
     fontWeight: '600',
     color: palette.text,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   hint: {
+    fontFamily: fonts.body,
     fontSize: 12,
     color: palette.muted,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    lineHeight: 18,
   },
   textArea: {
     minHeight: 100,
@@ -663,10 +719,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
     marginTop: spacing.xs,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    
+    
+    
+    
     elevation: 4,
   },
   submitButtonDisabled: {

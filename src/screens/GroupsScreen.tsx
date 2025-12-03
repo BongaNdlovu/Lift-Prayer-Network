@@ -30,8 +30,10 @@ import {
 import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, palette, radius, spacing, shadows } from '../theme/colors';
 import { SkeletonGroups } from '../components/SkeletonCard';
+import { CinematicBackground, RoundedPage, GlassHeader } from '../components/CinematicBackground';
+import { GlassCard, GlassIconButton } from '../components/GlassCard';
 import type { PrayerGroup } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -49,7 +51,7 @@ type GroupNotification = {
 
 export const GroupsScreen: React.FC = () => {
   const { user } = useAuth();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [groups, setGroups] = useState<PrayerGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -257,160 +259,163 @@ export const GroupsScreen: React.FC = () => {
   }
 
   const renderGroup = ({ item }: { item: PrayerGroup }) => (
-    <TouchableOpacity 
-      style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    <GlassCard 
       onPress={() => handleGroupPress(item)}
-      activeOpacity={0.7}
+      style={styles.groupCard}
+      padding="lg"
+      rounded="xl"
     >
       <View style={styles.groupHeader}>
-        <View style={[styles.groupEmoji, { backgroundColor: colors.accentLight }]}>
+        <View style={[styles.groupEmoji, { backgroundColor: isDark ? colors.glassWhite : colors.accentLight }]}>
           <Text style={styles.groupEmojiText}>{item.emoji || '🙏'}</Text>
         </View>
         <View style={styles.groupInfo}>
-          <Text style={[styles.groupName, { color: colors.text }]}>{item.name}</Text>
-          <Text style={[styles.groupMembers, { color: colors.muted }]}>
+          <Text style={[styles.groupName, { color: colors.stone900 }]}>{item.name}</Text>
+          <Text style={[styles.groupMembers, { color: colors.stone500 }]}>
             {item.memberUids.length} member{item.memberUids.length !== 1 ? 's' : ''}
           </Text>
         </View>
         <View style={styles.groupRightSection}>
           {item.ownerUid === user?.uid && (
-            <View style={[styles.ownerBadge, { backgroundColor: colors.accentLight }]}>
-              <Text style={styles.ownerBadgeText}>Owner</Text>
+            <View style={[styles.ownerBadge, { backgroundColor: colors.amber100 }]}>
+              <Text style={[styles.ownerBadgeText, { color: colors.amber600 }]}>Owner</Text>
             </View>
           )}
-          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          <Ionicons name="chevron-forward" size={20} color={colors.stone400} />
         </View>
       </View>
       
       {item.description && (
-        <Text style={[styles.groupDesc, { color: colors.muted }]}>{item.description}</Text>
+        <Text style={[styles.groupDesc, { color: colors.stone500 }]}>{item.description}</Text>
       )}
 
-      <View style={[styles.groupActions, { borderTopColor: colors.border }]}>
+      <View style={[styles.groupActions, { borderTopColor: colors.glassBorder }]}>
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: colors.accentLight }]}
+          style={[styles.actionBtn, { backgroundColor: isDark ? colors.glassWhite : colors.stone100 }]}
           onPress={(e) => {
             e.stopPropagation();
             handleShareInvite(item);
           }}
         >
-          <Ionicons name="share-outline" size={18} color={colors.accent} />
-          <Text style={[styles.actionBtnText, { color: colors.accent }]}>Invite</Text>
+          <Ionicons name="share-outline" size={18} color={colors.stone700} />
+          <Text style={[styles.actionBtnText, { color: colors.stone700 }]}>Invite</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.actionBtn, styles.leaveBtn, { backgroundColor: colors.dangerLight }]}
+          style={[styles.actionBtn, styles.leaveBtn, { backgroundColor: colors.rose100 }]}
           onPress={(e) => {
             e.stopPropagation();
             handleLeaveGroup(item);
           }}
         >
-          <Ionicons name="exit-outline" size={18} color={colors.danger} />
-          <Text style={[styles.leaveBtnText, { color: colors.danger }]}>
+          <Ionicons name="exit-outline" size={18} color={colors.rose600} />
+          <Text style={[styles.leaveBtnText, { color: colors.rose600 }]}>
             {item.ownerUid === user?.uid ? 'Delete' : 'Leave'}
           </Text>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </GlassCard>
   );
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient 
-      colors={gradientColors} 
-      start={{ x: 0, y: 0 }} 
-      end={{ x: 1, y: 1 }} 
-      style={{ flex: 1 }}
-    >
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <View style={styles.header}>
-        <Text style={[styles.heading, { color: colors.text }]}>Prayer Groups</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={[styles.headerBtn, { backgroundColor: colors.surface }]}
-            onPress={() => setShowJoinModal(true)}
-          >
-            <Ionicons name="enter-outline" size={20} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.headerBtn, styles.createBtn, { backgroundColor: colors.accent }]}
-            onPress={() => setShowCreateModal(true)}
-          >
-            <Ionicons name="add" size={22} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Notification Banner for Group Join Approvals */}
-      {notifications.map((notif) => (
-        <View key={notif.id} style={styles.notificationBanner}>
-          <View style={styles.notificationContent}>
-            <Text style={styles.notificationEmoji}>{notif.groupEmoji || '🙏'}</Text>
-            <View style={styles.notificationText}>
-              <Text style={[styles.notificationTitle, { color: colors.text }]}>Welcome!</Text>
-              <Text style={[styles.notificationMessage, { color: colors.muted }]}>
-                You&apos;ve been added to &quot;{notif.groupName}&quot;
-              </Text>
-            </View>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <View style={styles.header}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR CIRCLES</Text>
+            <Text style={styles.heading}>
+              Groups<Text style={styles.headingDot}>.</Text>
+            </Text>
           </View>
-          <TouchableOpacity
-            style={styles.notificationDismiss}
-            onPress={() => dismissNotification(notif.id)}
-          >
-            <Ionicons name="close" size={18} color={colors.muted} />
-          </TouchableOpacity>
-        </View>
-      ))}
-
-      {loading ? (
-        <View style={styles.list}>
-          <SkeletonGroups count={4} />
-        </View>
-      ) : groups.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>🤝</Text>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No groups yet</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            Create a prayer circle or join one with an invite code
-          </Text>
-          <View style={styles.emptyActions}>
-            <TouchableOpacity
-              style={[styles.emptyBtn, { backgroundColor: colors.accentLight }]}
-              onPress={() => setShowCreateModal(true)}
-            >
-              <Ionicons name="add-circle-outline" size={20} color={colors.accent} />
-              <Text style={[styles.emptyBtnText, { color: colors.accent }]}>Create Group</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.emptyBtn, { backgroundColor: colors.accentLight }]}
+          <View style={styles.headerButtons}>
+            <GlassIconButton
               onPress={() => setShowJoinModal(true)}
             >
-              <Ionicons name="enter-outline" size={20} color={colors.accent} />
-              <Text style={[styles.emptyBtnText, { color: colors.accent }]}>Join with Code</Text>
-            </TouchableOpacity>
+              <Ionicons name="enter-outline" size={22} color={colors.stone700} strokeWidth={1.5} />
+            </GlassIconButton>
+            <GlassIconButton
+              onPress={() => setShowCreateModal(true)}
+              style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+            >
+              <Ionicons name="add" size={24} color={colors.amber700} strokeWidth={2} />
+            </GlassIconButton>
           </View>
         </View>
-      ) : (
-        <FlatList
-          data={groups}
-          keyExtractor={(item) => item.id}
-          renderItem={renderGroup}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          initialNumToRender={8}
-          windowSize={5}
-          maxToRenderPerBatch={8}
-          updateCellsBatchingPeriod={50}
-          removeClippedSubviews={Platform.OS !== 'web'}
-          getItemLayout={(_, index) => ({
-            length: GROUP_ITEM_HEIGHT,
-            offset: GROUP_ITEM_HEIGHT * index,
-            index,
-          })}
-        />
-      )}
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          {/* Notification Banner */}
+          {notifications.map((notif) => (
+            <View key={notif.id} style={styles.notificationBanner}>
+              <View style={styles.notificationContent}>
+                <Text style={styles.notificationEmoji}>{notif.groupEmoji || '🙏'}</Text>
+                <View style={styles.notificationText}>
+                  <Text style={[styles.notificationTitle, { color: colors.stone900 }]}>Welcome!</Text>
+                  <Text style={[styles.notificationMessage, { color: colors.stone500 }]}>
+                    You&apos;ve been added to &quot;{notif.groupName}&quot;
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.notificationDismiss}
+                onPress={() => dismissNotification(notif.id)}
+              >
+                <Ionicons name="close" size={18} color={colors.stone400} />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          {loading ? (
+            <View style={styles.list}>
+              <SkeletonGroups count={4} />
+            </View>
+          ) : groups.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>🤝</Text>
+              <Text style={[styles.emptyTitle, { color: colors.stone900 }]}>No groups yet</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.stone500 }]}>
+                Create a prayer circle or join one with an invite code
+              </Text>
+              <View style={styles.emptyActions}>
+                <TouchableOpacity
+                  style={[styles.emptyBtn, { backgroundColor: colors.amber100 }]}
+                  onPress={() => setShowCreateModal(true)}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color={colors.amber700} />
+                  <Text style={[styles.emptyBtnText, { color: colors.amber700 }]}>Create Group</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.emptyBtn, { backgroundColor: colors.stone100 }]}
+                  onPress={() => setShowJoinModal(true)}
+                >
+                  <Ionicons name="enter-outline" size={20} color={colors.stone700} />
+                  <Text style={[styles.emptyBtnText, { color: colors.stone700 }]}>Join with Code</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <FlatList
+              data={groups}
+              keyExtractor={(item) => item.id}
+              renderItem={renderGroup}
+              contentContainerStyle={styles.list}
+              showsVerticalScrollIndicator={false}
+              initialNumToRender={8}
+              windowSize={5}
+              maxToRenderPerBatch={8}
+              updateCellsBatchingPeriod={50}
+              removeClippedSubviews={Platform.OS !== 'web'}
+              ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+              getItemLayout={(_, index) => ({
+                length: GROUP_ITEM_HEIGHT,
+                offset: GROUP_ITEM_HEIGHT * index,
+                index,
+              })}
+            />
+          )}
+        </RoundedPage>
+
 
       {/* Create Group Modal */}
       <Modal
@@ -518,99 +523,104 @@ export const GroupsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
-    </LinearGradient>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.background,
     padding: spacing.lg,
   },
-  header: {
+  
+  // Header styles
+  headerSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.lg,
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  header: {
+    flex: 1,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
   },
   heading: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: palette.text,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
   },
   headerButtons: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
+    marginBottom: 4,
   },
-  headerBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: palette.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  createBtn: {
-    backgroundColor: palette.accent,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
   },
   list: {
     padding: spacing.lg,
-    paddingTop: 0,
+    paddingBottom: 140,
+    paddingTop: spacing.md,
   },
+  
+  // Group Card styles
   groupCard: {
-    backgroundColor: palette.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: palette.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: 0, // Managed by ItemSeparatorComponent
   },
   groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   groupEmoji: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: palette.accentLight,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   groupEmojiText: {
-    fontSize: 24,
+    fontSize: 28,
   },
   groupInfo: {
     flex: 1,
   },
   groupName: {
     fontSize: 18,
-    fontWeight: '800',
-    color: palette.text,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    marginBottom: 2,
   },
   groupMembers: {
     fontSize: 13,
-    color: palette.muted,
+    fontWeight: '500',
   },
   groupRightSection: {
     flexDirection: 'row',
@@ -618,29 +628,27 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   ownerBadge: {
-    backgroundColor: palette.accentLight,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: radius.sm,
+    borderRadius: 8,
   },
   ownerBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
-    color: palette.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   groupDesc: {
     fontSize: 14,
-    color: palette.muted,
+    lineHeight: 22,
     marginBottom: spacing.md,
-    lineHeight: 20,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
   },
   groupActions: {
     flexDirection: 'row',
     gap: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
-    paddingTop: spacing.lg,
-    marginTop: spacing.sm,
+    paddingTop: spacing.md,
   },
   actionBtn: {
     flex: 1,
@@ -648,75 +656,109 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: palette.accentLight,
+    paddingVertical: 10,
+    borderRadius: radius.full,
   },
   actionBtnText: {
-    fontWeight: '700',
-    color: palette.accentDark,
+    fontSize: 13,
+    fontWeight: '600',
   },
   leaveBtn: {
-    backgroundColor: palette.dangerLight,
+    // Custom bg set inline
   },
   leaveBtnText: {
-    fontWeight: '700',
-    color: '#dc2626',
+    fontSize: 13,
+    fontWeight: '600',
   },
+  
+  // Empty State
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
+    paddingVertical: 60,
   },
   emptyEmoji: {
-    fontSize: 64,
+    fontSize: 48,
     marginBottom: spacing.md,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '800',
-    color: palette.text,
+    fontWeight: '600',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: palette.muted,
+    fontSize: 15,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    lineHeight: 22,
   },
   emptyActions: {
     flexDirection: 'row',
-    gap: spacing.lg,
-    marginTop: spacing.md,
+    gap: spacing.md,
   },
   emptyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: palette.accentLight,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    borderRadius: radius.full,
   },
   emptyBtnText: {
     fontWeight: '700',
-    color: palette.accentDark,
+    fontSize: 14,
   },
+  
+  // Notifications
+  notificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f0fdf4',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+  },
+  notificationEmoji: {
+    fontSize: 24,
+  },
+  notificationText: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  notificationMessage: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  notificationDismiss: {
+    padding: spacing.xs,
+  },
+  
+  // Modals (keep existing styles but tidy up)
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: palette.surface,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: spacing.lg,
     maxHeight: '80%',
   },
@@ -727,27 +769,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: palette.text,
+    fontSize: 24,
+    fontWeight: '700',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
   },
   inputLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: palette.muted,
+    fontWeight: '700',
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   input: {
-    backgroundColor: palette.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     fontSize: 16,
-    color: palette.text,
     borderWidth: 1,
-    borderColor: palette.border,
     marginBottom: spacing.lg,
   },
   textArea: {
@@ -772,138 +810,30 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emojiOptionActive: {
-    backgroundColor: palette.accentLight,
     borderWidth: 2,
-    borderColor: palette.accent,
   },
   emojiText: {
     fontSize: 24,
   },
   createButton: {
-    backgroundColor: palette.accent,
-    paddingVertical: spacing.md,
+    paddingVertical: 16,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
     alignItems: 'center',
     marginTop: spacing.md,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    ...shadows.glow,
   },
   buttonDisabled: {
     opacity: 0.5,
+    
   },
   createButtonText: {
     fontSize: 16,
-    fontWeight: '800',
-    color: palette.accentDark,
-  },
-  // Discover section styles
-  discoverSection: {
-    marginTop: spacing.xl,
-    paddingTop: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: palette.border,
-  },
-  discoverHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  discoverTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: palette.text,
-  },
-  discoverSubtitle: {
-    fontSize: 13,
-    color: palette.muted,
-    marginBottom: spacing.md,
-  },
-  discoverCard: {
-    backgroundColor: palette.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: palette.border,
-  },
-  discoverCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  discoverCardInfo: {
-    flex: 1,
-  },
-  discoverCardDesc: {
-    fontSize: 13,
-    color: palette.muted,
-    lineHeight: 18,
-    marginBottom: spacing.md,
-  },
-  joinBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: palette.success,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-  },
-  joinBtnDisabled: {
-    opacity: 0.6,
-  },
-  joinBtnText: {
-    fontSize: 14,
     fontWeight: '700',
-    color: '#fff',
-  },
-  // Notification banner styles
-  notificationBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: palette.successLight,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: palette.success,
-  },
-  notificationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: spacing.sm,
-  },
-  notificationEmoji: {
-    fontSize: 24,
-  },
-  notificationText: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: palette.success,
-  },
-  notificationMessage: {
-    fontSize: 13,
-    color: palette.success,
-    marginTop: 2,
-  },
-  notificationDismiss: {
-    padding: spacing.xs,
   },
 });
 

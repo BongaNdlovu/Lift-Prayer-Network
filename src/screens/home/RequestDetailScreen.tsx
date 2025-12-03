@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
+import { GlassIconButton } from '../../components/GlassCard';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -51,7 +53,7 @@ const formatDate = (value?: any) => {
 export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id, type, item: initialItem } = route.params;
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
   const [item, setItem] = useState<FeedItem | null>(initialItem || null);
   const [loading, setLoading] = useState(!initialItem);
   const [editMode, setEditMode] = useState(false);
@@ -404,19 +406,27 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header with Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={palette.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {type === 'REQUEST' ? 'Prayer Request' : 'Testimony'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
-      
-      <ScrollView contentContainerStyle={styles.content}>
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kickerHeader, { color: colors.stone500 }]}>
+              {type === 'REQUEST' ? 'TRANSMISSION' : 'VERIFICATION'}
+            </Text>
+            <Text style={styles.heading}>
+              Details<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <ScrollView contentContainerStyle={styles.content}>
         {commentError && (
           <InlineError message={commentError} onDismiss={() => setCommentError(null)} />
         )}
@@ -677,17 +687,57 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <TouchableOpacity style={styles.secondaryButton} onPress={handleFlag} disabled={busyAction}>
             <Text style={styles.secondaryText}>Submit Flag</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          </View>
+          </ScrollView>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kickerHeader: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 36,
+    fontWeight: '500',
+    letterSpacing: -1,
+    lineHeight: 38,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    shadowColor: '#eab308',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    
+    
+    
+    
     elevation: 10,
   },
   pulseRing: {
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   title: {
-    fontSize: 42,
+    fontSize: 32,
     fontWeight: '900',
     letterSpacing: 8,
     marginTop: 8,
