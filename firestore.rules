@@ -239,5 +239,17 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    // Following - users can manage their own following list
+    match /following/{uid}/users/{targetUid} {
+      // Users can read their own following list
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      // Users can follow/unfollow (create/delete) in their own list
+      allow create: if isSignedIn() && request.auth.uid == uid 
+        && request.resource.data.targetUid == targetUid;
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+      // No updates needed - just create/delete
+      allow update: if false;
+    }
   }
 }

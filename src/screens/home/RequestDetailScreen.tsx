@@ -72,8 +72,21 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const canDelete = useMemo(() => item && user && canDeleteContent((item as any).ownerUid, user.uid, user.email), [item, user]);
   const isAdmin = useMemo(() => hasAdminPermission(user?.email), [user?.email]);
   
+  // Apply current user's profile to their own posts for instant updates
+  const displayItem = useMemo(() => {
+    if (!item) return null;
+    if (isOwner && !(item as any).isAnonymous) {
+      return {
+        ...item,
+        userDisplayName: user?.displayName || item.userDisplayName,
+        userPhotoURL: user?.photoURL ?? (item as any).userPhotoURL,
+      };
+    }
+    return item;
+  }, [item, isOwner, user?.displayName, user?.photoURL]);
+  
   // Get verified badge for the content author
-  const authorBadge = useMemo(() => getVerifiedBadge((item as any)?.userEmail), [item]);
+  const authorBadge = useMemo(() => getVerifiedBadge((displayItem as any)?.userEmail), [displayItem]);
   const isEmailVerified = (item as any)?.isEmailVerified === true;
   const badgeStyle = authorBadge ? BADGE_STYLES[authorBadge.badgeType] : null;
   const badgeLabel = authorBadge?.badgeLabel || null;
@@ -395,7 +408,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
-  if (loading || !item) {
+  if (loading || !item || !displayItem) {
     return (
       <ErrorState
         title={loading ? 'Loading request...' : 'Unable to load request'}
@@ -431,11 +444,11 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <InlineError message={commentError} onDismiss={() => setCommentError(null)} />
         )}
         <Text style={styles.kicker}>{type === 'REQUEST' ? 'Transmission' : 'Verification'}</Text>
-        <Text style={styles.title}>{item.content.slice(0, 100)}</Text>
+        <Text style={styles.title}>{displayItem.content.slice(0, 100)}</Text>
         
         {/* Author Info with Badge */}
         <View style={styles.authorRow}>
-          <Text style={styles.meta}>By {item.userDisplayName}</Text>
+          <Text style={styles.meta}>By {displayItem.userDisplayName}</Text>
           {badgeStyle && badgeLabel && (
             <View style={[styles.authorBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
               <Ionicons name={badgeStyle.icon as any} size={10} color={badgeStyle.textColor} />

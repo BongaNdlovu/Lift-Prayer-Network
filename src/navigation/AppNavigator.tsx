@@ -35,6 +35,7 @@ import { SearchScreen } from '../screens/SearchScreen';
 import { AnsweredPrayersScreen } from '../screens/AnsweredPrayersScreen';
 import { AnnouncementsScreen } from '../screens/AnnouncementsScreen';
 import { DevotionsScreen } from '../screens/DevotionsScreen';
+import { FollowingScreen } from '../screens/FollowingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { MainTabParamList, RootStackParamList } from './types';
 import { useTheme } from '../contexts/ThemeContext';
@@ -379,6 +380,11 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="Devotions"
               component={DevotionsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Following"
+              component={FollowingScreen}
               options={{ headerShown: false }}
             />
           </>

@@ -40,7 +40,7 @@ import { GlassIconButton } from '../components/GlassCard';
 import { SkeletonNotifications } from '../components/SkeletonCard';
 import { RootStackParamList } from '../navigation/types';
 
-type NotificationType = 'prayer_received' | 'amen_received' | 'comment' | 'reaction' | 'testimony' | 'group_request';
+type NotificationType = 'prayer_received' | 'amen_received' | 'comment' | 'reaction' | 'testimony' | 'group_request' | 'new_follower';
 
 type Notification = {
   id: string;
@@ -72,6 +72,8 @@ const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionic
       return { name: 'sparkles', color: '#10b981' };
     case 'group_request':
       return { name: 'people', color: '#8b5cf6' };
+    case 'new_follower':
+      return { name: 'person-add', color: '#8b5cf6' };
     default:
       return { name: 'notifications', color: palette.muted };
   }
@@ -91,6 +93,8 @@ const getNotificationMessage = (notification: Notification): string => {
       return `shared a testimony you prayed for`;
     case 'group_request':
       return `posted a prayer in ${notification.groupName || 'your group'}`;
+    case 'new_follower':
+      return `started following you`;
     default:
       return 'sent you a notification';
   }

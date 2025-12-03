@@ -76,6 +76,9 @@ type Props = {
   onEdit?: (item: FeedItem) => void;
   onDelete?: (item: FeedItem) => void;
   onPin?: (id: string, isPinned: boolean) => void;
+  onFollow?: (targetUid: string, displayName: string, photoURL?: string | null) => Promise<boolean>;
+  onUnfollow?: (targetUid: string) => Promise<boolean>;
+  isFollowing?: boolean;
   currentUserId?: string;
   currentUserEmail?: string | null;
 };
@@ -91,6 +94,9 @@ export const FeedCard: React.FC<Props> = ({
   onEdit,
   onDelete,
   onPin,
+  onFollow,
+  onUnfollow,
+  isFollowing = false,
   currentUserId,
   currentUserEmail,
 }) => {
@@ -104,6 +110,7 @@ export const FeedCard: React.FC<Props> = ({
   const [deleting, setDeleting] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [isPraying, setIsPraying] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   
   // Animation refs for pray button
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -162,6 +169,34 @@ export const FeedCard: React.FC<Props> = ({
   
   // Pin status (only for requests)
   const isPinned = isRequest && (item as LiftRequest).isPinned;
+
+  // Handle follow/unfollow
+  const handleFollowToggle = async () => {
+    if (!currentUserId || isOwner || followLoading) return;
+    
+    setFollowLoading(true);
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      
+      if (isFollowing) {
+        const success = await onUnfollow?.(item.ownerUid);
+        if (success) {
+          Alert.alert('Unfollowed', `You unfollowed ${item.userDisplayName}`);
+        }
+      } else {
+        const success = await onFollow?.(item.ownerUid, item.userDisplayName, (item as any).userPhotoURL);
+        if (success) {
+          Alert.alert('Following', `You are now following ${item.userDisplayName}. Their posts will appear first in your feed.`);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Could not update follow status. Please try again.');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   const handleReport = async () => {
     if (!currentUserId || !selectedReason) return;
@@ -396,6 +431,18 @@ export const FeedCard: React.FC<Props> = ({
       });
     }
 
+    // Follow/Unfollow option - for non-owners only
+    if (!isOwner && currentUserId && (onFollow || onUnfollow)) {
+      options.push({
+        text: isFollowing ? 'Unfollow User' : 'Follow User',
+        icon: isFollowing ? 'person-remove-outline' : 'person-add-outline',
+        onPress: () => {
+          setShowOptionsModal(false);
+          handleFollowToggle();
+        },
+      });
+    }
+
     // Report & Block - for non-owners only
     if (!isOwner && currentUserId) {
       options.push({
@@ -597,7 +644,30 @@ export const FeedCard: React.FC<Props> = ({
                   </Text>
                 </View>
               )}
-              <Text style={styles.meta}>{formatRelativeTime((item as any).createdAt)}</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.meta}>{formatRelativeTime((item as any).createdAt)}</Text>
+                {/* Quick follow button - only show for non-owners */}
+                {!isOwner && currentUserId && (onFollow || onUnfollow) && (
+                  <TouchableOpacity
+                    style={[
+                      styles.followButton,
+                      isFollowing && styles.followButtonActive,
+                      followLoading && styles.disabled,
+                    ]}
+                    onPress={handleFollowToggle}
+                    disabled={followLoading}
+                  >
+                    <Ionicons
+                      name={isFollowing ? 'checkmark' : 'add'}
+                      size={12}
+                      color={isFollowing ? '#16a34a' : '#6b7280'}
+                    />
+                    <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
+                      {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -1034,6 +1104,36 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     color: palette.muted,
     marginTop: 1,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 1,
+  },
+  followButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  followButtonActive: {
+    backgroundColor: 'rgba(22,163,74,0.1)',
+    borderColor: 'rgba(22,163,74,0.3)',
+  },
+  followButtonText: {
+    fontSize: fontSizes.xs - 2,
+    fontFamily: fonts.bodyMedium,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  followButtonTextActive: {
+    color: '#16a34a',
   },
   statusBadge: {
     paddingHorizontal: 6,

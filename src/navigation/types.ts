@@ -46,6 +46,7 @@ export type RootStackParamList = {
   Stats: undefined;
   Announcements: undefined;
   Devotions: undefined;
+  Following: undefined;
 };
 
 export type MainTabParamList = {

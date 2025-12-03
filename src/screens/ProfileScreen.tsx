@@ -575,6 +575,22 @@ export const ProfileScreen: React.FC = () => {
 
           <TouchableOpacity
             style={styles.menuItem}
+            onPress={() => navigation.navigate('Following')}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#ede9fe' }]}>
+              <Ionicons name="people" size={20} color="#8b5cf6" />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuTitle}>Following</Text>
+              <Text style={styles.menuSubtitle}>Manage users you follow</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
             onPress={() => navigation.navigate('History')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#e0f2fe' }]}>

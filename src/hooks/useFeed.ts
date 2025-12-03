@@ -98,7 +98,18 @@ const classifyError = (err: any): FeedErrorType => {
   return 'unknown';
 };
 
-export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[]) => {
+type UserProfileOverride = {
+  displayName?: string | null;
+  photoURL?: string | null;
+};
+
+export const useFeed = (
+  mode: Mode, 
+  viewerUid?: string, 
+  userGroupIds?: string[], 
+  followingUids?: string[],
+  currentUserProfile?: UserProfileOverride
+) => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,28 +128,54 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
   useEffect(() => {
     getBlockedUsers().then(setBlockedUsers);
   }, [viewerUid]);
+  
+  // Apply current user's profile data to their own posts (for instant profile updates)
+  const applyCurrentUserProfile = useCallback((list: FeedItem[]): FeedItem[] => {
+    if (!viewerUid || !currentUserProfile) return list;
+    
+    return list.map((item) => {
+      // Only override for current user's non-anonymous posts
+      if (item.ownerUid === viewerUid && !(item as any).isAnonymous) {
+        return {
+          ...item,
+          userDisplayName: currentUserProfile.displayName || item.userDisplayName,
+          userPhotoURL: currentUserProfile.photoURL ?? (item as any).userPhotoURL,
+        };
+      }
+      return item;
+    });
+  }, [viewerUid, currentUserProfile]);
 
-  // Sort function to put pinned items first
-  const sortWithPinnedFirst = useCallback((list: FeedItem[]) => {
+  // Sort function to put pinned items first, then followed users, then by date
+  const sortWithPriority = useCallback((list: FeedItem[]) => {
     return [...list].sort((a, b) => {
-      // Pinned items come first
+      // 1. Pinned items come first (requests only)
       const aIsPinned = a.type === 'REQUEST' && (a as LiftRequest).isPinned;
       const bIsPinned = b.type === 'REQUEST' && (b as LiftRequest).isPinned;
       
       if (aIsPinned && !bIsPinned) return -1;
       if (!aIsPinned && bIsPinned) return 1;
       
-      // If both pinned or both not pinned, sort by pinnedAt or createdAt
+      // If both pinned, sort by pinnedAt
       if (aIsPinned && bIsPinned) {
         const aPinnedAt = (a as any).pinnedAt?.toDate?.() || (a as any).pinnedAt || 0;
         const bPinnedAt = (b as any).pinnedAt?.toDate?.() || (b as any).pinnedAt || 0;
         return new Date(bPinnedAt).getTime() - new Date(aPinnedAt).getTime();
       }
       
-      // For non-pinned items, maintain original order (by createdAt desc)
-      return 0;
+      // 2. Followed users' posts come second
+      const aIsFollowed = followingUids?.includes(a.ownerUid) ?? false;
+      const bIsFollowed = followingUids?.includes(b.ownerUid) ?? false;
+      
+      if (aIsFollowed && !bIsFollowed) return -1;
+      if (!aIsFollowed && bIsFollowed) return 1;
+      
+      // 3. Within same tier, sort by createdAt desc (newest first)
+      const aTime = (a as any).createdAt?.toDate?.() || (a as any).createdAt || 0;
+      const bTime = (b as any).createdAt?.toDate?.() || (b as any).createdAt || 0;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
-  }, []);
+  }, [followingUids]);
 
   const applyPrivacyFilter = useCallback(
     (list: FeedItem[]) => {
@@ -181,10 +218,13 @@ export const useFeed = (mode: Mode, viewerUid?: string, userGroupIds?: string[])
         return true;
       });
       
-      // Apply pinned sorting
-      return sortWithPinnedFirst(filtered);
+      // Apply current user's profile data to their own posts
+      const withProfileUpdates = applyCurrentUserProfile(filtered);
+      
+      // Apply priority sorting (pinned first, then followed users, then by date)
+      return sortWithPriority(withProfileUpdates);
     },
-    [viewerUid, userGroupIds, blockedUsers, sortWithPinnedFirst],
+    [viewerUid, userGroupIds, blockedUsers, sortWithPriority, applyCurrentUserProfile],
   );
 
   // Load cached data first for instant display

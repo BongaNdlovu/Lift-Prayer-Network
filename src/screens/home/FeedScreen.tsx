@@ -6,6 +6,7 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFeed } from '../../hooks/useFeed';
+import { useFollowing, useFollowingUids } from '../../hooks/useFollowing';
 import { useUnreadNotifications } from '../../hooks/useUnreadNotifications';
 import { logPrayer, logReaction, likeTestimony, pinRequest, unpinRequest } from '../../services/prayers';
 import type { ReactionType } from '../../services/prayers';
@@ -26,8 +27,11 @@ import type { RootStackParamList } from '../../navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getVerseOfDay } from '../../services/verseOfDay';
 
+type FeedTab = 'all' | 'following' | 'answered';
+
 export const FeedScreen: React.FC = () => {
   const [mode, setMode] = useState<'REQUEST' | 'TESTIMONY'>('REQUEST');
+  const [activeTab, setActiveTab] = useState<FeedTab>('all');
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { unreadCount } = useUnreadNotifications();
@@ -47,7 +51,33 @@ export const FeedScreen: React.FC = () => {
     return () => unsubscribe();
   }, [user?.uid]);
   
-  const { items, loading, error, errorType, isOffline, refresh } = useFeed(mode, user?.uid, userGroupIds);
+  // Get following data for feed prioritization and follow actions
+  const { follow, unfollow, isFollowing } = useFollowing(user?.uid, {
+    displayName: user?.displayName || undefined,
+    photoURL: user?.photoURL,
+  });
+  const followingUids = useFollowingUids(user?.uid);
+  
+  // Pass current user's profile to useFeed for instant profile updates on their own posts
+  const { items, loading, error, errorType, isOffline, refresh } = useFeed(
+    mode, 
+    user?.uid, 
+    userGroupIds, 
+    followingUids,
+    {
+      displayName: user?.displayName,
+      photoURL: user?.photoURL,
+    }
+  );
+  
+  // Follow/unfollow handlers for FeedCard
+  const handleFollow = async (targetUid: string, displayName: string, photoURL?: string | null): Promise<boolean> => {
+    return await follow(targetUid, displayName, photoURL);
+  };
+  
+  const handleUnfollow = async (targetUid: string): Promise<boolean> => {
+    return await unfollow(targetUid);
+  };
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
@@ -64,9 +94,14 @@ export const FeedScreen: React.FC = () => {
     }
   }, [items]);
 
-  // Filter items based on search, category, and urgent filter
+  // Filter items based on search, category, urgent filter, and active tab
   const filteredItems = useMemo(() => {
     let result = items;
+
+    // Following tab filter - show only posts from followed users
+    if (activeTab === 'following') {
+      result = result.filter((item) => followingUids.includes(item.ownerUid));
+    }
 
     // Search filter
     if (searchQuery.trim()) {
@@ -91,7 +126,7 @@ export const FeedScreen: React.FC = () => {
     }
 
     return result;
-  }, [items, searchQuery, selectedCategory, showUrgentOnly, mode]);
+  }, [items, searchQuery, selectedCategory, showUrgentOnly, mode, activeTab, followingUids]);
 
   const headerCounts = useMemo(() => {
     const totalPrayers = filteredItems.reduce((sum, item) => sum + (item.type === 'REQUEST' ? item.prayers ?? 0 : 0), 0);
@@ -415,31 +450,73 @@ export const FeedScreen: React.FC = () => {
           <GlassHeader style={styles.stickyHeader}>
             {/* Tab Navigation */}
             <View style={styles.tabRow}>
-              {(['For You', 'Requests', 'Answered'] as const).map((tab) => {
-                const tabKey = tab === 'For You' ? 'REQUEST' : tab === 'Requests' ? 'REQUEST' : 'TESTIMONY';
-                const isActive = (tab === 'For You' && mode === 'REQUEST') || 
-                                 (tab === 'Requests' && mode === 'REQUEST') ||
-                                 (tab === 'Answered' && mode === 'TESTIMONY');
-                // Only show "For You" and "Answered" for simplicity
-                if (tab === 'Requests') return null;
-                return (
-                  <TouchableOpacity
-                    key={tab}
-                    onPress={() => setMode(tab === 'Answered' ? 'TESTIMONY' : 'REQUEST')}
-                    style={styles.tabButton}
-                  >
+              {/* For You Tab */}
+              <TouchableOpacity
+                onPress={() => {
+                  setActiveTab('all');
+                  setMode('REQUEST');
+                }}
+                style={styles.tabButton}
+              >
+                <Text style={[
+                  styles.tabText,
+                  { color: colors.stone400 },
+                  activeTab === 'all' && mode === 'REQUEST' && styles.tabTextActive,
+                  activeTab === 'all' && mode === 'REQUEST' && { color: colors.stone900 },
+                ]}>
+                  For You
+                </Text>
+                {activeTab === 'all' && mode === 'REQUEST' && <View style={styles.tabIndicator} />}
+              </TouchableOpacity>
+
+              {/* Following Tab - only show if user is logged in */}
+              {user && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setActiveTab('following');
+                    setMode('REQUEST');
+                  }}
+                  style={styles.tabButton}
+                >
+                  <View style={styles.tabWithBadge}>
                     <Text style={[
                       styles.tabText,
                       { color: colors.stone400 },
-                      isActive && styles.tabTextActive,
-                      isActive && { color: colors.stone900 },
+                      activeTab === 'following' && styles.tabTextActive,
+                      activeTab === 'following' && { color: colors.stone900 },
                     ]}>
-                      {tab === 'For You' ? 'Prayer Requests' : 'Answered Prayers'}
+                      Following
                     </Text>
-                    {isActive && <View style={styles.tabIndicator} />}
-                  </TouchableOpacity>
-                );
-              })}
+                    {followingUids.length > 0 && (
+                      <View style={[styles.followingBadge, activeTab === 'following' && styles.followingBadgeActive]}>
+                        <Text style={[styles.followingBadgeText, activeTab === 'following' && styles.followingBadgeTextActive]}>
+                          {followingUids.length}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  {activeTab === 'following' && <View style={styles.tabIndicator} />}
+                </TouchableOpacity>
+              )}
+
+              {/* Answered Tab */}
+              <TouchableOpacity
+                onPress={() => {
+                  setActiveTab('answered');
+                  setMode('TESTIMONY');
+                }}
+                style={styles.tabButton}
+              >
+                <Text style={[
+                  styles.tabText,
+                  { color: colors.stone400 },
+                  activeTab === 'answered' && styles.tabTextActive,
+                  activeTab === 'answered' && { color: colors.stone900 },
+                ]}>
+                  Answered
+                </Text>
+                {activeTab === 'answered' && <View style={styles.tabIndicator} />}
+              </TouchableOpacity>
             </View>
 
             {/* Filter Chips */}
@@ -545,21 +622,39 @@ export const FeedScreen: React.FC = () => {
               </View>
             ) : filteredItems.length === 0 && !error ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>{mode === 'REQUEST' ? '🙏' : '✨'}</Text>
+                <Text style={styles.emptyEmoji}>
+                  {activeTab === 'following' ? '👥' : mode === 'REQUEST' ? '🙏' : '✨'}
+                </Text>
                 <Text style={[styles.emptyTitle, { color: colors.stone900 }]}>
-                  {searchQuery || selectedCategory !== 'all' 
-                    ? 'No matching prayers found'
-                    : mode === 'REQUEST' 
-                      ? 'No prayer requests yet' 
-                      : 'No testimonies yet'}
+                  {activeTab === 'following'
+                    ? followingUids.length === 0
+                      ? 'Not following anyone yet'
+                      : 'No posts from people you follow'
+                    : searchQuery || selectedCategory !== 'all' 
+                      ? 'No matching prayers found'
+                      : mode === 'REQUEST' 
+                        ? 'No prayer requests yet' 
+                        : 'No testimonies yet'}
                 </Text>
                 <Text style={[styles.emptySubtitle, { color: colors.stone500 }]}>
-                  {searchQuery || selectedCategory !== 'all'
-                    ? 'Try adjusting your filters'
-                    : mode === 'REQUEST'
-                      ? 'Be the first to share a prayer request!'
-                      : 'Share how God has answered your prayers!'}
+                  {activeTab === 'following'
+                    ? followingUids.length === 0
+                      ? 'Follow users from the feed to see their posts here'
+                      : 'Check back later for new posts'
+                    : searchQuery || selectedCategory !== 'all'
+                      ? 'Try adjusting your filters'
+                      : mode === 'REQUEST'
+                        ? 'Be the first to share a prayer request!'
+                        : 'Share how God has answered your prayers!'}
                 </Text>
+                {activeTab === 'following' && followingUids.length === 0 && (
+                  <TouchableOpacity
+                    style={[styles.emptyActionButton, { backgroundColor: colors.accent }]}
+                    onPress={() => setActiveTab('all')}
+                  >
+                    <Text style={styles.emptyActionButtonText}>Browse Feed</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               <FlatList
@@ -577,6 +672,9 @@ export const FeedScreen: React.FC = () => {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onPin={handlePin}
+                    onFollow={handleFollow}
+                    onUnfollow={handleUnfollow}
+                    isFollowing={isFollowing(item.ownerUid)}
                     currentUserId={user?.uid}
                     currentUserEmail={user?.email}
                   />
@@ -808,11 +906,28 @@ const styles = StyleSheet.create({
     height: 2,
     borderRadius: 1,
     backgroundColor: '#fbbf24',
-    // Glow effect
-    
-    
-    
-    
+  },
+  tabWithBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  followingBadge: {
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  followingBadgeActive: {
+    backgroundColor: '#fbbf24',
+  },
+  followingBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  followingBadgeTextActive: {
+    color: '#1c1917',
   },
   
   // === FILTER CHIPS ===
@@ -903,6 +1018,18 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  emptyActionButton: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  emptyActionButtonText: {
+    color: '#fff',
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
   },
   
   // === OFFLINE BANNER ===

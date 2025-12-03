@@ -149,6 +149,14 @@ export type PeopleStat = {
   lastPrayedAt?: TimeLike;
 };
 
+export type FollowRecord = {
+  id: string;
+  targetUid: string;
+  targetDisplayName: string;
+  targetPhotoURL?: string | null;
+  followedAt?: TimeLike;
+};
+
 export type UserProfile = {
   displayName: string;
   email?: string;
