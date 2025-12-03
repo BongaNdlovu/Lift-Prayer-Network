@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -33,7 +33,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CreateRequest'>;
 
 export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
+
+  // Memoize gradient colors for stability
+  const gradientColors = useMemo(
+    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
+    [colors.gradientBoldScreen]
+  );
   const netInfo = useNetInfo();
   const [content, setContent] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PrayerCategory>('other');
@@ -195,8 +201,8 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient colors={['#fefce8', '#f4f4f5']} style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}

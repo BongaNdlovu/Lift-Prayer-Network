@@ -62,6 +62,10 @@ export const createAnnouncement = async (
       priority: input.priority || 'normal',
       expiresAt: input.expiresAt ? Timestamp.fromDate(input.expiresAt) : null,
     });
+    
+    // Note: Push notifications are sent via Cloud Function (onAnnouncementCreated)
+    // which broadcasts to all users with push tokens enabled
+    
     return { success: true, id: docRef.id };
   } catch (err) {
     console.error('Error creating announcement:', err);

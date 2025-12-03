@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
@@ -307,8 +308,12 @@ export const SettingsScreen: React.FC = () => {
     infoText: { color: isDark ? colors.accent : '#92400e' },
   };
 
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   return (
-    <SafeAreaView style={[styles.container, dynamicStyles.container]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* Header with Back Button */}
       <View style={[styles.header, dynamicStyles.header]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, dynamicStyles.backButton]}>
@@ -629,6 +634,7 @@ export const SettingsScreen: React.FC = () => {
         </View>
       </Modal>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -12,11 +12,12 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
-import { palette, radius, spacing } from '../../theme/colors';
+import { fonts, palette, radius, spacing } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
@@ -119,8 +120,15 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
   const isLoading = loading;
 
+  // Memoize gradient colors to prevent re-renders and ensure stability on fresh install
+  const gradientColors = useMemo(
+    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
+    [colors.gradientBoldScreen]
+  );
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -229,6 +237,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -249,11 +258,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   logo: {
+    fontFamily: fonts.heading,
     fontSize: 36,
-    fontWeight: '900',
+    fontWeight: '700',
     letterSpacing: 3,
   },
   tagline: {
+    fontFamily: fonts.body,
     marginTop: 4,
     fontSize: 14,
   },
@@ -269,11 +280,13 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
   },
   title: {
+    fontFamily: fonts.heading,
     fontSize: 24,
-    fontWeight: '800',
+    fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
+    fontFamily: fonts.body,
     fontSize: 14,
     marginBottom: spacing.lg,
   },

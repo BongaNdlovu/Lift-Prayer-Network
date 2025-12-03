@@ -1,5 +1,6 @@
 import React from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,17 +19,23 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
   const isModerator = hasModeratorPermission(user?.email);
 
   // Must be at least a moderator to access
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   if (!isModerator) {
     return (
-      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.center, { backgroundColor: 'transparent' }]}>
         <Ionicons name="shield" size={40} color={colors.muted} />
         <Text style={[styles.denied, { color: colors.text }]}>Moderator access required</Text>
       </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -113,6 +120,7 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
         )}
       </View>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

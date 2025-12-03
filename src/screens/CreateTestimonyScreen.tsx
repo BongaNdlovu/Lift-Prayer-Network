@@ -34,7 +34,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CreateTestimony'>;
 
 export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
+
+  // Memoize gradient colors for stability
+  const gradientColors = useMemo(
+    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
+    [colors.gradientBoldScreen]
+  );
   const netInfo = useNetInfo();
   const { items: allRequests } = useFeed('REQUEST', user?.uid);
   const [content, setContent] = useState('');
@@ -206,9 +212,9 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient colors={['#f0fdf4', '#ecfdf5']} style={{ flex: 1 }}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}

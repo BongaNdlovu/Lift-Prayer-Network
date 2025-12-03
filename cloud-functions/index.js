@@ -997,6 +997,182 @@ exports.onCommentCreated = onDocumentCreated('comments/{commentId}', async (even
   }
 });
 
+// ============================================================================
+// Announcement Notifications - Broadcast to all users
+// ============================================================================
+
+/**
+ * When a new announcement is created, send push notifications to all users
+ */
+exports.onAnnouncementCreated = onDocumentCreated('announcements/{announcementId}', async (event) => {
+  const snap = event.data;
+  const data = snap.data();
+  const { title, content, priority, isActive, authorUid } = data;
+  
+  // Only send notifications for active announcements
+  if (!isActive) {
+    console.log('[onAnnouncementCreated] Announcement is not active, skipping notification');
+    return;
+  }
+  
+  console.log(`[onAnnouncementCreated] Broadcasting announcement: "${title}" (priority: ${priority})`);
+  
+  try {
+    // Get all users with push tokens
+    const usersSnapshot = await db.collection('users').get();
+    let notificationsSent = 0;
+    let usersProcessed = 0;
+    
+    // Priority emoji for notification title
+    const priorityEmoji = priority === 'urgent' ? '🚨' : priority === 'important' ? '📢' : '📣';
+    const notificationTitle = `${priorityEmoji} ${title}`;
+    const notificationBody = content.length > 150 ? content.substring(0, 150) + '...' : content;
+    
+    // Process users in batches to avoid overwhelming the push service
+    const batchSize = 50;
+    const userDocs = usersSnapshot.docs;
+    
+    for (let i = 0; i < userDocs.length; i += batchSize) {
+      const batch = userDocs.slice(i, i + batchSize);
+      
+      const batchPromises = batch.map(async (userDoc) => {
+        const userId = userDoc.id;
+        const userData = userDoc.data();
+        
+        // Skip the author (they created it, they know about it)
+        if (userId === authorUid) {
+          return;
+        }
+        
+        // Check if user has notifications enabled
+        if (userData?.settings?.notifications === false) {
+          return;
+        }
+        
+        usersProcessed++;
+        
+        const tokens = await getUserPushTokens(userId);
+        if (tokens.length > 0) {
+          await sendExpoPushNotification(
+            tokens,
+            notificationTitle,
+            notificationBody,
+            { 
+              type: 'ANNOUNCEMENT', 
+              announcementId: event.params.announcementId,
+              priority 
+            },
+            { 
+              channelId: 'announcements', 
+              priority: priority === 'urgent' ? 'high' : 'default' 
+            }
+          );
+          notificationsSent++;
+        }
+      });
+      
+      await Promise.all(batchPromises);
+      
+      // Small delay between batches to avoid rate limiting
+      if (i + batchSize < userDocs.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    console.log(`[onAnnouncementCreated] Broadcast complete: ${notificationsSent} notifications sent to ${usersProcessed} users`);
+    
+    // Update announcement with notification stats
+    await snap.ref.update({
+      notificationsSent,
+      notificationsSentAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+  } catch (err) {
+    console.error('[onAnnouncementCreated] Error broadcasting announcement:', err);
+  }
+});
+
+/**
+ * When a new devotion is published, send push notifications to all users
+ */
+exports.onDevotionCreated = onDocumentCreated('devotions/{devotionId}', async (event) => {
+  const snap = event.data;
+  const data = snap.data();
+  const { title, bibleVerse, bibleReference, isPublished, authorUid } = data;
+  
+  // Only send notifications for published devotions
+  if (!isPublished) {
+    console.log('[onDevotionCreated] Devotion is not published, skipping notification');
+    return;
+  }
+  
+  console.log(`[onDevotionCreated] Broadcasting devotion: "${title}"`);
+  
+  try {
+    // Get all users with push tokens
+    const usersSnapshot = await db.collection('users').get();
+    let notificationsSent = 0;
+    
+    const notificationTitle = `✝️ ${title}`;
+    const notificationBody = `${bibleReference}: "${bibleVerse.substring(0, 100)}${bibleVerse.length > 100 ? '...' : ''}"`;
+    
+    // Process users in batches
+    const batchSize = 50;
+    const userDocs = usersSnapshot.docs;
+    
+    for (let i = 0; i < userDocs.length; i += batchSize) {
+      const batch = userDocs.slice(i, i + batchSize);
+      
+      const batchPromises = batch.map(async (userDoc) => {
+        const userId = userDoc.id;
+        const userData = userDoc.data();
+        
+        // Skip the author
+        if (userId === authorUid) {
+          return;
+        }
+        
+        // Check if user has notifications enabled
+        if (userData?.settings?.notifications === false) {
+          return;
+        }
+        
+        const tokens = await getUserPushTokens(userId);
+        if (tokens.length > 0) {
+          await sendExpoPushNotification(
+            tokens,
+            notificationTitle,
+            notificationBody,
+            { 
+              type: 'DEVOTION', 
+              devotionId: event.params.devotionId 
+            },
+            { channelId: 'devotions', priority: 'default' }
+          );
+          notificationsSent++;
+        }
+      });
+      
+      await Promise.all(batchPromises);
+      
+      if (i + batchSize < userDocs.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    console.log(`[onDevotionCreated] Broadcast complete: ${notificationsSent} notifications sent`);
+    
+    // Update devotion with notification stats
+    await snap.ref.update({
+      notificationsSent,
+      notificationsSentAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+  } catch (err) {
+    console.error('[onDevotionCreated] Error broadcasting devotion:', err);
+  }
+});
+
 // Subscribe new push tokens to the "critical" topic for high-severity alerts
 exports.onPushTokenCreated = onDocumentCreated('users/{uid}/pushTokens/{token}', async (event) => {
   const snap = event.data;

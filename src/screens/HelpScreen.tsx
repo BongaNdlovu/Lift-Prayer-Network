@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -413,8 +414,12 @@ export const HelpScreen: React.FC = () => {
     setExpandedSections([]);
   };
 
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.backButton}
@@ -538,6 +543,7 @@ export const HelpScreen: React.FC = () => {
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

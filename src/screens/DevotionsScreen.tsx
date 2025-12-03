@@ -11,6 +11,7 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
@@ -159,10 +160,14 @@ export const DevotionsScreen: React.FC = () => {
     });
   };
 
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   // Detail view for a selected devotion
   if (selectedDevotion) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => setSelectedDevotion(null)} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -235,11 +240,13 @@ export const DevotionsScreen: React.FC = () => {
           </Text>
         </ScrollView>
       </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -432,6 +439,7 @@ export const DevotionsScreen: React.FC = () => {
         </View>
       </Modal>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

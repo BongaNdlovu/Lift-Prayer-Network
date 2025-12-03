@@ -97,7 +97,7 @@ export const AppNavigator: React.FC = () => {
     dark: isDark,
     colors: {
       primary: colors.accent,
-      background: 'transparent', // Make transparent for global gradient
+      background: colors.background,
       card: colors.surface,
       text: colors.text,
       border: colors.border,

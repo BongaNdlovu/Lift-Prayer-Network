@@ -1,10 +1,9 @@
+import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/hooks/useAuth';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
@@ -72,16 +71,10 @@ function App() {
 
 // Separate component to use theme context
 function ThemedApp() {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
   
   return (
-    <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={colors.gradientDeep as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+    <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <AuthProvider>
         <NotificationPollingProvider>
@@ -90,7 +83,7 @@ function ThemedApp() {
           </ToastProvider>
         </NotificationPollingProvider>
       </AuthProvider>
-    </View>
+    </>
   );
 }
 

@@ -475,17 +475,12 @@ export const CalendarScreen: React.FC = () => {
 
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
-  // Dynamic gradient colors based on theme
-  const gradientColors = isDark 
-    ? [colors.background, colors.surface] as const
-    : colors.screenGradient;
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={gradientColors as any}
-        style={styles.gradient}
-      >
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
@@ -644,7 +639,6 @@ export const CalendarScreen: React.FC = () => {
             </View>
           )}
         </ScrollView>
-      </LinearGradient>
 
       {/* Add Event Modal */}
       <Modal
@@ -873,6 +867,7 @@ export const CalendarScreen: React.FC = () => {
         </View>
       </Modal>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

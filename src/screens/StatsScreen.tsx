@@ -84,26 +84,28 @@ export const StatsScreen: React.FC = () => {
     });
   }, [user]);
 
-  // Dynamic gradient colors
-  const gradientColors = isDark 
-    ? [colors.background, colors.surface] as const
-    : ['#fefce8', '#f4f4f5'] as const;
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
 
   if (!user) {
     return (
-      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.center, { backgroundColor: 'transparent' }]}>
         <Text style={styles.emoji}>📊</Text>
         <Text style={[styles.title, { color: colors.text }]}>Sign in to view your stats</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>Track your prayer journey</Text>
       </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.center, { backgroundColor: 'transparent' }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </SafeAreaView>
+      </LinearGradient>
     );
   }
 
@@ -114,8 +116,8 @@ export const StatsScreen: React.FC = () => {
     : `${stats?.streakDays} days strong! 💪`;
 
   return (
-    <LinearGradient colors={gradientColors as any} style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={[styles.heading, { color: colors.text }]}>Your Journey</Text>
           <Text style={[styles.subheading, { color: colors.muted }]}>Prayer statistics & streaks</Text>

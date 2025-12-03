@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
@@ -20,9 +21,12 @@ type Report = {
 
 export const ReportsScreen: React.FC = () => {
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
 
   useEffect(() => {
     if (!db) return;
@@ -48,10 +52,12 @@ export const ReportsScreen: React.FC = () => {
 
   if (!hasAdminPermission(user?.email)) {
     return (
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
       <View style={styles.center}>
-        <Ionicons name="shield" size={32} color={palette.muted} />
-        <Text style={styles.denied}>Access Denied</Text>
+        <Ionicons name="shield" size={32} color={colors.muted} />
+        <Text style={[styles.denied, { color: colors.text }]}>Access Denied</Text>
       </View>
+      </LinearGradient>
     );
   }
 
@@ -91,13 +97,16 @@ export const ReportsScreen: React.FC = () => {
 
   if (loading) {
     return (
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
       <View style={styles.center}>
-        <ActivityIndicator color={palette.accent} />
+        <ActivityIndicator color={colors.accent} />
       </View>
+      </LinearGradient>
     );
   }
 
   return (
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
     <FlatList
       data={reports}
       keyExtractor={(item) => item.id}
@@ -131,6 +140,7 @@ export const ReportsScreen: React.FC = () => {
         </View>
       )}
     />
+    </LinearGradient>
   );
 };
 

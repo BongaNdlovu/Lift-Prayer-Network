@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Animated,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,7 +29,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
-import { Testimony } from '../types';
+import { Testimony, PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { Confetti } from '../components/Confetti';
 
 const TESTIMONY_ITEM_HEIGHT = 220;
@@ -158,6 +159,12 @@ export const AnsweredPrayersScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [stats, setStats] = useState({ total: 0, thisMonth: 0 });
+  const [selectedCategory, setSelectedCategory] = useState<PrayerCategory | 'all'>('all');
+
+  // Filter testimonies by category (using linkedRequestCategory if available)
+  const filteredTestimonies = selectedCategory === 'all'
+    ? testimonies
+    : testimonies.filter(t => (t as any).linkedRequestCategory === selectedCategory);
 
   const loadTestimonies = useCallback(async () => {
     if (!firebaseEnabled || !db) {
@@ -234,8 +241,12 @@ export const AnsweredPrayersScreen: React.FC = () => {
     ? [colors.successLight, colors.surface] as const
     : ['#f0fdf4', '#dcfce7'] as const;
 
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       {showConfetti && <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />}
 
       {/* Header */}
@@ -267,12 +278,41 @@ export const AnsweredPrayersScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Category Filter */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryScroll}
+        contentContainerStyle={styles.categoryContainer}
+      >
+        <TouchableOpacity
+          style={[styles.categoryChip, { backgroundColor: colors.surface, borderColor: colors.border }, selectedCategory === 'all' && styles.categoryChipActive]}
+          onPress={() => setSelectedCategory('all')}
+        >
+          <Text style={[styles.categoryText, { color: colors.muted }, selectedCategory === 'all' && styles.categoryTextActive]}>
+            All
+          </Text>
+        </TouchableOpacity>
+        {PRAYER_CATEGORIES.map((cat) => (
+          <TouchableOpacity
+            key={cat.id}
+            style={[styles.categoryChip, { backgroundColor: colors.surface, borderColor: colors.border }, selectedCategory === cat.id && styles.categoryChipActive]}
+            onPress={() => setSelectedCategory(selectedCategory === cat.id ? 'all' : cat.id)}
+          >
+            <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+            <Text style={[styles.categoryText, { color: colors.muted }, selectedCategory === cat.id && styles.categoryTextActive]}>
+              {cat.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.success} />
           <Text style={[styles.loadingText, { color: colors.success }]}>Loading testimonies...</Text>
         </View>
-      ) : testimonies.length === 0 ? (
+      ) : filteredTestimonies.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={[styles.emptyIcon, { backgroundColor: isDark ? colors.successLight : '#dcfce7' }]}>
             <Text style={styles.emptyEmoji}>🙏</Text>
@@ -291,7 +331,7 @@ export const AnsweredPrayersScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
-          data={testimonies}
+          data={filteredTestimonies}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
             <TestimonyCard
@@ -346,6 +386,7 @@ export const AnsweredPrayersScreen: React.FC = () => {
         />
       )}
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -417,6 +458,39 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: palette.border,
     marginHorizontal: spacing.md,
+  },
+  categoryScroll: {
+    marginBottom: spacing.md,
+    marginHorizontal: spacing.md,
+    minHeight: 44,
+    maxHeight: 44,
+  },
+  categoryContainer: {
+    gap: spacing.sm,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: 4,
+    minHeight: 32,
+  },
+  categoryChipActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  categoryEmoji: {
+    fontSize: 12,
+  },
+  categoryText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  categoryTextActive: {
+    color: '#fff',
   },
   center: {
     flex: 1,

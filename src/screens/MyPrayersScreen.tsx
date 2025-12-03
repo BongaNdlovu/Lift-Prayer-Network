@@ -42,7 +42,7 @@ type StatusFilter = 'all' | 'PENDING' | 'ACTIVE' | 'RESOLVED';
 
 export const MyPrayersScreen: React.FC = () => {
   const { user } = useAuth();
-  useTheme();
+  const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,9 +223,12 @@ export const MyPrayersScreen: React.FC = () => {
     }
   };
 
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   return (
-    <LinearGradient colors={['#fefce8', '#f4f4f5']} style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity

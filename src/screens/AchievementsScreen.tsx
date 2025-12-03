@@ -94,14 +94,12 @@ export const AchievementsScreen: React.FC = () => {
     );
   };
 
-  // Dynamic gradient colors
-  const gradientColors = isDark 
-    ? [colors.background, colors.surface] as const
-    : colors.screenGradient;
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient colors={gradientColors as any} style={styles.gradient}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
@@ -149,12 +147,15 @@ export const AchievementsScreen: React.FC = () => {
                       const achievement = ACHIEVEMENTS.find((a) => a.id === id);
                       if (!achievement) return null;
                       return (
-                        <LinearGradient
-                          colors={[colors.background, colors.surface]}
-                          style={styles.recentBadge}
+                        <View
+                          key={id}
+                          style={[
+                            styles.recentBadge,
+                            { backgroundColor: achievement.color },
+                          ]}
                         >
                           <Text style={styles.recentEmoji}>{achievement.emoji}</Text>
-                        </LinearGradient>
+                        </View>
                       );
                     })}
                   </View>
@@ -165,8 +166,8 @@ export const AchievementsScreen: React.FC = () => {
             </>
           }
         />
-      </LinearGradient>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

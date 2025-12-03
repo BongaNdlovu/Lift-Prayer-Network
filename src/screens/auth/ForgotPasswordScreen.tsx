@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
@@ -51,9 +52,16 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  // Memoize gradient colors for stability on fresh install
+  const gradientColors = useMemo(
+    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
+    [colors.gradientBoldScreen]
+  );
+
   if (emailSent) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <View style={styles.content}>
           <View style={[styles.successCard, { backgroundColor: colors.surface }]}>
             <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
@@ -82,11 +90,13 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
       </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -163,6 +173,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

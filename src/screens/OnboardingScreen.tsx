@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo, useCallback } from 'react';
 import {
   Animated,
   Dimensions,
@@ -14,6 +14,7 @@ import {
   View,
   ViewToken,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -156,7 +157,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
     }
   };
 
-  const handleQuestionNext = () => {
+  const handleQuestionNext = useCallback((forceSkip = false) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -164,8 +165,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
     const currentQuestion = questions[questionIndex];
     const currentAnswer = answers[currentQuestion.id];
     
-    // Validate answer
-    if (!currentAnswer || (Array.isArray(currentAnswer) && currentAnswer.length === 0)) {
+    // Validate answer (unless force skipping)
+    if (!forceSkip && (!currentAnswer || (Array.isArray(currentAnswer) && currentAnswer.length === 0))) {
       // Allow skipping text questions
       if (currentQuestion.type !== 'text') return;
     }
@@ -186,7 +187,13 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
     } else {
       handleComplete();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionIndex, answers]);
+
+  // Handler for skip button - forces advancement without validation
+  const handleSkipQuestion = useCallback(() => {
+    handleQuestionNext(true);
+  }, [handleQuestionNext]);
 
   const handleQuestionBack = () => {
     if (questionIndex > 0) {
@@ -286,8 +293,12 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       ? true 
       : (currentAnswer && (Array.isArray(currentAnswer) ? currentAnswer.length > 0 : true));
 
+    // Bold diagonal gradient
+    const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <View style={styles.questionHeader}>
           <TouchableOpacity onPress={handleQuestionBack} style={[styles.backButton, { backgroundColor: colors.surface }]}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -363,28 +374,36 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
               { backgroundColor: colors.accent },
               !canProceed && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
             ]}
-            onPress={handleQuestionNext}
+            onPress={() => handleQuestionNext()}
           >
             <Text style={[styles.buttonText, { color: colors.text }]}>
               {questionIndex === questions.length - 1 ? "Let's Go! ✝️" : 'Continue'}
             </Text>
           </TouchableOpacity>
           {question.type !== 'text' && !canProceed && (
-            <TouchableOpacity onPress={handleQuestionNext} style={styles.skipButton}>
+            <TouchableOpacity onPress={handleSkipQuestion} style={styles.skipButton}>
               <Text style={[styles.skipButtonText, { color: colors.muted }]}>Skip this question</Text>
             </TouchableOpacity>
           )}
         </View>
       </SafeAreaView>
+      </LinearGradient>
     );
   };
+
+  // Memoize gradient colors for performance and stability
+  const gradientColors = useMemo(
+    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
+    [colors.gradientBoldScreen]
+  );
 
   if (showQuestionnaire) {
     return renderQuestion();
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <View style={styles.skipContainer}>
         {currentIndex < slides.length - 1 && (
           <TouchableOpacity onPress={() => setShowQuestionnaire(true)}>
@@ -420,6 +439,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

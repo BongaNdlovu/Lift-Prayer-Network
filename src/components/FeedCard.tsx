@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, TouchableOpacity, Alert, Modal, Image, Animated, Share } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { GlassView } from './GlassView';
 import { palette, radius, spacing, shadows } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
 import { reportContent, blockUser, banUser, blockUserFromPosting, REPORT_REASONS, ReportReason } from '../services/moderation';
@@ -535,10 +535,11 @@ export const FeedCard: React.FC<Props> = ({
 
   return (
     <Pressable onPress={() => onPress?.(item)} style={isPinned && styles.pinnedCardWrapper}>
-      <GlassView
-        gradient={isPinned ? pinnedColors : cardColors}
+      <LinearGradient
+        colors={isPinned ? pinnedColors : cardColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={[styles.card, isUrgent && styles.cardUrgent, isPinned && styles.cardPinned]}
-        intensity={isDark ? 30 : 60}
       >
         {isPinned && (
           <View style={styles.pinnedBadge}>
@@ -799,7 +800,7 @@ export const FeedCard: React.FC<Props> = ({
             )}
           </View>
         </View>
-      </GlassView>
+      </LinearGradient>
 
       {/* Report Modal */}
       <Modal
@@ -916,9 +917,9 @@ export const FeedCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.sm,
-    padding: spacing.sm,
-    marginVertical: 3,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginVertical: spacing.sm,
     ...shadows.sm,
     borderWidth: 1,
     borderColor: palette.border,
@@ -973,9 +974,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -986,9 +987,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   avatarImage: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: palette.accent,
   },

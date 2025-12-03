@@ -65,12 +65,12 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
     copyToClipboard(allDetails, 'All details');
   };
 
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={isDark ? ['#1a1a1a', '#2d2d2d', '#1f1f1f'] : ['#fefce8', '#f5f3ff', '#fef3c7']}
-        style={styles.gradient}
-      >
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -292,8 +292,8 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
 
           <View style={{ height: 40 }} />
         </ScrollView>
-      </LinearGradient>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 

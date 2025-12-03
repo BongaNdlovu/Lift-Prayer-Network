@@ -17,7 +17,7 @@ import { Confetti } from '../../components/Confetti';
 import { queuePendingPrayer } from '../../services/offlineCache';
 import { subscribeToUserGroups } from '../../services/groups';
 import { prefetchFeedAvatars } from '../../utils/imagePrefetch';
-import { radius, spacing } from '../../theme/colors';
+import { fonts, radius, spacing } from '../../theme/colors';
 import type { FeedItem, PrayerCategory } from '../../types';
 import { PRAYER_CATEGORIES } from '../../types';
 import type { RootStackParamList } from '../../navigation/types';
@@ -315,13 +315,16 @@ export const FeedScreen: React.FC = () => {
     }
   };
 
-  // Dynamic gradient colors based on theme
-  const gradientColors = isDark 
-    ? (colors.screenGradient as unknown as [string, string, string])
-    : ['#fefce8', '#f4f4f5', '#ffffff'] as [string, string, string];
+  // Dynamic bold diagonal gradient colors based on theme
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
 
   return (
-    <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
+    <LinearGradient 
+      colors={gradientColors} 
+      start={{ x: 0, y: 0 }} 
+      end={{ x: 1, y: 1 }} 
+      style={{ flex: 1 }}
+    >
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
       <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         {offline && (
@@ -566,8 +569,8 @@ export const FeedScreen: React.FC = () => {
               updateCellsBatchingPeriod={50}
               removeClippedSubviews
               getItemLayout={(_, index) => ({
-                length: 180,
-                offset: 180 * index,
+                length: 200,
+                offset: 200 * index,
                 index,
               })}
               refreshControl={
@@ -622,10 +625,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   kicker: {
-    letterSpacing: 1.2,
+    fontFamily: fonts.bodyMedium,
     textTransform: 'uppercase',
     fontSize: 11,
     fontWeight: '600',
+    letterSpacing: 1,
   },
   headingRow: {
     flexDirection: 'row',
@@ -633,8 +637,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   heading: {
+    fontFamily: fonts.heading,
     fontSize: 28,
-    fontWeight: '900',
+    fontWeight: '700',
     letterSpacing: -0.5,
   },
   notificationBell: {
@@ -698,18 +703,18 @@ const styles = StyleSheet.create({
   },
   quickAccessBar: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   quickAccessButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.md,
-    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+    gap: 8,
   },
   quickAccessText: {
     fontSize: 12,
@@ -760,23 +765,24 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   categoryScroll: {
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
     marginHorizontal: -spacing.lg,
-    maxHeight: 32,
+    minHeight: 44,
+    maxHeight: 44,
   },
   categoryContainer: {
     paddingHorizontal: spacing.lg,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.md,
     borderWidth: 1,
-    gap: 3,
-    minHeight: 28,
+    gap: 4,
+    minHeight: 32,
   },
   categoryChipActive: {
     backgroundColor: '#eab308',

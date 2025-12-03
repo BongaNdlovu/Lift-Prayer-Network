@@ -4,11 +4,11 @@ export const lightPalette = {
   background: '#faf9f7',
   surface: '#ffffff',
   surfaceSecondary: '#f1f5f9',
-  surfaceDeep: '#f5f0e8', // New
+  surfaceDeep: '#f5f0e8',
   accent: '#eab308',
   accentDark: '#b45309',
+  accentDeep: '#92400e',
   accentLight: '#fef3c7',
-  accentDeep: '#92400e', // New
   text: '#0f172a',
   textSecondary: '#374151',
   muted: '#64748b',
@@ -19,17 +19,27 @@ export const lightPalette = {
   successLight: '#f0fdf4',
   shadow: 'rgba(0,0,0,0.08)',
 
-  // Gradient colors
+  // Gradient colors - 3 color
   gradientWarm: ['#fef3c7', '#fde68a', '#fcd34d'] as const,
   gradientSunrise: ['#fff7ed', '#fed7aa', '#fdba74'] as const,
   gradientCool: ['#f0f9ff', '#e0f2fe', '#bae6fd'] as const,
   gradientPurple: ['#faf5ff', '#f3e8ff', '#e9d5ff'] as const,
   gradientSuccess: ['#f0fdf4', '#dcfce7', '#bbf7d0'] as const,
-  gradientDeep: ['#faf9f7', '#fef3c7', '#fde68a', '#f59e0b'] as const, // New
   
   // Background gradients for screens
   screenGradient: ['#faf9f7', '#fef3c7', '#fff7ed'] as const,
   cardGradient: ['#ffffff', '#fefbf3'] as const,
+
+  // Bold diagonal gradients - dramatic aesthetic
+  gradientBoldScreen: ['#faf9f7', '#fef3c7', '#fde68a', '#f59e0b', '#d97706'] as const,
+  gradientBoldCard: ['#ffffff', '#fefbf3', '#fef3c7', '#fde68a'] as const,
+  gradientBoldAccent: ['#fcd34d', '#f59e0b', '#d97706', '#b45309'] as const,
+  gradientBoldHeader: ['#fef3c7', '#fde68a', '#fcd34d', '#f59e0b'] as const,
+  gradientBoldButton: ['#f59e0b', '#d97706', '#b45309'] as const,
+  
+  // Overlay gradients for depth
+  gradientOverlay: ['rgba(250,249,247,0.9)', 'rgba(254,243,199,0.7)', 'rgba(253,230,138,0.5)', 'rgba(245,158,11,0.3)'] as const,
+  gradientFade: ['rgba(255,255,255,1)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)'] as const,
 };
 
 // Dark theme palette
@@ -38,11 +48,11 @@ export const darkPalette = {
   background: '#0f172a',
   surface: '#1e293b',
   surfaceSecondary: '#334155',
-  surfaceDeep: '#0c1222', // New
+  surfaceDeep: '#0c1222',
   accent: '#fbbf24',
   accentDark: '#f59e0b',
+  accentDeep: '#78350f',
   accentLight: '#422006',
-  accentDeep: '#78350f', // New
   text: '#f8fafc',
   textSecondary: '#e2e8f0',
   muted: '#94a3b8',
@@ -53,17 +63,27 @@ export const darkPalette = {
   successLight: '#052e16',
   shadow: 'rgba(0,0,0,0.3)',
 
-  // Gradient colors
+  // Gradient colors - 3 color
   gradientWarm: ['#422006', '#451a03', '#431407'] as const,
   gradientSunrise: ['#1c1917', '#292524', '#44403c'] as const,
   gradientCool: ['#0c4a6e', '#075985', '#0369a1'] as const,
   gradientPurple: ['#2e1065', '#3b0764', '#4c1d95'] as const,
   gradientSuccess: ['#052e16', '#064e3b', '#065f46'] as const,
-  gradientDeep: ['#0f172a', '#1e293b', '#422006', '#78350f'] as const, // New
   
   // Background gradients for screens
   screenGradient: ['#0f172a', '#1e293b', '#1e1b4b'] as const,
   cardGradient: ['#1e293b', '#334155'] as const,
+
+  // Bold diagonal gradients - dramatic aesthetic
+  gradientBoldScreen: ['#0f172a', '#1e293b', '#422006', '#78350f', '#92400e'] as const,
+  gradientBoldCard: ['#1e293b', '#334155', '#422006', '#78350f'] as const,
+  gradientBoldAccent: ['#fbbf24', '#f59e0b', '#d97706', '#b45309'] as const,
+  gradientBoldHeader: ['#1e293b', '#422006', '#78350f', '#92400e'] as const,
+  gradientBoldButton: ['#fbbf24', '#f59e0b', '#d97706'] as const,
+  
+  // Overlay gradients for depth
+  gradientOverlay: ['rgba(15,23,42,0.95)', 'rgba(30,41,59,0.8)', 'rgba(66,32,6,0.6)', 'rgba(120,53,15,0.4)'] as const,
+  gradientFade: ['rgba(15,23,42,1)', 'rgba(15,23,42,0.8)', 'rgba(15,23,42,0)'] as const,
 };
 
 // Theme palette type
@@ -71,11 +91,11 @@ export type ThemePalette = {
   background: string;
   surface: string;
   surfaceSecondary: string;
-  surfaceDeep: string; // New
+  surfaceDeep: string;
   accent: string;
   accentDark: string;
+  accentDeep: string;
   accentLight: string;
-  accentDeep: string; // New
   text: string;
   textSecondary: string;
   muted: string;
@@ -85,14 +105,23 @@ export type ThemePalette = {
   success: string;
   successLight: string;
   shadow: string;
-  gradientWarm: readonly string[];
-  gradientSunrise: readonly string[];
-  gradientCool: readonly string[];
-  gradientPurple: readonly string[];
-  gradientSuccess: readonly string[];
-  gradientDeep: readonly string[]; // New
-  screenGradient: readonly string[];
-  cardGradient: readonly string[];
+  // 3-color gradients
+  gradientWarm: readonly [string, string, string];
+  gradientSunrise: readonly [string, string, string];
+  gradientCool: readonly [string, string, string];
+  gradientPurple: readonly [string, string, string];
+  gradientSuccess: readonly [string, string, string];
+  screenGradient: readonly [string, string, string];
+  cardGradient: readonly [string, string];
+  // Bold diagonal gradients
+  gradientBoldScreen: readonly [string, string, string, string, string];
+  gradientBoldCard: readonly [string, string, string, string];
+  gradientBoldAccent: readonly [string, string, string, string];
+  gradientBoldHeader: readonly [string, string, string, string];
+  gradientBoldButton: readonly [string, string, string];
+  // Overlay gradients
+  gradientOverlay: readonly [string, string, string, string];
+  gradientFade: readonly [string, string, string];
 };
 
 // Default export for backward compatibility (will be overridden by ThemeContext)
@@ -138,11 +167,11 @@ export const glass = {
 
 // Typography
 export const fonts = {
-  heading: 'Outfit_700Bold',
-  headingItalic: 'Outfit_700Bold', // Fallback to non-italic for now
-  body: 'Inter_400Regular',
-  bodyMedium: 'Inter_600SemiBold',
-  bodyBold: 'Inter_700Bold',
+  heading: 'PlayfairDisplay_700Bold',
+  headingItalic: 'PlayfairDisplay_700Bold_Italic',
+  body: 'Nunito_400Regular',
+  bodyMedium: 'Nunito_600SemiBold',
+  bodyBold: 'Nunito_700Bold',
 };
 
 export const typography = {

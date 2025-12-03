@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { collection, doc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
@@ -87,24 +88,32 @@ export const PinnedRequestsScreen: React.FC = () => {
     }
   };
 
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
+
   if (!isAdmin) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <Ionicons name="shield" size={32} color={colors.muted} />
         <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
       </View>
+      </LinearGradient>
     );
   }
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <ActivityIndicator color={colors.accent} />
       </View>
+      </LinearGradient>
     );
   }
 
   return (
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
     <FlatList
       data={items}
       keyExtractor={(item) => item.id}
@@ -139,6 +148,7 @@ export const PinnedRequestsScreen: React.FC = () => {
         </View>
       )}
     />
+    </LinearGradient>
   );
 };
 

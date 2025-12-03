@@ -117,6 +117,23 @@ const setupAndroidNotificationChannels = async () => {
     lightColor: '#f59e0b',
   });
 
+  // Announcements channel
+  await Notifications.setNotificationChannelAsync('announcements', {
+    name: 'Announcements',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#3b82f6',
+    sound: 'default',
+  });
+
+  // Devotions channel
+  await Notifications.setNotificationChannelAsync('devotions', {
+    name: 'Daily Devotions',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 250],
+    lightColor: '#8b5cf6',
+  });
+
   console.log('[Notifications] Android notification channels configured');
 };
 
@@ -207,6 +224,73 @@ export const sendTestNotification = async (): Promise<boolean> => {
 /**
  * Get the current push token status for debugging
  */
+/**
+ * Send a local notification for a new announcement
+ */
+export const sendAnnouncementNotification = async (
+  title: string,
+  body: string,
+  priority: 'normal' | 'important' | 'urgent' = 'normal'
+): Promise<boolean> => {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('[Notifications] Permission not granted for announcement notification');
+      return false;
+    }
+    
+    const priorityEmoji = priority === 'urgent' ? '🚨' : priority === 'important' ? '📢' : '📣';
+    
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `${priorityEmoji} ${title}`,
+        body: body.length > 100 ? body.substring(0, 100) + '...' : body,
+        data: { type: 'ANNOUNCEMENT', priority },
+        sound: 'default',
+        ...(Platform.OS === 'android' && { channelId: 'announcements' }),
+      },
+      trigger: null, // Send immediately
+    });
+    
+    console.log('[Notifications] Announcement notification sent');
+    return true;
+  } catch (error) {
+    console.error('[Notifications] Error sending announcement notification:', error);
+    return false;
+  }
+};
+
+/**
+ * Send a local notification for a new devotion
+ */
+export const sendDevotionNotification = async (
+  title: string,
+  verse: string
+): Promise<boolean> => {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      return false;
+    }
+    
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `✝️ ${title}`,
+        body: verse,
+        data: { type: 'DEVOTION' },
+        sound: 'default',
+        ...(Platform.OS === 'android' && { channelId: 'devotions' }),
+      },
+      trigger: null,
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('[Notifications] Error sending devotion notification:', error);
+    return false;
+  }
+};
+
 export const getPushTokenStatus = async (): Promise<{
   permissionStatus: string;
   expoPushToken: string | null;

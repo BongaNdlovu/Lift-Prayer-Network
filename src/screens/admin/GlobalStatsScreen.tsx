@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { doc, getDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
@@ -21,6 +22,9 @@ export const GlobalStatsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const isAdmin = hasAdminPermission(user?.email);
+
+  // Bold diagonal gradient
+  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
 
   useEffect(() => {
     const loadStats = async () => {
@@ -48,23 +52,28 @@ export const GlobalStatsScreen: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <Ionicons name="shield" size={32} color={colors.muted} />
         <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
       </View>
+      </LinearGradient>
     );
   }
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <ActivityIndicator color={colors.accent} />
       </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <Text style={[styles.title, { color: colors.text }]}>Global Prayer Activity</Text>
         <View style={styles.row}>
@@ -84,6 +93,7 @@ export const GlobalStatsScreen: React.FC = () => {
         ) : null}
       </View>
     </View>
+    </LinearGradient>
   );
 };
 
