@@ -20,7 +20,7 @@ import { db, firebaseEnabled, storage } from './firebase';
 import type { PrayerGroup } from '../types';
 import { checkAndUnlockAchievements } from './achievements';
 import { classifyError, type AppError } from '../types/errors';
-import { checkRateLimit } from '../utils/security';
+import { checkActionRateLimit, formatRateLimitError } from '../utils/security';
 
 export type GroupResult<T> = 
   | { success: true; data: T }
@@ -207,9 +207,9 @@ export const joinGroup = async (groupId: string, userId: string): Promise<JoinGr
   }
 
   // Rate limit group joins (5 per hour)
-  const allowed = checkRateLimit(`group_join_${userId}`, 5, 60 * 60 * 1000);
-  if (!allowed) {
-    return { success: false, error: 'Too many join attempts. Please try again later.' };
+  const rateLimit = checkActionRateLimit(userId, 'groupJoins');
+  if (!rateLimit.allowed) {
+    return { success: false, error: formatRateLimitError('group join attempts', rateLimit.resetInSeconds) };
   }
 
   try {

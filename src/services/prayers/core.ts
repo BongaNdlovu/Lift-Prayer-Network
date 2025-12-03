@@ -13,6 +13,7 @@ import { db, firebaseEnabled } from '../firebase';
 import { updateStreak } from '../stats';
 import { checkAndUnlockAchievements } from '../achievements';
 import { LogPrayerResult, RequestUpdateData, PRAYERS_FOR_ACTIVE } from './types';
+import { checkActionRateLimit, formatRateLimitError } from '../../utils/security';
 
 /**
  * Check if user has already prayed on a specific request.
@@ -60,6 +61,16 @@ export const logPrayer = async (
   }
   if (!targetRequestId || typeof targetRequestId !== 'string') {
     return { success: false, error: 'Invalid request ID' };
+  }
+
+  // Client-side rate limiting for prayers
+  const rateLimit = checkActionRateLimit(actorUid, 'prayers');
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      error: formatRateLimitError('prayers', rateLimit.resetInSeconds),
+      rateLimited: true,
+    };
   }
 
   // Prevent users from praying on their own requests
@@ -221,13 +232,23 @@ export const logReaction = async (
   targetId: string,
   targetType: 'REQUEST' | 'TESTIMONY',
   reactionType: ReactionType
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<{ success: boolean; error?: string; rateLimited?: boolean }> => {
   if (!firebaseEnabled || !db) {
     return { success: false, error: 'Firebase not enabled' };
   }
 
   if (!actorUid || !targetId) {
     return { success: false, error: 'Invalid parameters' };
+  }
+
+  // Client-side rate limiting for reactions
+  const rateLimit = checkActionRateLimit(actorUid, 'reactions');
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      error: formatRateLimitError('reactions', rateLimit.resetInSeconds),
+      rateLimited: true,
+    };
   }
 
   // Map reaction type to field name
@@ -290,13 +311,23 @@ export const likeTestimony = async (
   actorUid: string,
   testimonyId: string,
   testimonyOwnerUid?: string,
-): Promise<{ success: boolean; error?: string; liked?: boolean; isOwnTestimony?: boolean }> => {
+): Promise<{ success: boolean; error?: string; liked?: boolean; isOwnTestimony?: boolean; rateLimited?: boolean }> => {
   if (!firebaseEnabled || !db) {
     return { success: false, error: 'Firebase not initialized' };
   }
 
   if (!actorUid || !testimonyId) {
     return { success: false, error: 'Invalid parameters' };
+  }
+
+  // Client-side rate limiting for reactions (amen is a type of reaction)
+  const rateLimit = checkActionRateLimit(actorUid, 'reactions');
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      error: formatRateLimitError('reactions', rateLimit.resetInSeconds),
+      rateLimited: true,
+    };
   }
 
   const testimonyRef = doc(db, 'testimonies', testimonyId);

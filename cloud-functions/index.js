@@ -466,6 +466,148 @@ exports.cleanupDeadTokens = onSchedule('0 3 * * *', async (event) => {
   }
 });
 
+// ============================================================================
+// Rate Limit Cleanup Configuration
+// ============================================================================
+const RATE_LIMIT_CLEANUP_CONFIG = {
+  retentionDays: 30,           // Delete rate limit docs older than 30 days
+  batchSize: 500,              // Max docs to delete per batch
+  maxBatchesPerRun: 10,        // Max batches per execution (5000 docs total)
+  dryRun: false,               // Set to true to log without deleting
+  alertThreshold: 10000,       // Warn if more than this many docs would be deleted
+};
+
+/**
+ * Clean up old rate limit documents to reduce Firestore bloat
+ * Runs daily at 2 AM
+ * 
+ * Collections cleaned:
+ * - rateLimits: User action rate tracking (e.g., userId_prayers)
+ * - rateLimitViolations: Logged violations for monitoring
+ */
+exports.cleanupRateLimits = onSchedule('0 2 * * *', async (event) => {
+  const config = RATE_LIMIT_CLEANUP_CONFIG;
+  const cutoffDate = new Date(Date.now() - config.retentionDays * 24 * 60 * 60 * 1000);
+  const cutoffTimestamp = admin.firestore.Timestamp.fromDate(cutoffDate);
+  
+  console.log(`[RateLimitCleanup] Starting cleanup (retention: ${config.retentionDays}d, dryRun: ${config.dryRun})`);
+  console.log(`[RateLimitCleanup] Cutoff date: ${cutoffDate.toISOString()}`);
+  
+  let totalDeleted = 0;
+  let totalSkipped = 0;
+  const errors = [];
+  
+  try {
+    // 1. Clean up rateLimits collection
+    const rateLimitsResult = await cleanupCollection(
+      'rateLimits',
+      'lastAction',
+      cutoffTimestamp,
+      config
+    );
+    totalDeleted += rateLimitsResult.deleted;
+    totalSkipped += rateLimitsResult.skipped;
+    if (rateLimitsResult.error) errors.push(rateLimitsResult.error);
+    
+    // 2. Clean up rateLimitViolations collection
+    const violationsResult = await cleanupCollection(
+      'rateLimitViolations',
+      'timestamp',
+      cutoffTimestamp,
+      config
+    );
+    totalDeleted += violationsResult.deleted;
+    totalSkipped += violationsResult.skipped;
+    if (violationsResult.error) errors.push(violationsResult.error);
+    
+    // Alert if unusually high deletion count
+    if (totalDeleted > config.alertThreshold) {
+      console.warn(`[RateLimitCleanup] ALERT: High deletion count (${totalDeleted} docs). Review for anomalies.`);
+    }
+    
+    console.log(`[RateLimitCleanup] Complete: deleted=${totalDeleted}, skipped=${totalSkipped}, errors=${errors.length}`);
+    
+    // Log cleanup stats for monitoring
+    await db.collection('cleanupLogs').add({
+      type: 'rateLimits',
+      deletedCount: totalDeleted,
+      skippedCount: totalSkipped,
+      errors: errors.length > 0 ? errors : null,
+      dryRun: config.dryRun,
+      cutoffDate: cutoffTimestamp,
+      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+  } catch (error) {
+    console.error('[RateLimitCleanup] Fatal error:', error);
+    
+    // Log error for monitoring
+    await db.collection('cleanupLogs').add({
+      type: 'rateLimits',
+      error: error.message,
+      dryRun: config.dryRun,
+      cutoffDate: cutoffTimestamp,
+      failedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+});
+
+/**
+ * Helper function to clean up a collection with batching and error handling
+ */
+async function cleanupCollection(collectionName, timestampField, cutoffTimestamp, config) {
+  let deleted = 0;
+  let skipped = 0;
+  let batchCount = 0;
+  let error = null;
+  
+  try {
+    while (batchCount < config.maxBatchesPerRun) {
+      const snapshot = await db.collection(collectionName)
+        .where(timestampField, '<', cutoffTimestamp)
+        .limit(config.batchSize)
+        .get();
+      
+      if (snapshot.empty) {
+        console.log(`[RateLimitCleanup] ${collectionName}: No more docs to clean`);
+        break;
+      }
+      
+      if (config.dryRun) {
+        console.log(`[RateLimitCleanup] DRY RUN: Would delete ${snapshot.size} docs from ${collectionName}`);
+        skipped += snapshot.size;
+        break; // Only check first batch in dry run
+      }
+      
+      const batch = db.batch();
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      
+      await batch.commit();
+      deleted += snapshot.size;
+      batchCount++;
+      
+      console.log(`[RateLimitCleanup] ${collectionName}: Deleted batch ${batchCount} (${snapshot.size} docs)`);
+      
+      // Small delay between batches to avoid overwhelming Firestore
+      if (snapshot.size === config.batchSize) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    if (batchCount >= config.maxBatchesPerRun) {
+      console.warn(`[RateLimitCleanup] ${collectionName}: Hit max batches limit. More docs may remain.`);
+    }
+    
+  } catch (err) {
+    console.error(`[RateLimitCleanup] Error cleaning ${collectionName}:`, err);
+    error = `${collectionName}: ${err.message}`;
+  }
+  
+  return { deleted, skipped, error };
+}
+
 /**
  * Clean up stale offline queues from users who haven't synced
  * Runs daily at 4 AM

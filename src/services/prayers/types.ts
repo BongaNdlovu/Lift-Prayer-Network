@@ -16,6 +16,7 @@ export type ServiceResult<T = void> = {
 export type LogPrayerResult = ServiceResult & {
   alreadyPrayed?: boolean;
   isSelfPrayer?: boolean;
+  rateLimited?: boolean;
 };
 
 /** Data for editing a prayer request */

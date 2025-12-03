@@ -17,7 +17,12 @@ import {
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
 import type { Comment } from '../types';
-import { validateContent, checkDailyLimit } from '../utils/security';
+import { 
+  validateContent, 
+  checkDailyLimit, 
+  checkActionRateLimit, 
+  formatRateLimitError 
+} from '../utils/security';
 
 // Daily comment limit per user
 const DAILY_COMMENT_LIMIT = 10;
@@ -54,6 +59,12 @@ export const addComment = async (
   content: string
 ): Promise<string | null> => {
   if (!firebaseEnabled || !db) return null;
+
+  // Client-side rate limiting for comments (per-hour check)
+  const rateLimit = checkActionRateLimit(authorUid, 'comments');
+  if (!rateLimit.allowed) {
+    throw new Error(formatRateLimitError('comments', rateLimit.resetInSeconds));
+  }
 
   // Check daily limit (client-side)
   const dailyCheck = checkDailyLimit(`comments_${authorUid}`, DAILY_COMMENT_LIMIT);

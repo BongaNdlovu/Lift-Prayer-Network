@@ -9,7 +9,7 @@ import {
   addDoc,
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
-import { checkRateLimit } from '../utils/security';
+import { checkActionRateLimit, formatRateLimitError } from '../utils/security';
 
 export const fetchRequestOrTestimony = async (type: 'REQUEST' | 'TESTIMONY', id: string) => {
   if (!firebaseEnabled || !db) return null;
@@ -59,8 +59,9 @@ export const flagContent = async (
     throw new Error('Authentication required to report content');
   }
 
-  if (!checkRateLimit(`report_${actorUid}`, 5, 60000)) {
-    throw new Error('Too many reports. Please wait a minute before reporting again.');
+  const rateLimit = checkActionRateLimit(actorUid, 'reports');
+  if (!rateLimit.allowed) {
+    throw new Error(formatRateLimitError('reports', rateLimit.resetInSeconds));
   }
   await addDoc(collection(db, 'reports'), {
     actorUid,

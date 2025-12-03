@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db, firebaseEnabled } from './firebase';
-import { checkRateLimit } from '../utils/security';
+import { checkActionRateLimit, formatRateLimitError } from '../utils/security';
 
 const BLOCKED_USERS_KEY = '@lift_blocked_users';
 
@@ -55,8 +55,9 @@ export const reportContent = async (
   }
 
   // Rate limit: max 5 reports per minute per user
-  if (!checkRateLimit(`report_${reporterUid}`, 5, 60000)) {
-    return { success: false, error: 'Too many reports. Please wait a minute before reporting again.' };
+  const rateLimit = checkActionRateLimit(reporterUid, 'reports');
+  if (!rateLimit.allowed) {
+    return { success: false, error: formatRateLimitError('reports', rateLimit.resetInSeconds) };
   }
 
   try {

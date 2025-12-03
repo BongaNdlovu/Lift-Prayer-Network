@@ -316,25 +316,82 @@ export const validatePassword = (password: string): ValidationResult => {
  */
 const rateLimitCache: Map<string, { count: number; resetTime: number }> = new Map();
 
-export const checkRateLimit = (
+export type RateLimitResult = {
+  allowed: boolean;
+  remaining: number;
+  resetInMs: number;
+  resetInSeconds: number;
+};
+
+/**
+ * Check rate limit with detailed result
+ */
+export const checkRateLimitWithInfo = (
   key: string,
   maxRequests: number = 10,
   windowMs: number = 60000 // 1 minute
-): boolean => {
+): RateLimitResult => {
   const now = Date.now();
   const cached = rateLimitCache.get(key);
 
   if (!cached || now > cached.resetTime) {
     rateLimitCache.set(key, { count: 1, resetTime: now + windowMs });
-    return true;
+    return {
+      allowed: true,
+      remaining: maxRequests - 1,
+      resetInMs: windowMs,
+      resetInSeconds: Math.ceil(windowMs / 1000),
+    };
   }
 
+  const resetInMs = Math.max(0, cached.resetTime - now);
+  const resetInSeconds = Math.ceil(resetInMs / 1000);
+
   if (cached.count >= maxRequests) {
-    return false;
+    return {
+      allowed: false,
+      remaining: 0,
+      resetInMs,
+      resetInSeconds,
+    };
   }
 
   cached.count++;
-  return true;
+  return {
+    allowed: true,
+    remaining: maxRequests - cached.count,
+    resetInMs,
+    resetInSeconds,
+  };
+};
+
+/**
+ * Simple rate limit check (backward compatible)
+ */
+export const checkRateLimit = (
+  key: string,
+  maxRequests: number = 10,
+  windowMs: number = 60000 // 1 minute
+): boolean => {
+  return checkRateLimitWithInfo(key, maxRequests, windowMs).allowed;
+};
+
+/**
+ * Reset rate limit for a specific key (useful after successful cooldown)
+ */
+export const resetRateLimit = (key: string): void => {
+  rateLimitCache.delete(key);
+};
+
+/**
+ * Get remaining time until rate limit resets
+ */
+export const getRateLimitCooldown = (key: string): number => {
+  const cached = rateLimitCache.get(key);
+  if (!cached) return 0;
+  
+  const now = Date.now();
+  return Math.max(0, cached.resetTime - now);
 };
 
 /**
@@ -375,6 +432,82 @@ export const CONTENT_LIMITS = {
   COMMENTS_PER_DAY: 10,  // Limited to 10 comments per day
   PRAYERS_PER_MINUTE: 10,
   PRAYERS_PER_HOUR: 100,
+};
+
+/**
+ * Rate limit configurations for high-frequency actions
+ * Matches server-side RATE_LIMITS in cloud-functions/index.js
+ */
+export const RATE_LIMIT_CONFIG = {
+  prayers: { 
+    maxPerMinute: 10, 
+    maxPerHour: 100,
+    windowMs: 60 * 1000, // 1 minute window for quick check
+  },
+  requests: { 
+    maxPerHour: 10, 
+    maxPerDay: 30,
+    windowMs: 60 * 60 * 1000, // 1 hour window
+  },
+  testimonies: { 
+    maxPerHour: 10, 
+    maxPerDay: 20,
+    windowMs: 60 * 60 * 1000,
+  },
+  comments: { 
+    maxPerHour: 20, 
+    maxPerDay: 10,
+    windowMs: 60 * 60 * 1000,
+  },
+  groupJoins: { 
+    maxPerHour: 5, 
+    maxPerDay: 10,
+    windowMs: 60 * 60 * 1000,
+  },
+  reports: { 
+    maxPerMinute: 5,
+    maxPerHour: 15,
+    windowMs: 60 * 1000,
+  },
+  reactions: {
+    maxPerMinute: 30,
+    windowMs: 60 * 1000,
+  },
+} as const;
+
+export type RateLimitAction = keyof typeof RATE_LIMIT_CONFIG;
+
+/**
+ * Check rate limit for a specific action type
+ * Returns detailed info about the rate limit status
+ */
+export const checkActionRateLimit = (
+  userId: string,
+  action: RateLimitAction
+): RateLimitResult => {
+  const config = RATE_LIMIT_CONFIG[action];
+  const key = `${action}_${userId}`;
+  
+  // Use the most restrictive limit (usually per-minute or per-hour)
+  const maxRequests = 'maxPerMinute' in config 
+    ? config.maxPerMinute 
+    : config.maxPerHour;
+  
+  return checkRateLimitWithInfo(key, maxRequests, config.windowMs);
+};
+
+/**
+ * Format rate limit error message for user display
+ */
+export const formatRateLimitError = (
+  action: string,
+  resetInSeconds: number
+): string => {
+  if (resetInSeconds <= 60) {
+    return `Too many ${action}. Please wait ${resetInSeconds} seconds.`;
+  }
+  const minutes = Math.ceil(resetInSeconds / 60);
+  return `Too many ${action}. Please wait ${minutes} minute${minutes > 1 ? 's' : ''}.`;
 };
 
 /**
