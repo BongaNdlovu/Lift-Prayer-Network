@@ -244,6 +244,34 @@ const helpSections: HelpSection[] = [
     ],
   },
   {
+    id: 'permissions',
+    icon: 'key-outline',
+    iconColor: '#0ea5e9',
+    iconBg: '#e0f2fe',
+    title: 'App Permissions',
+    content: [
+      {
+        title: 'Push Notifications',
+        description: 'Allows Lift to send you notifications when someone prays for you, when your prayers are answered, or when there\'s important community activity.',
+        tip: 'You can enable/disable notifications in Profile → Notification Settings at any time.',
+      },
+      {
+        title: 'Haptic Feedback (Vibration)',
+        description: 'Provides gentle vibrations when you interact with the app, like when you tap buttons or pray for someone. This creates a more tactile, engaging experience.',
+        tip: 'This permission is optional and can be disabled in your device settings.',
+      },
+      {
+        title: 'Background Refresh',
+        description: 'Keeps your prayer reminders and notifications working even when the app is closed. This ensures you never miss an important prayer update.',
+        tip: 'Disabling this may delay notifications until you open the app.',
+      },
+      {
+        title: 'Managing Permissions',
+        description: 'You can change app permissions anytime in your device Settings → Apps → Lift. We only request permissions that enhance your experience.',
+      },
+    ],
+  },
+  {
     id: 'privacy',
     icon: 'shield-checkmark-outline',
     iconColor: '#64748b',

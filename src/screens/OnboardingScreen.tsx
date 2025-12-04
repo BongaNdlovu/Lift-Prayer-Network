@@ -60,6 +60,42 @@ const getSlides = (colors: any): OnboardingSlide[] => [
     description: 'When prayers are answered, share your testimony and inspire others.',
     color: colors.successLight,
   },
+  {
+    id: '4',
+    emoji: '🔔',
+    title: 'Stay Connected',
+    description: 'We\'ll ask for a few permissions to keep you updated on prayers and community activity.',
+    color: colors.sky100,
+  },
+];
+
+// Permission info for the permissions screen
+type PermissionInfo = {
+  icon: string;
+  title: string;
+  description: string;
+  required: boolean;
+};
+
+const PERMISSIONS_INFO: PermissionInfo[] = [
+  {
+    icon: 'notifications-outline',
+    title: 'Push Notifications',
+    description: 'Get notified when someone prays for you, answers your request, or when there\'s community activity.',
+    required: false,
+  },
+  {
+    icon: 'phone-portrait-outline',
+    title: 'Haptic Feedback',
+    description: 'Feel gentle vibrations when you interact with the app for a more tactile experience.',
+    required: false,
+  },
+  {
+    icon: 'refresh-outline',
+    title: 'Background Refresh',
+    description: 'Keep your prayer reminders and notifications working even when the app is closed.',
+    required: false,
+  },
 ];
 
 type QuestionOption = {
@@ -250,15 +286,60 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
     });
   };
 
-  const renderSlide = ({ item }: { item: OnboardingSlide }) => (
-    <View style={[styles.slide, { width }]}>
-      <View style={[styles.emojiContainer, { backgroundColor: item.color }]}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
+  const renderSlide = ({ item }: { item: OnboardingSlide }) => {
+    // Special permissions slide (slide 4)
+    if (item.id === '4') {
+      return (
+        <View style={[styles.slide, { width }]}>
+          <View style={[styles.emojiContainer, { backgroundColor: item.color }]}>
+            <Text style={styles.emoji}>{item.emoji}</Text>
+          </View>
+          <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[styles.description, { color: colors.muted, marginBottom: spacing.lg }]}>{item.description}</Text>
+          
+          {/* Permission cards */}
+          <View style={styles.permissionsContainer}>
+            {PERMISSIONS_INFO.map((permission, index) => (
+              <View 
+                key={index} 
+                style={[styles.permissionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              >
+                <View style={[styles.permissionIconContainer, { backgroundColor: colors.accentLight }]}>
+                  <Ionicons name={permission.icon as any} size={20} color={colors.accent} />
+                </View>
+                <View style={styles.permissionTextContainer}>
+                  <View style={styles.permissionTitleRow}>
+                    <Text style={[styles.permissionTitle, { color: colors.text }]}>{permission.title}</Text>
+                    <View style={[styles.optionalBadge, { backgroundColor: colors.stone200 }]}>
+                      <Text style={[styles.optionalBadgeText, { color: colors.stone600 }]}>Optional</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.permissionDescription, { color: colors.muted }]} numberOfLines={2}>
+                    {permission.description}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          
+          <Text style={[styles.permissionNote, { color: colors.muted }]}>
+            You can change these anytime in Settings
+          </Text>
+        </View>
+      );
+    }
+
+    // Regular slides
+    return (
+      <View style={[styles.slide, { width }]}>
+        <View style={[styles.emojiContainer, { backgroundColor: item.color }]}>
+          <Text style={styles.emoji}>{item.emoji}</Text>
+        </View>
+        <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+        <Text style={[styles.description, { color: colors.muted }]}>{item.description}</Text>
       </View>
-      <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
-      <Text style={[styles.description, { color: colors.muted }]}>{item.description}</Text>
-    </View>
-  );
+    );
+  };
 
   const renderDots = () => (
     <View style={styles.dotsContainer}>
@@ -636,5 +717,61 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.sm,
     fontWeight: '600',
+  },
+  // Permission styles
+  permissionsContainer: {
+    width: '100%',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  permissionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+  },
+  permissionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permissionTextContainer: {
+    flex: 1,
+  },
+  permissionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: 2,
+  },
+  permissionTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.sm,
+    fontWeight: '700',
+  },
+  optionalBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  optionalBadgeText: {
+    fontFamily: fonts.body,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  permissionDescription: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    lineHeight: 16,
+  },
+  permissionNote: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    marginTop: spacing.lg,
+    textAlign: 'center',
   },
 });
