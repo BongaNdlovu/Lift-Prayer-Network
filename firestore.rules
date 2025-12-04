@@ -251,5 +251,30 @@ service cloud.firestore {
       // No updates needed - just create/delete
       allow update: if false;
     }
+
+    // Study Guides - Sabbath School quarterly lessons
+    // Readable by all signed-in users, admin-only write
+    match /studyGuides/{guideId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+      
+      // Lessons within study guides
+      match /lessons/{lessonId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    // User Study Stats - streak, completion, bookmarks
+    // Users can read/write their own stats
+    match /userStudyStats/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // User Progress - lesson completion tracking
+    // Users can read/write their own progress
+    match /userProgress/{userId}/{document=**} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
   }
 }

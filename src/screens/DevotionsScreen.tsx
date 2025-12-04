@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Platform,
   SafeAreaView,
@@ -10,6 +10,9 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  Alert,
+  Share,
+  ActionSheetIOS,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +22,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { radius, spacing, fonts } from '../theme/colors';
 import { CinematicBackground } from '../components/CinematicBackground';
 import { GlassIconButton } from '../components/GlassCard';
+import HapticPatterns from '../utils/haptics';
 import {
   StudyGuide,
   UserStats,
@@ -43,6 +47,10 @@ export const DevotionsScreen: React.FC = () => {
   const [stats, setStats] = useState<UserStats>(MOCK_USER_STATS);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabOption>('Current');
+  
+  // Local state for likes and bookmarks (persisted in stats.savedLessons for bookmarks)
+  const [likedGuides, setLikedGuides] = useState<Set<string>>(new Set());
+  const [bookmarkedGuides, setBookmarkedGuides] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Subscribe to study guides
@@ -53,7 +61,11 @@ export const DevotionsScreen: React.FC = () => {
 
     // Get user stats
     if (user?.uid) {
-      getUserStats(user.uid).then(setStats);
+      getUserStats(user.uid).then((userStats) => {
+        setStats(userStats);
+        // Initialize bookmarked guides from saved lessons
+        setBookmarkedGuides(new Set(userStats.savedLessons || []));
+      });
     }
 
     return unsubscribe;
@@ -63,11 +75,95 @@ export const DevotionsScreen: React.FC = () => {
     navigation.navigate('GuideDetails', { guideId: guide.id });
   };
 
+  // Handle like toggle
+  const handleLike = useCallback((guideId: string) => {
+    HapticPatterns.buttonPress();
+    setLikedGuides(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(guideId)) {
+        newSet.delete(guideId);
+      } else {
+        newSet.add(guideId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Handle bookmark toggle
+  const handleBookmark = useCallback((guideId: string) => {
+    HapticPatterns.buttonPress();
+    setBookmarkedGuides(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(guideId)) {
+        newSet.delete(guideId);
+      } else {
+        newSet.add(guideId);
+      }
+      return newSet;
+    });
+    // Update stats for saved count display
+    setStats(prev => ({
+      ...prev,
+      savedLessons: bookmarkedGuides.has(guideId)
+        ? prev.savedLessons.filter(id => id !== guideId)
+        : [...prev.savedLessons, guideId],
+    }));
+  }, [bookmarkedGuides]);
+
+  // Handle more menu
+  const handleMoreMenu = useCallback((guide: StudyGuide) => {
+    HapticPatterns.buttonPress();
+    
+    const options = ['Share', 'View Details', 'Cancel'];
+    const cancelButtonIndex = 2;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+          title: guide.title,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            handleShare(guide);
+          } else if (buttonIndex === 1) {
+            handleSelectGuide(guide);
+          }
+        }
+      );
+    } else {
+      // Android fallback
+      Alert.alert(
+        guide.title,
+        'Choose an action',
+        [
+          { text: 'Share', onPress: () => handleShare(guide) },
+          { text: 'View Details', onPress: () => handleSelectGuide(guide) },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
+  }, []);
+
+  // Handle share
+  const handleShare = async (guide: StudyGuide) => {
+    try {
+      await Share.share({
+        title: guide.title,
+        message: `📖 ${guide.title}\n\n${guide.description}\n\nStudy with me on Lift!`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   // Filter guides based on active tab
   const filteredGuides = guides.filter(guide => {
     if (activeTab === 'Current') return guide.isActive;
     if (activeTab === 'Archive') return !guide.isActive;
-    return true; // Saved - show all for now
+    if (activeTab === 'Saved') return bookmarkedGuides.has(guide.id);
+    return true;
   });
 
   return (
@@ -176,8 +272,11 @@ export const DevotionsScreen: React.FC = () => {
                         <Text style={[styles.dateRange, { color: colors.stone400 }]}>{guide.dateRange}</Text>
                       </View>
                     </View>
-                    <TouchableOpacity style={styles.moreButton}>
-                      <Ionicons name="ellipsis-horizontal" size={18} color={colors.stone300} />
+                    <TouchableOpacity 
+                      style={styles.moreButton}
+                      onPress={() => handleMoreMenu(guide)}
+                    >
+                      <Ionicons name="ellipsis-horizontal" size={18} color={colors.stone400} />
                     </TouchableOpacity>
                   </View>
 
@@ -216,14 +315,28 @@ export const DevotionsScreen: React.FC = () => {
                       <Text style={[styles.readButtonText, { color: colors.amber100 }]}>Read</Text>
                     </TouchableOpacity>
                     <View style={styles.socialActions}>
-                      <TouchableOpacity style={styles.socialButton}>
-                        <Ionicons name="heart-outline" size={20} color={colors.stone400} />
-                        <Text style={[styles.socialCount, { color: colors.stone400 }]}>
-                          {Math.floor(Math.random() * 5) + 1}k
+                      <TouchableOpacity 
+                        style={styles.socialButton}
+                        onPress={() => handleLike(guide.id)}
+                      >
+                        <Ionicons 
+                          name={likedGuides.has(guide.id) ? "heart" : "heart-outline"} 
+                          size={20} 
+                          color={likedGuides.has(guide.id) ? colors.rose500 : colors.stone400} 
+                        />
+                        <Text style={[styles.socialCount, { color: likedGuides.has(guide.id) ? colors.rose500 : colors.stone400 }]}>
+                          {likedGuides.has(guide.id) ? '4.6k' : '4.5k'}
                         </Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.socialButton}>
-                        <Ionicons name="bookmark-outline" size={20} color={colors.stone400} />
+                      <TouchableOpacity 
+                        style={styles.socialButton}
+                        onPress={() => handleBookmark(guide.id)}
+                      >
+                        <Ionicons 
+                          name={bookmarkedGuides.has(guide.id) ? "bookmark" : "bookmark-outline"} 
+                          size={20} 
+                          color={bookmarkedGuides.has(guide.id) ? colors.amber500 : colors.stone400} 
+                        />
                       </TouchableOpacity>
                     </View>
                   </View>
