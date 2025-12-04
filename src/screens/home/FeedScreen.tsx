@@ -424,15 +424,12 @@ export const FeedScreen: React.FC = () => {
               <Text style={[styles.quickAccessText, { color: colors.stone700 }]}>Announcements</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.quickAccessButton, styles.quickAccessLocked, { backgroundColor: colors.glassWhiteLight, borderColor: colors.glassBorderLight }]}
-              activeOpacity={1}
-              onPress={() => {}}
+              style={[styles.quickAccessButton, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}
+              onPress={() => navigation.navigate('Devotions')}
+              activeOpacity={0.7}
             >
-              <Ionicons name="book-outline" size={18} color={colors.stone400} />
-              <Text style={[styles.quickAccessText, { color: colors.stone400 }]}>Devotions</Text>
-              <View style={[styles.comingSoonBadge, { backgroundColor: colors.amber100 }]}>
-                <Text style={[styles.comingSoonText, { color: colors.amber700 }]}>Soon</Text>
-              </View>
+              <Ionicons name="book-outline" size={18} color={colors.amber600} />
+              <Text style={[styles.quickAccessText, { color: colors.stone700 }]}>Devotions</Text>
             </TouchableOpacity>
           </View>
 

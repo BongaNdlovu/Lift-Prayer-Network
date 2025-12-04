@@ -7,455 +7,231 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
-  TextInput,
-  Modal,
+  Image,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { hasAdminPermission } from '../config/admins';
-import { radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { radius, spacing, fonts } from '../theme/colors';
+import { CinematicBackground } from '../components/CinematicBackground';
 import { GlassIconButton } from '../components/GlassCard';
 import {
-  Devotion,
-  subscribeToDevotions,
-  createDevotion,
-  updateDevotion,
-  deleteDevotion,
-} from '../services/devotions';
+  StudyGuide,
+  UserStats,
+  subscribeToStudyGuides,
+  getUserStats,
+  MOCK_USER_STATS,
+} from '../services/studyGuides';
+import { RootStackParamList } from '../navigation/types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// Tab options
+type TabOption = 'Current' | 'Archive' | 'Saved';
 
 export const DevotionsScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
   const { colors } = useTheme();
   
-  const [devotions, setDevotions] = useState<Devotion[]>([]);
+  const [guides, setGuides] = useState<StudyGuide[]>([]);
+  const [stats, setStats] = useState<UserStats>(MOCK_USER_STATS);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingDevotion, setEditingDevotion] = useState<Devotion | null>(null);
-  const [selectedDevotion, setSelectedDevotion] = useState<Devotion | null>(null);
-  
-  // Form state
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [bibleVerse, setBibleVerse] = useState('');
-  const [bibleReference, setBibleReference] = useState('');
-  const [reflection, setReflection] = useState('');
-  const [prayer, setPrayer] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const isAdmin = hasAdminPermission(user?.email);
+  const [activeTab, setActiveTab] = useState<TabOption>('Current');
 
   useEffect(() => {
-    const unsubscribe = subscribeToDevotions((data) => {
-      setDevotions(data);
+    // Subscribe to study guides
+    const unsubscribe = subscribeToStudyGuides((data) => {
+      setGuides(data);
       setLoading(false);
     });
+
+    // Get user stats
+    if (user?.uid) {
+      getUserStats(user.uid).then(setStats);
+    }
+
     return unsubscribe;
-  }, []);
+  }, [user?.uid]);
 
-  const resetForm = () => {
-    setTitle('');
-    setContent('');
-    setBibleVerse('');
-    setBibleReference('');
-    setReflection('');
-    setPrayer('');
-    setEditingDevotion(null);
+  const handleSelectGuide = (guide: StudyGuide) => {
+    navigation.navigate('GuideDetails', { guideId: guide.id });
   };
 
-  const handleOpenCreate = () => {
-    resetForm();
-    setShowCreateModal(true);
-  };
-
-  const handleOpenEdit = (devotion: Devotion) => {
-    setTitle(devotion.title);
-    setContent(devotion.content);
-    setBibleVerse(devotion.bibleVerse);
-    setBibleReference(devotion.bibleReference);
-    setReflection(devotion.reflection || '');
-    setPrayer(devotion.prayer || '');
-    setEditingDevotion(devotion);
-    setShowCreateModal(true);
-  };
-
-  const handleSubmit = async () => {
-    if (!title.trim() || !content.trim() || !bibleVerse.trim() || !bibleReference.trim()) {
-      Alert.alert('Missing Fields', 'Please fill in title, content, Bible verse, and reference.');
-      return;
-    }
-    if (!user) return;
-
-    setSubmitting(true);
-    try {
-      if (editingDevotion) {
-        const result = await updateDevotion(editingDevotion.id, {
-          title,
-          content,
-          bibleVerse,
-          bibleReference,
-          reflection: reflection || undefined,
-          prayer: prayer || undefined,
-        });
-        if (result.success) {
-          Alert.alert('Success', 'Devotion updated.');
-          setShowCreateModal(false);
-          resetForm();
-        } else {
-          Alert.alert('Error', result.error || 'Could not update devotion.');
-        }
-      } else {
-        const result = await createDevotion(user.uid, user.displayName || 'Admin', {
-          title,
-          content,
-          bibleVerse,
-          bibleReference,
-          reflection: reflection || undefined,
-          prayer: prayer || undefined,
-        });
-        if (result.success) {
-          Alert.alert('Success', 'Devotion created.');
-          setShowCreateModal(false);
-          resetForm();
-        } else {
-          Alert.alert('Error', result.error || 'Could not create devotion.');
-        }
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDelete = (devotion: Devotion) => {
-    Alert.alert(
-      'Delete Devotion',
-      `Are you sure you want to delete "${devotion.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await deleteDevotion(devotion.id);
-            if (!result.success) {
-              Alert.alert('Error', result.error || 'Could not delete devotion.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long',
-      month: 'long', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  // Detail view for a selected devotion
-  if (selectedDevotion) {
-    return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.headerSection}>
-            <GlassIconButton onPress={() => setSelectedDevotion(null)}>
-              <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-            </GlassIconButton>
-            <View style={styles.headerCenter}>
-              <Text style={[styles.kicker, { color: colors.stone500 }]}>DAILY</Text>
-              <Text style={styles.heading}>
-                Devotion<Text style={styles.headingDot}>.</Text>
-              </Text>
-            </View>
-            {isAdmin ? (
-              <GlassIconButton onPress={() => handleOpenEdit(selectedDevotion)}>
-                <Ionicons name="create-outline" size={22} color={colors.stone700} />
-              </GlassIconButton>
-            ) : (
-              <View style={{ width: 44 }} />
-            )}
-          </View>
-          <RoundedPage style={styles.mainContent}>
-
-        <ScrollView style={styles.detailContent} contentContainerStyle={styles.detailContainer}>
-          <Text style={[styles.detailDate, { color: colors.muted }]}>
-            {formatDate(selectedDevotion.publishDate)}
-          </Text>
-          
-          <Text style={[styles.detailTitle, { color: colors.text }]}>
-            {selectedDevotion.title}
-          </Text>
-
-          {/* Bible Verse Card */}
-          <View style={[styles.verseCard, { backgroundColor: colors.accentLight }]}>
-            <Ionicons name="book-outline" size={24} color={colors.accent} style={styles.verseIcon} />
-            <Text style={[styles.verseText, { color: colors.text }]}>
-              &ldquo;{selectedDevotion.bibleVerse}&rdquo;
-            </Text>
-            <Text style={[styles.verseReference, { color: colors.accent }]}>
-              — {selectedDevotion.bibleReference}
-            </Text>
-          </View>
-
-          {/* Main Content */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              <Ionicons name="document-text-outline" size={18} color={colors.accent} /> Today&apos;s Message
-            </Text>
-            <Text style={[styles.sectionContent, { color: colors.text }]}>
-              {selectedDevotion.content}
-            </Text>
-          </View>
-
-          {/* Reflection */}
-          {selectedDevotion.reflection && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                <Ionicons name="bulb-outline" size={18} color={colors.accent} /> Reflection
-              </Text>
-              <Text style={[styles.sectionContent, { color: colors.text }]}>
-                {selectedDevotion.reflection}
-              </Text>
-            </View>
-          )}
-
-          {/* Prayer */}
-          {selectedDevotion.prayer && (
-            <View style={[styles.prayerCard, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                <Ionicons name="heart-outline" size={18} color={colors.accent} /> Prayer
-              </Text>
-              <Text style={[styles.prayerText, { color: colors.text, fontStyle: 'italic' }]}>
-                {selectedDevotion.prayer}
-              </Text>
-            </View>
-          )}
-
-          <Text style={[styles.authorText, { color: colors.muted }]}>
-            Written by {selectedDevotion.authorName}
-          </Text>
-          </ScrollView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
-    );
-  }
+  // Filter guides based on active tab
+  const filteredGuides = guides.filter(guide => {
+    if (activeTab === 'Current') return guide.isActive;
+    if (activeTab === 'Archive') return !guide.isActive;
+    return true; // Saved - show all for now
+  });
 
   return (
-    <CinematicBackground useOuterBackground>
+    <CinematicBackground>
       <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
+        {/* Header Section */}
         <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
+          </TouchableOpacity>
+          
           <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>SPIRITUAL</Text>
-            <Text style={styles.heading}>
-              Devotions<Text style={styles.headingDot}>.</Text>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>SABBATH SCHOOL</Text>
+            <Text style={[styles.heading, { color: colors.stone900 }]}>
+              Study<Text style={styles.headingDot}>.</Text>
             </Text>
           </View>
-          {isAdmin ? (
-            <GlassIconButton onPress={handleOpenCreate}>
-              <Ionicons name="add" size={22} color={colors.stone700} />
-            </GlassIconButton>
-          ) : (
-            <View style={{ width: 44 }} />
-          )}
+          
+          <GlassIconButton onPress={() => {}}>
+            <Ionicons name="search-outline" size={20} color={colors.stone700} />
+          </GlassIconButton>
         </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
-        </View>
-      ) : devotions.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="book-outline" size={64} color={colors.muted} />
-          <Text style={[styles.emptyText, { color: colors.muted }]}>No devotions yet</Text>
-          {isAdmin && (
-            <TouchableOpacity 
-              style={[styles.createButton, { backgroundColor: colors.accent }]}
-              onPress={handleOpenCreate}
-            >
-              <Text style={styles.createButtonText}>Create First Devotion</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : (
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-          {/* Featured/Latest Devotion */}
-          {devotions.length > 0 && (
-            <TouchableOpacity 
-              style={[styles.featuredCard, { backgroundColor: colors.accent }]}
-              onPress={() => setSelectedDevotion(devotions[0])}
-            >
-              <View style={styles.featuredBadge}>
-                <Ionicons name="sunny" size={16} color="#fff" />
-                <Text style={styles.featuredBadgeText}>Today&apos;s Devotion</Text>
-              </View>
-              <Text style={styles.featuredTitle}>{devotions[0].title}</Text>
-              <Text style={styles.featuredVerse} numberOfLines={2}>
-                &ldquo;{devotions[0].bibleVerse}&rdquo;
-              </Text>
-              <Text style={styles.featuredReference}>— {devotions[0].bibleReference}</Text>
-              <View style={styles.featuredFooter}>
-                <Text style={styles.featuredDate}>{formatDate(devotions[0].publishDate)}</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </View>
-            </TouchableOpacity>
-          )}
-
-          {/* Previous Devotions */}
-          {devotions.length > 1 && (
-            <>
-              <Text style={[styles.sectionHeader, { color: colors.text }]}>Previous Devotions</Text>
-              {devotions.slice(1).map((devotion) => (
-                <TouchableOpacity 
-                  key={devotion.id} 
-                  style={[styles.card, { backgroundColor: colors.surface }]}
-                  onPress={() => setSelectedDevotion(devotion)}
-                >
-                  <View style={styles.cardContent}>
-                    <Text style={[styles.cardTitle, { color: colors.text }]}>{devotion.title}</Text>
-                    <Text style={[styles.cardVerse, { color: colors.muted }]} numberOfLines={1}>
-                      {devotion.bibleReference}
-                    </Text>
-                    <Text style={[styles.cardDate, { color: colors.muted }]}>
-                      {formatDate(devotion.publishDate)}
-                    </Text>
-                  </View>
-                  {isAdmin && (
-                    <View style={styles.adminActions}>
-                      <TouchableOpacity onPress={() => handleOpenEdit(devotion)} style={styles.iconButton}>
-                        <Ionicons name="create-outline" size={18} color={colors.muted} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDelete(devotion)} style={styles.iconButton}>
-                        <Ionicons name="trash-outline" size={18} color="#dc2626" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                  <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-                </TouchableOpacity>
-              ))}
-            </>
-          )}
-        </ScrollView>
-      )}
-
-      {/* Create/Edit Modal */}
-      <Modal visible={showCreateModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {editingDevotion ? 'Edit Devotion' : 'New Devotion'}
-              </Text>
-              <TouchableOpacity onPress={() => { setShowCreateModal(false); resetForm(); }}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <Text style={[styles.label, { color: colors.text }]}>Title *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Devotion title"
-                placeholderTextColor={colors.muted}
-              />
-
-              <Text style={[styles.label, { color: colors.text }]}>Bible Verse *</Text>
-              <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                value={bibleVerse}
-                onChangeText={setBibleVerse}
-                placeholder="Enter the Bible verse text..."
-                placeholderTextColor={colors.muted}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-              />
-
-              <Text style={[styles.label, { color: colors.text }]}>Bible Reference *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                value={bibleReference}
-                onChangeText={setBibleReference}
-                placeholder="e.g., John 3:16"
-                placeholderTextColor={colors.muted}
-              />
-
-              <Text style={[styles.label, { color: colors.text }]}>Message/Content *</Text>
-              <TextInput
-                style={[styles.input, styles.textAreaLarge, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                value={content}
-                onChangeText={setContent}
-                placeholder="Today's devotional message..."
-                placeholderTextColor={colors.muted}
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-              />
-
-              <Text style={[styles.label, { color: colors.text }]}>Reflection (Optional)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                value={reflection}
-                onChangeText={setReflection}
-                placeholder="Questions or thoughts for reflection..."
-                placeholderTextColor={colors.muted}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-              />
-
-              <Text style={[styles.label, { color: colors.text }]}>Prayer (Optional)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                value={prayer}
-                onChangeText={setPrayer}
-                placeholder="A prayer for today..."
-                placeholderTextColor={colors.muted}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-              />
-            </ScrollView>
-
-            <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
-              <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: colors.accent }]}
-                onPress={handleSubmit}
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.submitButtonText}>
-                    {editingDevotion ? 'Update' : 'Publish'}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
+        {/* Stats Strip */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
+            <Text style={[styles.statValue, { color: colors.stone800 }]}>{stats.currentStreak}</Text>
+            <Text style={[styles.statLabel, { color: colors.stone500 }]}>Day Streak</Text>
+          </View>
+          <View style={[styles.statCard, styles.statCardHighlight, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}>
+            <Text style={[styles.statValue, { color: colors.stone800 }]}>
+              {Math.round((stats.lessonsCompleted / 13) * 100)}%
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.stone600 }]}>Completed</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
+            <Text style={[styles.statValue, { color: colors.stone800 }]}>{stats.savedLessons.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.stone500 }]}>Saved</Text>
           </View>
         </View>
-        </Modal>
-        </RoundedPage>
+
+        {/* Main Content Sheet */}
+        <View style={[styles.contentSheet, { backgroundColor: colors.glassWhiteStrong, borderColor: colors.glassBorder }]}>
+          {/* Tabs */}
+          <View style={[styles.tabsContainer, { borderBottomColor: colors.stone100 }]}>
+            {(['Current', 'Archive', 'Saved'] as TabOption[]).map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={styles.tab}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text style={[
+                  styles.tabText,
+                  activeTab === tab ? styles.tabTextActive : null,
+                  { color: activeTab === tab ? colors.stone900 : colors.stone400 }
+                ]}>
+                  {tab}
+                </Text>
+                {activeTab === tab && (
+                  <View style={[styles.tabIndicator, { backgroundColor: colors.amber500 }]} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Guide Feed */}
+          <ScrollView
+            style={styles.feedScroll}
+            contentContainerStyle={styles.feedContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.accent} />
+              </View>
+            ) : filteredGuides.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="book-outline" size={48} color={colors.stone300} />
+                <Text style={[styles.emptyText, { color: colors.stone400 }]}>
+                  {activeTab === 'Saved' ? 'No saved lessons yet' : 'No study guides available'}
+                </Text>
+              </View>
+            ) : (
+              filteredGuides.map((guide) => (
+                <TouchableOpacity
+                  key={guide.id}
+                  style={[styles.guideCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  onPress={() => handleSelectGuide(guide)}
+                  activeOpacity={0.7}
+                >
+                  {/* Author Row */}
+                  <View style={styles.authorRow}>
+                    <View style={styles.authorInfo}>
+                      <View style={[styles.authorAvatar, { backgroundColor: colors.stone200 }]}>
+                        {guide.authorAvatar ? (
+                          <Image source={{ uri: guide.authorAvatar }} style={styles.avatarImage} />
+                        ) : (
+                          <Ionicons name="person" size={16} color={colors.stone400} />
+                        )}
+                      </View>
+                      <View>
+                        <Text style={[styles.authorName, { color: colors.stone900 }]}>{guide.author}</Text>
+                        <Text style={[styles.dateRange, { color: colors.stone400 }]}>{guide.dateRange}</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity style={styles.moreButton}>
+                      <Ionicons name="ellipsis-horizontal" size={18} color={colors.stone300} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Content */}
+                  <View style={styles.guideContent}>
+                    <Text style={[styles.guideTitle, { color: colors.stone900 }]} numberOfLines={2}>
+                      {guide.title}
+                    </Text>
+                    <Text style={[styles.guideDescription, { color: colors.stone500 }]} numberOfLines={2}>
+                      {guide.description}
+                    </Text>
+                  </View>
+
+                  {/* Cover Image */}
+                  <View style={styles.coverContainer}>
+                    <Image
+                      source={{ uri: guide.coverImage }}
+                      style={styles.coverImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.coverOverlay} />
+                    {guide.isActive && (
+                      <View style={[styles.activeBadge, { backgroundColor: colors.amber500 }]}>
+                        <Text style={styles.activeBadgeText}>CURRENT</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Actions */}
+                  <View style={styles.actionsRow}>
+                    <TouchableOpacity 
+                      style={[styles.readButton, { backgroundColor: colors.stone900 }]}
+                      onPress={() => handleSelectGuide(guide)}
+                    >
+                      <Ionicons name="book-outline" size={16} color={colors.amber100} />
+                      <Text style={[styles.readButtonText, { color: colors.amber100 }]}>Read</Text>
+                    </TouchableOpacity>
+                    <View style={styles.socialActions}>
+                      <TouchableOpacity style={styles.socialButton}>
+                        <Ionicons name="heart-outline" size={20} color={colors.stone400} />
+                        <Text style={[styles.socialCount, { color: colors.stone400 }]}>
+                          {Math.floor(Math.random() * 5) + 1}k
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.socialButton}>
+                        <Ionicons name="bookmark-outline" size={20} color={colors.stone400} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </CinematicBackground>
   );
@@ -466,15 +242,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  // Header styles
+  // Header
   headerSection: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
-    zIndex: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerCenter: {
     flex: 1,
@@ -485,7 +266,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2,
     textTransform: 'uppercase',
-    marginBottom: spacing.xs,
+    marginBottom: 2,
     opacity: 0.8,
   },
   heading: {
@@ -493,270 +274,234 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1,
-    lineHeight: 36,
-    color: '#1c1917',
   },
   headingDot: {
     color: '#f59e0b',
   },
-  mainContent: {
-    flex: 1,
-    zIndex: 10,
-  },
-  
-  header: {
+
+  // Stats
+  statsRow: {
     flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  statCard: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+  },
+  statCardHighlight: {
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  statValue: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 22,
+    fontWeight: '600',
+  },
+  statLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginTop: 2,
+  },
+
+  // Content Sheet
+  contentSheet: {
+    flex: 1,
+    borderTopLeftRadius: radius.xxxl,
+    borderTopRightRadius: radius.xxxl,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    overflow: 'hidden',
+  },
+
+  // Tabs
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     borderBottomWidth: 1,
   },
-  backButton: {
-    padding: spacing.xs,
+  tab: {
+    marginRight: spacing.xl,
+    paddingBottom: spacing.md,
+    position: 'relative',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  tabText: {
+    fontSize: 15,
+    fontWeight: '400',
   },
-  addButton: {
-    padding: spacing.xs,
+  tabTextActive: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontWeight: '500',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderRadius: 1,
+  },
+
+  // Feed
+  feedScroll: {
+    flex: 1,
+  },
+  feedContent: {
+    padding: spacing.md,
+    paddingBottom: spacing.xxl * 2,
+    gap: spacing.lg,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: spacing.xxl * 2,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
+    paddingVertical: spacing.xxl * 2,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     marginTop: spacing.md,
-    marginBottom: spacing.lg,
   },
-  createButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: spacing.md,
-  },
-  featuredCard: {
-    borderRadius: radius.xl,
+
+  // Guide Card
+  guideCard: {
+    borderRadius: radius.xxxl,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    borderWidth: 1,
   },
-  featuredBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: spacing.sm,
-  },
-  featuredBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    opacity: 0.9,
-  },
-  featuredTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
-  },
-  featuredVerse: {
-    color: '#fff',
-    fontSize: 14,
-    fontStyle: 'italic',
-    opacity: 0.9,
-    marginBottom: spacing.xs,
-  },
-  featuredReference: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-    opacity: 0.8,
-  },
-  featuredFooter: {
+  authorRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
-  featuredDate: {
-    color: '#fff',
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  sectionHeader: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  card: {
+  authorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
-  cardContent: {
-    flex: 1,
+  authorAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
-  cardVerse: {
+  authorName: {
     fontSize: 13,
-    marginBottom: 2,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
-  cardDate: {
+  dateRange: {
+    fontFamily: Platform.select({ ios: 'Georgia-Italic', android: 'serif' }),
     fontSize: 12,
+    fontStyle: 'italic',
   },
-  adminActions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginRight: spacing.sm,
-  },
-  iconButton: {
+  moreButton: {
     padding: spacing.xs,
   },
-  // Detail view styles
-  detailContent: {
-    flex: 1,
+
+  // Guide Content
+  guideContent: {
+    marginBottom: spacing.md,
   },
-  detailContainer: {
-    padding: spacing.lg,
-  },
-  detailDate: {
-    fontSize: 14,
-    marginBottom: spacing.xs,
-  },
-  detailTitle: {
+  guideTitle: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: spacing.lg,
     lineHeight: 28,
+    marginBottom: spacing.xs,
   },
-  verseCard: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    alignItems: 'center',
-  },
-  verseIcon: {
-    marginBottom: spacing.sm,
-  },
-  verseText: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: spacing.sm,
-  },
-  verseReference: {
+  guideDescription: {
     fontSize: 14,
-    fontWeight: '600',
+    lineHeight: 20,
   },
-  section: {
-    marginBottom: spacing.lg,
+
+  // Cover Image
+  coverContainer: {
+    height: 120,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+    position: 'relative',
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
+  coverImage: {
+    width: '100%',
+    height: '100%',
   },
-  sectionContent: {
-    fontSize: 16,
-    lineHeight: 24,
+  coverOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
-  prayerCard: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+  activeBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
   },
-  prayerText: {
-    fontSize: 15,
-    lineHeight: 22,
+  activeBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
-  authorText: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: spacing.md,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    maxHeight: '95%',
-  },
-  modalHeader: {
+
+  // Actions
+  actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: 1,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  modalBody: {
-    padding: spacing.md,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 16,
-  },
-  textArea: {
-    minHeight: 80,
-  },
-  textAreaLarge: {
-    minHeight: 120,
-  },
-  modalFooter: {
-    padding: spacing.md,
-    borderTopWidth: 1,
-  },
-  submitButton: {
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
+  readButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
   },
-  submitButtonText: {
-    color: '#fff',
+  readButtonText: {
+    fontSize: 13,
     fontWeight: '700',
-    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  socialActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  socialCount: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
+
+export default DevotionsScreen;

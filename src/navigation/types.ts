@@ -47,6 +47,14 @@ export type RootStackParamList = {
   Announcements: undefined;
   Devotions: undefined;
   Following: undefined;
+  GuideDetails: {
+    guideId: string;
+  };
+  LessonReader: {
+    guideId: string;
+    lessonId: string;
+    lessonTitle?: string;
+  };
 };
 
 export type MainTabParamList = {
