@@ -12,9 +12,13 @@ const getProjectId = (): string => {
     || Constants.manifest2?.extra?.expoClient?.extra?.eas?.projectId;
   
   if (!projectId) {
-    console.warn('[Notifications] No projectId found in app config. Push notifications may not work correctly.');
-    // Fallback to the known project ID
-    return '122737a1-4d4a-4986-9807-12dbdb314dca';
+    // SECURITY: Do not fall back to a hard-coded project ID as this could
+    // register push tokens to the wrong project. Throw an error instead.
+    throw new Error(
+      '[Notifications] No projectId found in app config. ' +
+      'Ensure eas.projectId is set in app.json extra config. ' +
+      'Push notifications will not work without a valid project ID.'
+    );
   }
   
   return projectId;
