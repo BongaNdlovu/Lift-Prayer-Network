@@ -51,6 +51,8 @@ export const DevotionsScreen: React.FC = () => {
   // Local state for likes and bookmarks (persisted in stats.savedLessons for bookmarks)
   const [likedGuides, setLikedGuides] = useState<Set<string>>(new Set());
   const [bookmarkedGuides, setBookmarkedGuides] = useState<Set<string>>(new Set());
+  // Track like counts per guide (starts at 0, increments/decrements with user action)
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     // Subscribe to study guides
@@ -78,6 +80,9 @@ export const DevotionsScreen: React.FC = () => {
   // Handle like toggle
   const handleLike = useCallback((guideId: string) => {
     HapticPatterns.buttonPress();
+    const isCurrentlyLiked = likedGuides.has(guideId);
+    
+    // Update liked guides set
     setLikedGuides(prev => {
       const newSet = new Set(prev);
       if (newSet.has(guideId)) {
@@ -87,7 +92,13 @@ export const DevotionsScreen: React.FC = () => {
       }
       return newSet;
     });
-  }, []);
+    
+    // Update like count
+    setLikeCounts(prev => ({
+      ...prev,
+      [guideId]: (prev[guideId] || 0) + (isCurrentlyLiked ? -1 : 1),
+    }));
+  }, [likedGuides]);
 
   // Handle bookmark toggle
   const handleBookmark = useCallback((guideId: string) => {
@@ -325,7 +336,7 @@ export const DevotionsScreen: React.FC = () => {
                           color={likedGuides.has(guide.id) ? colors.rose500 : colors.stone400} 
                         />
                         <Text style={[styles.socialCount, { color: likedGuides.has(guide.id) ? colors.rose500 : colors.stone400 }]}>
-                          {likedGuides.has(guide.id) ? '4.6k' : '4.5k'}
+                          {likeCounts[guide.id] || 0}
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
