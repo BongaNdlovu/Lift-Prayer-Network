@@ -160,6 +160,22 @@
         { "fieldPath": "isPublished", "order": "ASCENDING" },
         { "fieldPath": "publishDate", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "studyGuides",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "year", "order": "DESCENDING" },
+        { "fieldPath": "quarter", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "studyGuides",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "year", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

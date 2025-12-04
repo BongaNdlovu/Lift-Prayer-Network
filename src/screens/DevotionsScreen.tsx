@@ -121,12 +121,42 @@ export const DevotionsScreen: React.FC = () => {
     }));
   }, [bookmarkedGuides]);
 
+  // Local state for archived guides (user can archive/unarchive)
+  const [archivedGuides, setArchivedGuides] = useState<Set<string>>(new Set());
+
+  // Handle archive toggle
+  const handleArchive = useCallback((guideId: string, guideName: string) => {
+    HapticPatterns.buttonPress();
+    const isCurrentlyArchived = archivedGuides.has(guideId);
+    
+    setArchivedGuides(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(guideId)) {
+        newSet.delete(guideId);
+      } else {
+        newSet.add(guideId);
+      }
+      return newSet;
+    });
+
+    // Show confirmation
+    Alert.alert(
+      isCurrentlyArchived ? 'Restored' : 'Archived',
+      isCurrentlyArchived 
+        ? `"${guideName}" has been restored to your current studies.`
+        : `"${guideName}" has been moved to your archive.`,
+      [{ text: 'OK' }]
+    );
+  }, [archivedGuides]);
+
   // Handle more menu
   const handleMoreMenu = useCallback((guide: StudyGuide) => {
     HapticPatterns.buttonPress();
     
-    const options = ['Share', 'View Details', 'Cancel'];
-    const cancelButtonIndex = 2;
+    const isArchived = archivedGuides.has(guide.id);
+    const archiveOption = isArchived ? 'Restore from Archive' : 'Archive Study';
+    const options = ['Share', archiveOption, 'View Details', 'Cancel'];
+    const cancelButtonIndex = 3;
 
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -139,6 +169,8 @@ export const DevotionsScreen: React.FC = () => {
           if (buttonIndex === 0) {
             handleShare(guide);
           } else if (buttonIndex === 1) {
+            handleArchive(guide.id, guide.title);
+          } else if (buttonIndex === 2) {
             handleSelectGuide(guide);
           }
         }
@@ -150,12 +182,13 @@ export const DevotionsScreen: React.FC = () => {
         'Choose an action',
         [
           { text: 'Share', onPress: () => handleShare(guide) },
+          { text: archiveOption, onPress: () => handleArchive(guide.id, guide.title) },
           { text: 'View Details', onPress: () => handleSelectGuide(guide) },
           { text: 'Cancel', style: 'cancel' },
         ]
       );
     }
-  }, []);
+  }, [archivedGuides, handleArchive]);
 
   // Handle share
   const handleShare = async (guide: StudyGuide) => {
@@ -171,9 +204,20 @@ export const DevotionsScreen: React.FC = () => {
 
   // Filter guides based on active tab
   const filteredGuides = guides.filter(guide => {
-    if (activeTab === 'Current') return guide.isActive;
-    if (activeTab === 'Archive') return !guide.isActive;
-    if (activeTab === 'Saved') return bookmarkedGuides.has(guide.id);
+    // User-archived guides go to Archive tab
+    const isUserArchived = archivedGuides.has(guide.id);
+    
+    if (activeTab === 'Current') {
+      // Show active guides that user hasn't archived
+      return guide.isActive && !isUserArchived;
+    }
+    if (activeTab === 'Archive') {
+      // Show inactive guides OR user-archived guides
+      return !guide.isActive || isUserArchived;
+    }
+    if (activeTab === 'Saved') {
+      return bookmarkedGuides.has(guide.id);
+    }
     return true;
   });
 
