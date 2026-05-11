@@ -1,0 +1,687 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  SafeAreaView,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  RefreshControl,
+  Image,
+  Platform,
+  Alert,
+  Animated,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Swipeable } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  updateDoc,
+  doc,
+  deleteDoc,
+  Timestamp,
+  writeBatch,
+} from 'firebase/firestore';
+import { db, firebaseEnabled } from '../services/firebase';
+import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
+import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
+import { SkeletonNotifications } from '../components/SkeletonCard';
+import { RootStackParamList } from '../navigation/types';
+import { NOTIFICATIONS_LIMIT } from '../config/queryLimits';
+import { logFirestoreRead } from '../utils/readBudget';
+
+type NotificationType = 'prayer_received' | 'amen_received' | 'comment' | 'reaction' | 'testimony' | 'group_request' | 'new_follower';
+
+type Notification = {
+  id: string;
+  type: NotificationType;
+  actorDisplayName: string;
+  actorPhotoURL?: string;
+  targetRequestId?: string;
+  targetTestimonyId?: string;
+  targetSummary?: string;
+  groupName?: string;
+  reactionType?: string;
+  createdAt: Timestamp;
+  read: boolean;
+};
+
+const NOTIFICATION_ITEM_HEIGHT = 96;
+
+const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
+  switch (type) {
+    case 'prayer_received':
+      return { name: 'hand-left', color: '#f59e0b' };
+    case 'amen_received':
+      return { name: 'sparkles', color: '#10b981' };
+    case 'comment':
+      return { name: 'chatbubble', color: '#3b82f6' };
+    case 'reaction':
+      return { name: 'heart', color: '#ec4899' };
+    case 'testimony':
+      return { name: 'sparkles', color: '#10b981' };
+    case 'group_request':
+      return { name: 'people', color: '#8b5cf6' };
+    case 'new_follower':
+      return { name: 'person-add', color: '#8b5cf6' };
+    default:
+      return { name: 'notifications', color: palette.muted };
+  }
+};
+
+const getNotificationMessage = (notification: Notification): string => {
+  switch (notification.type) {
+    case 'prayer_received':
+      return `prayed for your request`;
+    case 'amen_received':
+      return `said Amen to your testimony 🙌`;
+    case 'comment':
+      return `commented on your ${notification.targetSummary ? 'request' : 'post'}`;
+    case 'reaction':
+      return `reacted ${notification.reactionType === 'heart' ? '❤️' : notification.reactionType === 'fire' ? '🔥' : '💪'} to your post`;
+    case 'testimony':
+      return `shared a testimony you prayed for`;
+    case 'group_request':
+      return `posted a prayer in ${notification.groupName || 'your group'}`;
+    case 'new_follower':
+      return `started following you`;
+    default:
+      return 'sent you a notification';
+  }
+};
+
+const formatTimeAgo = (timestamp: Timestamp): string => {
+  if (!timestamp) return '';
+  const now = Date.now();
+  const time = timestamp.toDate().getTime();
+  const diff = now - time;
+  
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return timestamp.toDate().toLocaleDateString();
+};
+
+export const NotificationsInboxScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
+  const { colors } = useTheme();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    if (!user || !firebaseEnabled || !db) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const notificationsRef = collection(db, 'notifications');
+      const q = query(
+        notificationsRef,
+        where('recipientUid', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(NOTIFICATIONS_LIMIT)
+      );
+
+      const snapshot = await getDocs(q);
+      logFirestoreRead('notifications_inbox', snapshot.size);
+      const items: Notification[] = [];
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        items.push({
+          id: docSnap.id,
+          type: data.type || 'prayer_received',
+          actorDisplayName: data.actorDisplayName || 'Someone',
+          actorPhotoURL: data.actorPhotoURL,
+          targetRequestId: data.targetRequestId,
+          targetTestimonyId: data.targetTestimonyId,
+          targetSummary: data.targetSummary,
+          groupName: data.groupName,
+          reactionType: data.reactionType,
+          createdAt: data.createdAt,
+          read: data.read || false,
+        });
+      });
+
+      setNotifications(items);
+    } catch (err) {
+      console.error('Error loading notifications:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  const handleNotificationPress = async (notification: Notification) => {
+    // Mark as read
+    if (!notification.read && db) {
+      try {
+        await updateDoc(doc(db!, 'notifications', notification.id), { read: true });
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
+        );
+      } catch (err) {
+        console.warn('Error marking notification as read:', err);
+      }
+    }
+
+    // Navigate to the relevant screen
+    if (notification.type === 'amen_received' && notification.targetTestimonyId) {
+      navigation.navigate('RequestDetail', {
+        id: notification.targetTestimonyId,
+        type: 'TESTIMONY',
+      });
+    } else if (notification.targetRequestId) {
+      navigation.navigate('RequestDetail', {
+        id: notification.targetRequestId,
+        type: notification.type === 'testimony' ? 'TESTIMONY' : 'REQUEST',
+      });
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!db || notifications.length === 0) return;
+
+    const unread = notifications.filter((n) => !n.read);
+    if (unread.length === 0) return;
+
+    try {
+      const batch = writeBatch(db!);
+      unread.forEach((n) => {
+        batch.update(doc(db!, 'notifications', n.id), { read: true });
+      });
+      await batch.commit();
+
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Delete a single notification
+  const handleDeleteNotification = async (notificationId: string) => {
+    if (!db) return;
+
+    try {
+      await deleteDoc(doc(db, 'notifications', notificationId));
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+      Alert.alert('Error', 'Could not delete notification');
+    }
+  };
+
+  // Delete all notifications
+  const handleDeleteAll = () => {
+    if (notifications.length === 0) return;
+
+    Alert.alert(
+      'Delete All Notifications',
+      'Are you sure you want to delete all notifications? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            if (!db) return;
+            
+            try {
+              const batch = writeBatch(db);
+              notifications.forEach((n) => {
+                batch.delete(doc(db!, 'notifications', n.id));
+              });
+              await batch.commit();
+              setNotifications([]);
+              
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+            } catch (err) {
+              console.error('Error deleting all notifications:', err);
+              Alert.alert('Error', 'Could not delete notifications');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Render swipe action (delete button)
+  const renderRightActions = (
+    _progress: Animated.AnimatedInterpolation<number>,
+    _dragX: Animated.AnimatedInterpolation<number>,
+    notificationId: string
+  ) => {
+    return (
+      <TouchableOpacity
+        style={styles.deleteAction}
+        onPress={() => handleDeleteNotification(notificationId)}
+      >
+        <Ionicons name="trash-outline" size={24} color="#fff" />
+        <Text style={styles.deleteActionText}>Delete</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderNotification = ({ item }: { item: Notification }) => {
+    const icon = getNotificationIcon(item.type);
+    const message = getNotificationMessage(item);
+
+    return (
+      <Swipeable
+        renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item.id)}
+        overshootRight={false}
+        friction={2}
+      >
+        <TouchableOpacity
+          style={[
+            styles.notificationCard, 
+            { backgroundColor: colors.surface, borderBottomColor: colors.border },
+            !item.read && { backgroundColor: colors.accentLight }
+          ]}
+          onPress={() => handleNotificationPress(item)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.notificationLeft}>
+            {item.actorPhotoURL ? (
+              <Image
+                source={{ uri: item.actorPhotoURL }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: icon.color + '20' }]}>
+                <Text style={[styles.avatarText, { color: icon.color }]}>
+                  {getInitials(item.actorDisplayName)}
+                </Text>
+              </View>
+            )}
+            <View style={[styles.iconBadge, { backgroundColor: icon.color }]}>
+              <Ionicons name={icon.name} size={10} color="#fff" />
+            </View>
+          </View>
+
+          <View style={styles.notificationContent}>
+            <Text style={[styles.notificationText, { color: colors.textSecondary }]}>
+              <Text style={[styles.actorName, { color: colors.text }]}>{item.actorDisplayName}</Text>
+              {' '}{message}
+            </Text>
+            {item.targetSummary && (
+              <Text style={[styles.targetSummary, { color: colors.muted }]} numberOfLines={1}>
+                &quot;{item.targetSummary}&quot;
+              </Text>
+            )}
+            <Text style={[styles.timeAgo, { color: colors.muted }]}>{formatTimeAgo(item.createdAt)}</Text>
+          </View>
+
+          {!item.read && <View style={styles.unreadDot} />}
+        </TouchableOpacity>
+      </Swipeable>
+    );
+  };
+
+  return (
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>UPDATES</Text>
+            <Text style={styles.heading}>
+              Inbox<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={styles.headerActions}>
+            {unreadCount > 0 && (
+              <GlassIconButton onPress={markAllAsRead}>
+                <Ionicons name="checkmark-done-outline" size={20} color={colors.amber700} />
+              </GlassIconButton>
+            )}
+            {notifications.length > 0 && (
+              <GlassIconButton onPress={handleDeleteAll}>
+                <Ionicons name="trash-outline" size={20} color={colors.rose600} />
+              </GlassIconButton>
+            )}
+          </View>
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+
+      {loading ? (
+        <View style={styles.list}>
+          <SkeletonNotifications count={6} />
+        </View>
+      ) : notifications.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceSecondary }]}>
+            <Ionicons name="notifications-outline" size={48} color={colors.muted} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No notifications yet</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            When someone prays for you or interacts with your posts, you&apos;ll see it here
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          style={styles.list}
+          data={notifications}
+          keyExtractor={(item) => item.id}
+          renderItem={renderNotification}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                // Haptic feedback on pull-to-refresh
+                if (Platform.OS !== 'web') {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch {
+                    // Haptics not available
+                  }
+                }
+                setRefreshing(true);
+                loadNotifications();
+              }}
+            />
+          }
+          ListHeaderComponent={
+            <View style={styles.listHeader}>
+              {unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>{unreadCount} new</Text>
+                </View>
+              )}
+              <Text style={styles.swipeHint}>Swipe left to delete</Text>
+            </View>
+          }
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          getItemLayout={(_, index) => ({
+            length: NOTIFICATION_ITEM_HEIGHT,
+            offset: NOTIFICATION_ITEM_HEIGHT * index,
+            index,
+          })}
+          ListFooterComponent={<View style={{ height: 40 }} />}
+        />
+      )}
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  backButton: {
+    padding: spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: palette.text,
+  },
+  markAllButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  markAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.accentDark,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  headerActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteAction: {
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+  },
+  deleteActionText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: palette.text,
+    marginBottom: spacing.xs,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: palette.muted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  list: {
+    flex: 1,
+  },
+  listHeader: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  swipeHint: {
+    fontSize: 12,
+    color: palette.muted,
+    fontStyle: 'italic',
+  },
+  unreadBadge: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  unreadBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  notificationUnread: {
+    backgroundColor: '#fffbeb',
+  },
+  notificationLeft: {
+    position: 'relative',
+    marginRight: spacing.md,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  iconBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationText: {
+    fontSize: 14,
+    color: palette.text,
+    lineHeight: 20,
+  },
+  actorName: {
+    fontWeight: '700',
+  },
+  targetSummary: {
+    fontSize: 13,
+    color: palette.muted,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  timeAgo: {
+    fontSize: 12,
+    color: palette.muted,
+    marginTop: 4,
+  },
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#f59e0b',
+    marginLeft: spacing.sm,
+  },
+});
+
+export default NotificationsInboxScreen;

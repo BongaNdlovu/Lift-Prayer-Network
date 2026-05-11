@@ -1,0 +1,697 @@
+import React, { useEffect, useState } from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
+  Platform,
+  Linking,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
+import { doc, getDoc } from 'firebase/firestore';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
+import { palette, radius, spacing } from '../theme/colors';
+import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
+import { GlassIconButton } from '../components/GlassCard';
+import { db, firebaseEnabled } from '../services/firebase';
+import { registerForPushNotifications, storePushToken, sendTestNotification, getPushTokenStatus } from '../services/notifications';
+import { updateUserSettings } from '../services/userProfile';
+import { hasAdminPermission } from '../config/admins';
+import type { RootStackParamList } from '../navigation/types';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'NotificationsSettings'>;
+
+type NotificationSettings = {
+  enabled: boolean;
+  prayers: boolean;
+  comments: boolean;
+  testimonies: boolean;
+  critical: boolean;
+  groups: boolean;
+  achievements: boolean;
+  dailyReminder: boolean;
+  reminderTime: string; // HH:MM format
+  weeklyRecapEnabled: boolean;
+};
+
+const DEFAULT_SETTINGS: NotificationSettings = {
+  enabled: false,
+  prayers: true,
+  comments: true,
+  testimonies: true,
+  critical: false,
+  groups: true,
+  achievements: true,
+  dailyReminder: false,
+  reminderTime: '09:00',
+  weeklyRecapEnabled: false,
+};
+
+export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => {
+  const { user } = useAuth();
+  const { colors } = useTheme();
+  const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
+  const [, setLoading] = useState(true);
+  const [permissionStatus, setPermissionStatus] = useState<string>('unknown');
+
+  // Load current settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      // Check notification permission status
+      const { status } = await Notifications.getPermissionsAsync();
+      setPermissionStatus(status);
+
+      if (!user || !firebaseEnabled || !db) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          const userSettings = data.settings || {};
+          setSettings({
+            enabled: userSettings.notifications ?? false,
+            prayers: userSettings.notificationsPrayers ?? true,
+            comments: userSettings.notificationsComments ?? true,
+            testimonies: userSettings.notificationsTestimonies ?? true,
+            critical: userSettings.notificationsCritical ?? false,
+            groups: userSettings.notificationsGroups ?? true,
+            achievements: userSettings.notificationsAchievements ?? true,
+            dailyReminder: userSettings.dailyReminder ?? false,
+            reminderTime: userSettings.reminderTime ?? '09:00',
+            weeklyRecapEnabled: userSettings.weeklyRecapEnabled ?? false,
+          });
+        }
+      } catch (err) {
+        console.error('[Notifications] Error loading settings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [user]);
+
+  const requestPermission = async () => {
+    try {
+      const registration = await registerForPushNotifications();
+      setPermissionStatus(registration.status);
+
+      if (registration.status === 'granted' && user && registration.expoPushToken) {
+        await storePushToken(user.uid, registration.expoPushToken, registration.devicePushToken);
+        await updateSetting('enabled', true);
+        
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        
+        Alert.alert('Success', 'Push notifications enabled!');
+      } else if (registration.status === 'denied') {
+        Alert.alert(
+          'Permission Denied',
+          'Please enable notifications in your device settings to receive prayer alerts.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+      }
+    } catch (err) {
+      console.error('[Notifications] Error requesting permission:', err);
+      Alert.alert('Error', 'Could not enable notifications. Please try again.');
+    }
+  };
+
+  const updateSetting = async (key: keyof NotificationSettings, value: boolean | string) => {
+    if (!user) return;
+
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync();
+    }
+
+    // Update local state immediately for responsive UI
+    setSettings(prev => ({ ...prev, [key]: value }));
+
+    // Map to Firestore field names
+    const fieldMap: Record<string, string> = {
+      enabled: 'notifications',
+      prayers: 'notificationsPrayers',
+      comments: 'notificationsComments',
+      testimonies: 'notificationsTestimonies',
+      critical: 'notificationsCritical',
+      groups: 'notificationsGroups',
+      achievements: 'notificationsAchievements',
+      dailyReminder: 'dailyReminder',
+      reminderTime: 'reminderTime',
+      weeklyRecapEnabled: 'weeklyRecapEnabled',
+    };
+
+    try {
+      await updateUserSettings(user, { [fieldMap[key]]: value });
+    } catch (err) {
+      console.error('[Notifications] Error updating setting:', err);
+      // Revert on error
+      setSettings(prev => ({ ...prev, [key]: !value }));
+      Alert.alert('Error', 'Could not update setting. Please try again.');
+    }
+  };
+
+  const handleToggle = (key: keyof NotificationSettings) => {
+    const currentValue = settings[key];
+    
+    // Special handling for push notifications
+    if (key === 'enabled' && !currentValue) {
+      if (permissionStatus !== 'granted') {
+        requestPermission();
+        return;
+      }
+    }
+
+    updateSetting(key, !currentValue);
+  };
+
+  if (!user) {
+    return (
+      <CinematicBackground useOuterBackground>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.centerContent}>
+            <Ionicons name="notifications-off" size={64} color={palette.muted} />
+            <Text style={styles.emptyTitle}>Sign in Required</Text>
+            <Text style={styles.emptySubtitle}>
+              Please sign in to manage your notification preferences.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </CinematicBackground>
+    );
+  }
+
+  return (
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        {/* === HEADER SECTION === */}
+        <View style={styles.headerSection}>
+          <GlassIconButton onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          </GlassIconButton>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.kicker, { color: colors.stone500 }]}>PREFERENCES</Text>
+            <Text style={styles.heading}>
+              Alerts<Text style={styles.headingDot}>.</Text>
+            </Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* === MAIN CONTENT === */}
+        <RoundedPage style={styles.mainContent}>
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Permission Status Banner */}
+        {permissionStatus !== 'granted' && (
+          <TouchableOpacity style={styles.permissionBanner} onPress={requestPermission}>
+            <Ionicons name="alert-circle" size={24} color="#f59e0b" />
+            <View style={styles.permissionBannerContent}>
+              <Text style={styles.permissionBannerTitle}>Notifications Disabled</Text>
+              <Text style={styles.permissionBannerText}>
+                Tap to enable push notifications
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+          </TouchableOpacity>
+        )}
+
+        {/* Push Notifications Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Push Notifications</Text>
+          
+          <View style={styles.settingCard}>
+            <SettingRow
+              icon="notifications"
+              iconColor="#3b82f6"
+              title="Enable Notifications"
+              value={settings.enabled && permissionStatus === 'granted'}
+              onToggle={() => handleToggle('enabled')}
+              disabled={permissionStatus !== 'granted'}
+            />
+            
+            <View style={styles.divider} />
+            
+            <SettingRow
+              icon="alert-circle"
+              iconColor="#ef4444"
+              title="Critical Prayer Alerts"
+              value={settings.critical}
+              onToggle={() => handleToggle('critical')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
+            />
+          </View>
+        </View>
+
+        {/* Prayer Notifications Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Prayer & Content Activity</Text>
+          
+          <View style={styles.settingCard}>
+            <SettingRow
+              icon="heart"
+              iconColor="#ec4899"
+              title="Prayers on Your Requests"
+              value={settings.prayers}
+              onToggle={() => handleToggle('prayers')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
+            />
+            
+            <View style={styles.divider} />
+            
+            <SettingRow
+              icon="checkmark-circle"
+              iconColor="#22c55e"
+              title="Linked Testimonies"
+              value={settings.testimonies}
+              onToggle={() => handleToggle('testimonies')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
+            />
+            
+            <View style={styles.divider} />
+            
+            <SettingRow
+              icon="people"
+              iconColor="#8b5cf6"
+              title="Comments on Your Content"
+              value={settings.comments}
+              onToggle={() => handleToggle('comments')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
+            />
+          </View>
+        </View>
+
+        {/* Group Activity Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Group Activity</Text>
+          
+          <View style={styles.settingCard}>
+            <SettingRow
+              icon="people"
+              iconColor="#0ea5e9"
+              title="Group Updates"
+              value={settings.groups}
+              onToggle={() => handleToggle('groups')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
+            />
+          </View>
+        </View>
+
+        {/* Achievements Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Achievements</Text>
+          
+          <View style={styles.settingCard}>
+            <SettingRow
+              icon="trophy"
+              iconColor="#f59e0b"
+              title="Achievement Unlocked"
+              value={settings.achievements}
+              onToggle={() => handleToggle('achievements')}
+              disabled={!settings.enabled || permissionStatus !== 'granted'}
+            />
+          </View>
+        </View>
+
+        {/* Weekly Recap Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Weekly Recap</Text>
+          
+          <View style={styles.settingCard}>
+            <SettingRow
+              icon="calendar-outline"
+              iconColor="#eab308"
+              title="Weekly Summary"
+              value={settings.weeklyRecapEnabled}
+              onToggle={() => handleToggle('weeklyRecapEnabled')}
+            />
+          </View>
+        </View>
+
+        {/* Reminders Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Daily Reminders</Text>
+          
+          <View style={styles.settingCard}>
+            <SettingRow
+              icon="alarm"
+              iconColor="#0ea5e9"
+              title="Daily Prayer Reminder"
+              value={settings.dailyReminder}
+              onToggle={() => handleToggle('dailyReminder')}
+            />
+            
+            {settings.dailyReminder && (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity 
+                  style={styles.timeRow}
+                  onPress={() => navigation.navigate('Reminders')}
+                >
+                  <View style={styles.timeRowLeft}>
+                    <View style={[styles.iconContainer, { backgroundColor: '#e0f2fe' }]}>
+                      <Ionicons name="time" size={20} color="#0ea5e9" />
+                    </View>
+                    <View>
+                      <Text style={styles.settingTitle}>Reminder Time</Text>
+                      <Text style={styles.settingSubtitle}>Configure in Reminders</Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* Debug Section - Test Notifications (Admin Only) */}
+        {hasAdminPermission(user?.email) && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Troubleshooting</Text>
+          
+          <View style={styles.settingCard}>
+            <TouchableOpacity 
+              style={styles.debugButton}
+              onPress={async () => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                const success = await sendTestNotification();
+                if (success) {
+                  Alert.alert('Test Sent', 'A test notification was sent. You should see it shortly.');
+                } else {
+                  Alert.alert('Test Failed', 'Could not send test notification. Please check permissions.');
+                }
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
+                <Ionicons name="flask" size={20} color="#f59e0b" />
+              </View>
+              <View style={styles.debugButtonText}>
+                <Text style={styles.settingTitle}>Send Test Notification</Text>
+                <Text style={styles.settingSubtitle}>Verify notifications are working</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            </TouchableOpacity>
+            
+            <View style={styles.divider} />
+            
+            <TouchableOpacity 
+              style={styles.debugButton}
+              onPress={async () => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                const status = await getPushTokenStatus();
+                Alert.alert(
+                  'Push Token Status',
+                  `Permission: ${status.permissionStatus}\n\nToken: ${status.expoPushToken ? status.expoPushToken.substring(0, 40) + '...' : 'None'}\n\nError: ${status.error || 'None'}`,
+                  [{ text: 'OK' }]
+                );
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#dbeafe' }]}>
+                <Ionicons name="key" size={20} color="#3b82f6" />
+              </View>
+              <View style={styles.debugButtonText}>
+                <Text style={styles.settingTitle}>View Push Token</Text>
+                <Text style={styles.settingSubtitle}>Check your device&apos;s push token</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        )}
+
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <Ionicons name="information-circle" size={20} color="#3b82f6" />
+          <Text style={styles.infoText}>
+            You can customize which notifications you receive. Disabled settings will not send any notifications for that category.
+          </Text>
+        </View>
+          </ScrollView>
+        </RoundedPage>
+      </SafeAreaView>
+    </CinematicBackground>
+  );
+};
+
+// Reusable setting row component
+type SettingRowProps = {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  title: string;
+  value: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+};
+
+const SettingRow: React.FC<SettingRowProps> = ({
+  icon,
+  iconColor,
+  title,
+  value,
+  onToggle,
+  disabled,
+}) => (
+  <View style={[styles.settingRow, disabled && styles.settingRowDisabled]}>
+    <View style={[styles.iconContainer, { backgroundColor: `${iconColor}20` }]}>
+      <Ionicons name={icon} size={20} color={iconColor} />
+    </View>
+    <View style={styles.settingInfo}>
+      <Text style={[styles.settingTitle, disabled && styles.settingTitleDisabled]}>
+        {title}
+      </Text>
+    </View>
+    <Switch
+      value={value}
+      onValueChange={onToggle}
+      disabled={disabled}
+      trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
+      thumbColor={value ? '#f59e0b' : '#f4f4f5'}
+    />
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  
+  // Header styles
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    zIndex: 20,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    opacity: 0.8,
+  },
+  heading: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontSize: 32,
+    fontWeight: '500',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+    color: '#1c1917',
+  },
+  headingDot: {
+    color: '#f59e0b',
+  },
+  
+  // Content styles
+  mainContent: {
+    flex: 1,
+    zIndex: 10,
+  },
+  
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: palette.text,
+  },
+  content: {
+    padding: spacing.lg,
+    paddingBottom: 40,
+  },
+  centerContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: palette.text,
+    marginTop: spacing.md,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: palette.muted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef3c7',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+  },
+  permissionBannerContent: {
+    flex: 1,
+  },
+  permissionBannerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  permissionBannerText: {
+    fontSize: 13,
+    color: '#b45309',
+    marginTop: 2,
+  },
+  section: {
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: palette.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.sm,
+  },
+  settingCard: {
+    backgroundColor: '#fff',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: palette.border,
+    overflow: 'hidden',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  settingRowDisabled: {
+    opacity: 0.5,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingInfo: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: palette.text,
+  },
+  settingTitleDisabled: {
+    color: palette.muted,
+  },
+  settingSubtitle: {
+    fontSize: 12,
+    color: palette.muted,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: palette.border,
+    marginLeft: 68,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+  },
+  timeRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#eff6ff',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#3b82f6',
+    lineHeight: 18,
+  },
+  debugButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  debugButtonText: {
+    flex: 1,
+  },
+});
+

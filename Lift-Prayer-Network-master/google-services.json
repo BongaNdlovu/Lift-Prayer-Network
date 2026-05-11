@@ -1,0 +1,52 @@
+{
+  "project_info": {
+    "project_number": "628602476853",
+    "firebase_url": "https://end-of-time-94cd3-default-rtdb.firebaseio.com",
+    "project_id": "end-of-time-94cd3",
+    "storage_bucket": "end-of-time-94cd3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628602476853:android:18499e2e916155ce11147c",
+        "android_client_info": {
+          "package_name": "Lift.Prayer.App"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "628602476853-40k5j7979vdo172pg3j0810tq4v9pjdh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "Lift.Prayer.App",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "628602476853-fbff4l5q79a6ovq24b4vfsag0nldqum2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "Lift.Prayer.App",
+            "certificate_hash": "7720290239729415324110e7a5878a66304f05be"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArjsoQnRxcLbQogLpp8dk0DeXzRUImkn4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "628602476853-8cdmr7fmp3a42od8q8vh4uae4ptp4lkl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

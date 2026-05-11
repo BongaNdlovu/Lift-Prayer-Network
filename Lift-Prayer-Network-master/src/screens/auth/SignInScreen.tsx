@@ -1,0 +1,378 @@
+import React, { useState, useMemo } from 'react';
+import {
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
+import { fonts, fontSizes, palette, radius, spacing } from '../../theme/colors';
+import { CinematicBackground } from '../../components/CinematicBackground';
+import { RootStackParamList } from '../../navigation/types';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
+
+export const SignInScreen: React.FC<Props> = ({ navigation }) => {
+  const { signIn, signInGuest, resetPassword } = useAuth();
+  const { colors } = useTheme();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    if (!email.trim()) {
+      Alert.alert('Email Required', 'Please enter your email address.');
+      return;
+    }
+    if (!password) {
+      Alert.alert('Password Required', 'Please enter your password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signIn(email, password);
+      // Navigation happens automatically via auth state change
+    } catch (error: any) {
+      const errorMessage = error.message || 'Please check your credentials and try again.';
+      
+      // Check if it's a "user not found" or "invalid credentials" error and offer to create account
+      // Firebase returns "invalid-credential" when the user doesn't exist or password is wrong
+      if (errorMessage.toLowerCase().includes('no account found') || 
+          errorMessage.toLowerCase().includes('user not found') ||
+          errorMessage.toLowerCase().includes('sign up first') ||
+          errorMessage.toLowerCase().includes('invalid email or password') ||
+          errorMessage.toLowerCase().includes('invalid credential')) {
+        Alert.alert(
+          'Sign In Failed',
+          "We couldn't sign you in. This could be because:\n\n• No account exists with this email\n• The password is incorrect\n\nWould you like to create a new account or try again?",
+          [
+            { text: 'Try Again', style: 'cancel' },
+            { text: 'Forgot Password', onPress: handleForgotPassword },
+            { 
+              text: 'Create Account', 
+              onPress: () => navigation.navigate('SignUp')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Sign In Failed', errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert(
+        'Email Required',
+        'Please enter your email address first, then tap "Forgot password".'
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Reset Password',
+      `Send password reset email to ${email.trim()}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send',
+          onPress: async () => {
+            try {
+              await resetPassword(email);
+              Alert.alert(
+                'Email Sent',
+                'Check your inbox for password reset instructions. Don\'t forget to check your spam folder.'
+              );
+            } catch (error: any) {
+              Alert.alert('Reset Failed', error.message || 'Could not send reset email.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleGuestSignIn = async () => {
+    setLoading(true);
+    try {
+      await signInGuest();
+      // Navigation happens automatically via auth state change
+    } catch (error: any) {
+      Alert.alert('Guest Sign-In Failed', error.message || 'Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isLoading = loading;
+
+  // Memoize gradient colors to prevent re-renders and ensure stability on fresh install
+  const gradientColors = useMemo(
+    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
+    [colors.gradientBoldScreen]
+  );
+
+  return (
+    <CinematicBackground useOuterBackground>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.logo}>LIFT</Text>
+              <Text style={[styles.tagline, { color: colors.stone500 }]}>Live network of prayer</Text>
+            </View>
+
+          {/* Sign In Card */}
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Sign in to continue</Text>
+
+            {/* Email Input */}
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="mail-outline" size={20} color={colors.muted} style={styles.inputIcon} />
+              <TextInput
+                placeholder="Email address"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                autoComplete="email"
+                style={[styles.input, { color: colors.text }]}
+                value={email}
+                onChangeText={setEmail}
+                editable={!isLoading}
+              />
+            </View>
+
+            {/* Password Input */}
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.muted} style={styles.inputIcon} />
+              <TextInput
+                placeholder="Password"
+                placeholderTextColor={colors.muted}
+                secureTextEntry={!showPassword}
+                textContentType="password"
+                autoComplete="password"
+                style={[styles.input, styles.passwordInput, { color: colors.text }]}
+                value={password}
+                onChangeText={setPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeButton}
+                disabled={isLoading}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.muted}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Forgot Password */}
+            <TouchableOpacity onPress={handleForgotPassword} disabled={isLoading}>
+              <Text style={[styles.forgotText, { color: colors.muted }]}>Forgot password?</Text>
+            </TouchableOpacity>
+
+            {/* Sign In Button */}
+            <TouchableOpacity
+              style={[
+                styles.button, 
+                styles.primaryButton, 
+                { backgroundColor: colors.accent },
+                isLoading && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
+              ]}
+              onPress={handleSignIn}
+              disabled={isLoading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.text} />
+              ) : (
+                <Text style={[styles.primaryButtonText, { color: colors.text }]}>Sign In</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Sign Up Link */}
+            <View style={styles.signUpContainer}>
+              <Text style={[styles.signUpText, { color: colors.muted }]}>Don&apos;t have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={isLoading}>
+                <Text style={[styles.signUpLink, { color: colors.accent }]}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Guest Sign In */}
+          <TouchableOpacity
+            style={styles.guestButton}
+            onPress={handleGuestSignIn}
+            disabled={isLoading}
+          >
+            <Text style={[styles.guestText, { color: colors.muted }]}>Continue as guest</Text>
+          </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </CinematicBackground>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: spacing.lg,
+    justifyContent: 'center',
+  },
+  header: {
+    marginBottom: spacing.xl,
+  },
+  logo: {
+    fontFamily: fonts.heading,
+    fontSize: 48,
+    fontWeight: '500',
+    letterSpacing: -1,
+    color: '#1c1917',
+  },
+  tagline: {
+    fontFamily: fonts.body,
+    marginTop: 4,
+    fontSize: fontSizes.sm,
+  },
+  card: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    
+    
+    
+    
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: palette.border,
+  },
+  title: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xxl,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+    marginBottom: spacing.lg,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+  },
+  inputIcon: {
+    paddingLeft: spacing.md,
+  },
+  input: {
+    fontFamily: fonts.body,
+    flex: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    fontSize: fontSizes.md,
+  },
+  passwordInput: {
+    paddingRight: 44,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: spacing.md,
+    padding: 4,
+  },
+  forgotText: {
+    fontFamily: fonts.bodyMedium,
+    fontWeight: '600',
+    textAlign: 'right',
+    marginBottom: spacing.lg,
+    fontSize: fontSizes.sm,
+  },
+  button: {
+    borderRadius: radius.md,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    minHeight: 52,
+    marginBottom: spacing.md,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  primaryButton: {
+    
+    
+    
+    
+    elevation: 4,
+  },
+  primaryButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontWeight: '800',
+    fontSize: fontSizes.lg,
+  },
+  signUpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  signUpText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+  },
+  signUpLink: {
+    fontFamily: fonts.bodyBold,
+    fontWeight: '700',
+    fontSize: fontSizes.sm,
+  },
+  guestButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    borderRadius: radius.md,
+  },
+  guestText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+  },
+});

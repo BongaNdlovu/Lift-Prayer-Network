@@ -1,0 +1,58 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Profile pictures - users can only upload/modify their own
+    // Files are stored as profile-pictures/{userId}.jpg
+    // We use a folder structure to properly match user ownership
+    match /profile-pictures/{userId}/{fileName} {
+      // Anyone can view profile pictures (they're public)
+      allow read: if true;
+      
+      // Only the owner can upload their picture
+      allow write: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Also allow direct file uploads without subfolder (for backward compatibility)
+    // This matches files like profile-pictures/userId.jpg
+    match /profile-pictures/{fileName} {
+      // Anyone can view profile pictures (they're public)
+      allow read: if true;
+      
+      // Only allow users to upload their own profile picture (file name must start with UID)
+      allow write: if isSignedIn()
+        && fileName.matches(request.auth.uid + '.*')
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Group images - only group owners can upload/modify
+    // Note: We can't check Firestore from storage rules, so we rely on the client
+    // to only call this for owned groups. The groupId in the path should match
+    // a group the user owns. For additional security, consider using Cloud Functions.
+    match /group-images/{groupId}/{fileName} {
+      allow read: if true;
+      // Restrict writes: require auth, size limit, image type
+      // Client-side must verify group ownership before uploading
+      allow write: if isSignedIn()
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Request/Testimony attachments (future feature)
+    match /attachments/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() 
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
