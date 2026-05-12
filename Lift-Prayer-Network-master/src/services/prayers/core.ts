@@ -176,7 +176,7 @@ export const logPrayer = async (
       if (!isSelfPrayer && safeTargetOwnerUid !== 'anon' && db) {
         const notificationRef = doc(collection(db, 'notifications'));
         txn.set(notificationRef, {
-          type: 'prayer_received',
+          type: 'PRAYER',
           recipientUid: safeTargetOwnerUid,
           actorUid,
           actorDisplayName: actorDisplayName || 'Someone',

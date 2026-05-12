@@ -239,7 +239,7 @@ export const AnsweredPrayersScreen: React.FC = () => {
     navigation.navigate('RequestDetail', {
       id: item.id,
       type: 'TESTIMONY',
-      item,
+      item: { ...item, type: 'TESTIMONY' },
     });
   };
 

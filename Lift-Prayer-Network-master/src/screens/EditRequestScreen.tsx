@@ -35,11 +35,12 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
   const isRequest = type === 'REQUEST';
+  const requestItem = isRequest && item.type === 'REQUEST' ? item : null;
   
   // Form state
   const [content, setContent] = useState(item.content || '');
-  const [selectedCategory, setSelectedCategory] = useState<PrayerCategory>(item.category || 'other');
-  const [isUrgent, setIsUrgent] = useState(item.isUrgent || false);
+  const [selectedCategory, setSelectedCategory] = useState<PrayerCategory>(requestItem?.category || 'other');
+  const [isUrgent, setIsUrgent] = useState(requestItem?.isUrgent || false);
   const [isPrivate, setIsPrivate] = useState(item.isPrivate || false);
   // Note: Status is NOT editable by users - it changes automatically based on prayer engagement
   
@@ -281,7 +282,7 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 <View style={styles.statusInfoCard}>
                   <Ionicons name="information-circle" size={20} color="#3b82f6" />
                   <View style={styles.statusInfoContent}>
-                    <Text style={styles.statusInfoTitle}>Current Status: {item.status || 'PENDING'}</Text>
+                    <Text style={styles.statusInfoTitle}>Current Status: {requestItem?.status || 'PENDING'}</Text>
                     <Text style={styles.statusInfoText}>
                       Status changes automatically when your prayer receives engagement from the community.
                     </Text>

@@ -19,10 +19,11 @@ export const normalizePrivacyFields = (input: PrivacyInput) => {
 
 export const validatePrivacyFields = (input: PrivacyInput): string | null => {
   const normalized = normalizePrivacyFields(input);
+  const rawGroupIds = Array.from(new Set(input.groupIds || [])).filter(Boolean);
   if (normalized.visibility === 'GROUP' && normalized.groupIds.length === 0) {
     return 'Choose at least one group for a group-visible prayer.';
   }
-  if (normalized.visibility === 'PRIVATE' && normalized.groupIds.length > 0) {
+  if (normalized.visibility === 'PRIVATE' && rawGroupIds.length > 0) {
     return 'Private prayers cannot also be assigned to groups.';
   }
   return null;

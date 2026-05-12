@@ -64,7 +64,7 @@ export const followUser = async (
     // Create a notification for the target user
     try {
       await addDoc(collection(db, 'notifications'), {
-        type: 'new_follower',
+        type: 'FOLLOW',
         recipientUid: targetUid,
         actorUid,
         actorDisplayName: actorDisplayName || 'Someone',

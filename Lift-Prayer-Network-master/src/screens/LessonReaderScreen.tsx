@@ -187,7 +187,7 @@ export const LessonReaderScreen: React.FC = () => {
               style={styles.memoryIcon}
             />
             <Text style={[styles.memoryText, { color: colors.stone700 }]}>
-              "{lesson.memoryText}"
+              &ldquo;{lesson.memoryText}&rdquo;
             </Text>
             <Text style={[styles.memoryRef, { color: colors.amber700 }]}>
               — {lesson.memoryRef}
@@ -264,10 +264,10 @@ export const LessonReaderScreen: React.FC = () => {
               </Text>
             </View>
             <Text style={[styles.discussionText, { color: colors.stone800 }]}>
-              1. How does Joshua's call to be "strong and courageous" apply to your life today?
+              1. How does Joshua&apos;s call to be &ldquo;strong and courageous&rdquo; apply to your life today?
             </Text>
             <Text style={[styles.discussionText, { color: colors.stone800 }]}>
-              2. What "promised lands" is God calling you to enter?
+              2. What &ldquo;promised lands&rdquo; is God calling you to enter?
             </Text>
             <Text style={[styles.discussionText, { color: colors.stone800 }]}>
               3. How can meditating on Scripture day and night transform your daily decisions?
