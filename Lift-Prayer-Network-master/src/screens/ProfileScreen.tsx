@@ -13,7 +13,6 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { doc, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
@@ -25,8 +24,8 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, palette, radius, spacing, shadows } from '../theme/colors';
-import { GlassCard, GlassIconButton } from '../components/GlassCard';
+import { fonts, palette, radius, spacing } from '../theme/colors';
+import { GlassIconButton } from '../components/GlassCard';
 import { LiftScreen } from '../components/LiftLayout';
 import { db, firebaseEnabled, storage } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
@@ -38,7 +37,7 @@ import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
 
 export const ProfileScreen: React.FC = () => {
   const { user, signOut, resendVerification, linkGuestToEmail } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [upgradeName, setUpgradeName] = useState('');

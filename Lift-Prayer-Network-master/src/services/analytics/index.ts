@@ -25,7 +25,6 @@ import { Platform } from 'react-native';
 import {
   AnalyticsEvent,
   AnalyticsEventNames,
-  AnalyticsEventName,
   EventCategory,
   ANALYTICS_SCHEMA_VERSION,
   // Event param types
@@ -55,10 +54,7 @@ import {
 } from './types';
 
 import {
-  AnalyticsProvider,
   AnalyticsQueueManager,
-  ConsoleAnalyticsProvider,
-  NoOpAnalyticsProvider,
   createAnalyticsProvider,
 } from './adapter';
 

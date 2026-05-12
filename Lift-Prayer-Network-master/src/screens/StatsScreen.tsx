@@ -18,7 +18,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
 import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
-import { LiftScreen, LiftHeader, LiftCard, LiftStat } from '../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 
 type StatCardProps = {
   emoji: string;
@@ -68,7 +68,7 @@ const StatCard: React.FC<StatCardProps> = ({ emoji, value, label, color, delay =
 export const StatsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -434,4 +434,3 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
   },
 });
-

@@ -29,7 +29,7 @@ export const CinematicBackground: React.FC<CinematicBackgroundProps> = ({
   glowIntensity = 1,
   useOuterBackground = false,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   
   const backgroundColor = useOuterBackground 
     ? colors.cinematicBackgroundOuter 

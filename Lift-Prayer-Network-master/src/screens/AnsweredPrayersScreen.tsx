@@ -243,11 +243,6 @@ export const AnsweredPrayersScreen: React.FC = () => {
     });
   };
 
-  // Dynamic gradient colors for header
-  const headerGradient = isDark 
-    ? [colors.successLight, colors.surface] as const
-    : ['#f0fdf4', '#dcfce7'] as const;
-
   return (
     <CinematicBackground useOuterBackground>
       <SafeAreaView style={styles.container}>

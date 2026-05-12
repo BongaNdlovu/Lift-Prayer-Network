@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -17,7 +16,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../contexts/ThemeContext';
 import { radius, spacing, fonts } from '../theme/colors';
-import { GlassIconButton } from '../components/GlassCard';
 import {
   StudyGuide,
   Lesson,

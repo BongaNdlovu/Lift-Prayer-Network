@@ -13,7 +13,6 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -634,4 +633,3 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 });
-

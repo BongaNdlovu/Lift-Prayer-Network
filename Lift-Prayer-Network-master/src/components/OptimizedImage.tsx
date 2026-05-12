@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Image, ImageContentFit, ImageSource } from 'expo-image';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -40,7 +40,7 @@ export const OptimizedImage: React.FC<Props> = ({
   onError,
   accessibilityLabel,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const [hasError, setHasError] = useState(false);
 
   // Handle null/undefined source
@@ -92,7 +92,6 @@ export const OptimizedAvatar: React.FC<AvatarProps> = ({
   fallbackText = '?',
   fallbackColor,
 }) => {
-  const { isDark } = useTheme();
   const [hasError, setHasError] = useState(false);
 
   const avatarStyle = {

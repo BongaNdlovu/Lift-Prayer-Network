@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
-import { spacing, fonts, radius } from '../../theme/colors';
+import { fonts, radius } from '../../theme/colors';
 import { LiftScreen, LiftLogo, LiftCard, LiftButton } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 

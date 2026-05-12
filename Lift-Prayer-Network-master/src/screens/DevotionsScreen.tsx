@@ -9,7 +9,6 @@ import {
   View,
   Image,
   ActivityIndicator,
-  Dimensions,
   Alert,
   Share,
   ActionSheetIOS,
@@ -19,10 +18,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing, fonts } from '../theme/colors';
+import { radius, spacing } from '../theme/colors';
 import { CinematicBackground } from '../components/CinematicBackground';
 import { GlassIconButton } from '../components/GlassCard';
-import HapticPatterns from '../utils/haptics';
+import { HapticPatterns } from '../utils/haptics';
 import {
   StudyGuide,
   UserStats,
@@ -32,7 +31,6 @@ import {
 } from '../services/studyGuides';
 import { RootStackParamList } from '../navigation/types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Tab options
@@ -73,9 +71,9 @@ export const DevotionsScreen: React.FC = () => {
     return unsubscribe;
   }, [user?.uid]);
 
-  const handleSelectGuide = (guide: StudyGuide) => {
+  const handleSelectGuide = useCallback((guide: StudyGuide) => {
     navigation.navigate('GuideDetails', { guideId: guide.id });
-  };
+  }, [navigation]);
 
   // Handle like toggle
   const handleLike = useCallback((guideId: string) => {
@@ -188,7 +186,7 @@ export const DevotionsScreen: React.FC = () => {
         ]
       );
     }
-  }, [archivedGuides, handleArchive]);
+  }, [archivedGuides, handleArchive, handleSelectGuide]);
 
   // Handle share
   const handleShare = async (guide: StudyGuide) => {

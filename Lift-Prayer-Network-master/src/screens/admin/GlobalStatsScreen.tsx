@@ -23,9 +23,6 @@ export const GlobalStatsScreen: React.FC = () => {
 
   const isAdmin = hasAdminPermission(user?.email);
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   useEffect(() => {
     const loadStats = async () => {
       if (!db || !isAdmin) {
@@ -182,4 +179,3 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 });
-

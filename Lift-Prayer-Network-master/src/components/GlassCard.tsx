@@ -3,10 +3,9 @@
  * Features translucent backgrounds, subtle borders, and soft shadows
  */
 import React from 'react';
-import { View, StyleSheet, ViewStyle, StyleProp, Pressable, Animated, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View, StyleSheet, ViewStyle, StyleProp, Pressable, Animated } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { shadows, radius, fonts, fontSizes, spacing } from '../theme/colors';
+import { radius, fonts, fontSizes, spacing } from '../theme/colors';
 import { lightImpact, selectionFeedback } from '../utils/haptics';
 
 interface GlassCardProps {
@@ -271,7 +270,7 @@ export const GlassIconButton: React.FC<GlassIconButtonProps> = ({
   size = 'md',
   badge,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   
   const sizeMap = {
     sm: 36,

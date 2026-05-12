@@ -11,7 +11,6 @@ import {
   subscribeToFollowingUids,
   followUser,
   unfollowUser,
-  isFollowingUser,
 } from '../services/following';
 import type { FollowRecord } from '../types';
 

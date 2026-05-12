@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -12,7 +12,6 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
 import * as Haptics from 'expo-haptics';
@@ -39,11 +38,6 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
 
-  // Memoize gradient colors for stability
-  const gradientColors = useMemo(
-    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
-    [colors.gradientBoldScreen]
-  );
   const netInfo = useNetInfo();
   const { items: allRequests } = useFeed('REQUEST', user?.uid);
   const [content, setContent] = useState('');
@@ -792,4 +786,3 @@ const styles = StyleSheet.create({
     color: '#166534',
   },
 });
-

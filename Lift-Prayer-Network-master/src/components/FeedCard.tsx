@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing, shadows, fonts, fontSizes } from '../theme/colors';
+import { palette, radius, spacing, fonts, fontSizes } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
 import { reportContent, blockUser, banUser, blockUserFromPosting, REPORT_REASONS, ReportReason } from '../services/moderation';
 import { getVerifiedBadge, BADGE_STYLES, canEditContent, canDeleteContent, hasAdminPermission, hasModeratorPermission } from '../config/admins';
@@ -192,7 +192,7 @@ export const FeedCard: React.FC<Props> = ({
           Alert.alert('Following', `You are now following ${item.userDisplayName}. Their posts will appear first in your feed.`);
         }
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Could not update follow status. Please try again.');
     } finally {
       setFollowLoading(false);

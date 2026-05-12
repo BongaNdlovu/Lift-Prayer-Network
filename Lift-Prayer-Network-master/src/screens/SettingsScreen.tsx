@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { radius, spacing } from '../theme/colors';
-import { LiftScreen, LiftHeader, LiftCard, LiftIconButton, LiftButton } from '../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 import { updateUserSettings } from '../services/userProfile';
 import { getBlockedUsers, unblockUser, syncBlockedUsers } from '../services/moderation';
 import { deletePrayerHistory } from '../services/prayers';

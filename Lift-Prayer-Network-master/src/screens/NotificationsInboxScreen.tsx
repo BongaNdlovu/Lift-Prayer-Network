@@ -365,7 +365,25 @@ export const NotificationsInboxScreen: React.FC = () => {
 
   return (
     <LiftScreen>
-      <LiftHeader title="Inbox" subtitle="Your notifications" onBack={() => navigation.goBack()} />
+      <LiftHeader
+        title="Inbox"
+        subtitle="Your notifications"
+        onBack={() => navigation.goBack()}
+        right={
+          <View style={styles.headerActions}>
+            {unreadCount > 0 ? (
+              <LiftIconButton onPress={markAllAsRead}>
+                <Ionicons name="checkmark-done" size={18} color={colors.text} />
+              </LiftIconButton>
+            ) : null}
+            {notifications.length > 0 ? (
+              <LiftIconButton onPress={handleDeleteAll}>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              </LiftIconButton>
+            ) : null}
+          </View>
+        }
+      />
       <View style={styles.content}>
 
       {loading ? (

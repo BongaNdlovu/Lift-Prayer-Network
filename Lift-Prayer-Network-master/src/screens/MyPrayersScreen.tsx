@@ -25,13 +25,12 @@ import {
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
-import { useTheme } from '../contexts/ThemeContext';
 import { logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { SkeletonCard } from '../components/SkeletonCard';
 import { palette, radius, spacing } from '../theme/colors';
-import { LiftScreen, LiftHeader, LiftIconButton, LiftChip } from '../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 import type { FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 import { MY_PRAYERS_LIMIT } from '../config/queryLimits';
@@ -44,7 +43,6 @@ type StatusFilter = 'all' | 'PENDING' | 'ACTIVE' | 'RESOLVED' | 'ANSWERED';
 
 export const MyPrayersScreen: React.FC = () => {
   const { user } = useAuth();
-  const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);

@@ -8,7 +8,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -26,9 +25,8 @@ import {
   updateReminder,
   type PrayerReminder,
 } from '../services/reminders';
-import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
-import { LiftScreen, LiftHeader, LiftIconButton, LiftButton, LiftCard } from '../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 
 const DAYS = [
   { id: 0, short: 'S', full: 'Sunday' },
@@ -42,7 +40,6 @@ const DAYS = [
 
 export const RemindersScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { colors } = useTheme();
   const [reminders, setReminders] = useState<PrayerReminder[]>([]);
   const [, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -630,4 +627,3 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
 });
-

@@ -7,7 +7,7 @@ import { hasAdminPermission } from '../../config/admins';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
-import { LiftScreen, LiftHeader, LiftIconButton } from '../../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../../components/LiftLayout';
 
 type Report = {
   id: string;

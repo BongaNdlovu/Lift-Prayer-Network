@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text,
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LiftScreen, LiftHeader, LiftCard, LiftButton } from '../components/LiftLayout';
+import { LiftScreen, LiftHeader, LiftCard } from '../components/LiftLayout';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { archivePrayerPromise, getTodayPrayerPromises, markPromiseAnswered, markPromisePrayed } from '../services/prayerPromises';

@@ -46,6 +46,27 @@ export const useNotificationPolling = (userId: string | undefined) => {
     checkPollingNeeded();
   }, []);
 
+  // Show a local notification
+  const showLocalNotification = useCallback(async (notif: NotificationData) => {
+    if (Platform.OS === 'web') return;
+
+    try {
+      const { title, body } = getNotificationContent(notif);
+      
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: true,
+          data: { notificationId: notif.id, type: notif.type },
+        },
+        trigger: null, // Show immediately
+      });
+    } catch (error) {
+      console.warn('[NotificationPolling] Error showing local notification:', error);
+    }
+  }, []);
+
   // Fetch new notifications from Firestore
   const checkForNewNotifications = useCallback(async () => {
     if (!userId || !firebaseEnabled || !db) return;
@@ -81,32 +102,11 @@ export const useNotificationPolling = (userId: string | undefined) => {
 
       // Update last check time
       lastCheckTime = new Date();
-    } catch (error) {
+    } catch {
       // Silently fail - don't spam console with polling errors
       // This can happen if the query requires an index
     }
-  }, [userId]);
-
-  // Show a local notification
-  const showLocalNotification = async (notif: NotificationData) => {
-    if (Platform.OS === 'web') return;
-
-    try {
-      const { title, body } = getNotificationContent(notif);
-      
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          sound: true,
-          data: { notificationId: notif.id, type: notif.type },
-        },
-        trigger: null, // Show immediately
-      });
-    } catch (error) {
-      console.warn('[NotificationPolling] Error showing local notification:', error);
-    }
-  };
+  }, [userId, showLocalNotification]);
 
   // Generate notification content based on type
   const getNotificationContent = (notif: NotificationData): { title: string; body: string } => {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -13,7 +13,6 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
 import * as Haptics from 'expo-haptics';
@@ -39,11 +38,6 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
 
-  // Memoize gradient colors for stability
-  const gradientColors = useMemo(
-    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
-    [colors.gradientBoldScreen]
-  );
   const netInfo = useNetInfo();
   const groupId = route.params?.groupId;
   const groupName = route.params?.groupName;

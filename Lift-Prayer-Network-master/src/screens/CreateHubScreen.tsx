@@ -1,12 +1,12 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LiftScreen, LiftCard, LiftButton } from '../components/LiftLayout';
+import { LiftScreen } from '../components/LiftLayout';
 import { GlassCard } from '../components/GlassCard';
 import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing } from '../theme/colors';
+import { spacing } from '../theme/colors';
 import type { RootStackParamList } from '../navigation/types';
 
 export const CreateHubScreen: React.FC = () => {

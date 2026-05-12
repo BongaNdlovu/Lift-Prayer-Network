@@ -39,7 +39,7 @@ const getAvatarColor = (name: string): string => {
 export const FollowingScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { following, loading, unfollow } = useFollowing(user?.uid);
 
   const handleUnfollow = async (record: FollowRecord) => {

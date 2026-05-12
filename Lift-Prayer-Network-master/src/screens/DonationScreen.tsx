@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -30,7 +29,7 @@ const BANK_DETAILS = {
 
 const DonationScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string, fieldName: string) => {
@@ -596,4 +595,3 @@ const styles = StyleSheet.create({
 });
 
 export default DonationScreen;
-

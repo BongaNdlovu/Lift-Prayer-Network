@@ -5,7 +5,6 @@
  * Integrates with Sentry for production error reporting.
  */
 
-import { Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { Analytics } from './analytics/index';
 

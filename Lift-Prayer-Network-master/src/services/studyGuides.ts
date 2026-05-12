@@ -11,12 +11,10 @@ import {
   deleteDoc,
   query,
   orderBy,
-  limit,
   onSnapshot,
   serverTimestamp,
   Timestamp,
   getDoc,
-  getDocs,
   where,
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';

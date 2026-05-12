@@ -20,7 +20,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { hasAdminPermission } from '../../config/admins';
 import { palette, radius, spacing } from '../../theme/colors';
-import { LiftScreen, LiftHeader, LiftIconButton } from '../../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../../components/LiftLayout';
 
 type BannedUser = {
   id: string;

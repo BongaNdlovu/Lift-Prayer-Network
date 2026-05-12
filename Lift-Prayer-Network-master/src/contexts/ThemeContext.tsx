@@ -1,14 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useColorScheme, StyleSheet, Appearance } from 'react-native';
+import { StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightPalette, darkPalette, setPalette, type ThemePalette, spacing, radius } from '../theme/colors';
 
 const THEME_KEY = '@lift_theme_preference';
 
 type ThemeMode = 'light' | 'system';
-
-// Get system color scheme synchronously for immediate render
-const getInitialColorScheme = () => Appearance.getColorScheme() === 'dark';
 
 type ThemeContextValue = {
   isDark: boolean;
@@ -140,7 +137,6 @@ const createDynamicStyles = (colors: ThemePalette, isDark: boolean) => StyleShee
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const systemColorScheme = useColorScheme();
   const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
   // Use ref to track if we've loaded saved preference (avoids re-render flash)
   const hasLoadedRef = useRef(false);

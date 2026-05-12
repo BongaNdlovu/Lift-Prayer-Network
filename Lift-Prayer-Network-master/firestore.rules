@@ -49,8 +49,11 @@ service cloud.firestore {
       // GROUP requests must have at least one groupId
       let groupValid = visibility != 'GROUP' || (groupIds != null && groupIds.size() > 0);
       
-      // PRIVATE requests should have isPrivate flag set
-      let privateValid = visibility != 'PRIVATE' || isPrivate == true;
+      // PRIVATE requests should have isPrivate flag set and no group targeting
+      let privateValid = visibility != 'PRIVATE' || (
+        isPrivate == true
+        && (groupIds == null || groupIds.size() == 0)
+      );
       
       // PUBLIC requests should not be marked private
       let publicValid = visibility != 'PUBLIC' || isPrivate != true;

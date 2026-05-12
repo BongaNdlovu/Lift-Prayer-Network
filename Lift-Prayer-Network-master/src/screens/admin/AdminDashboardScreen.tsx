@@ -7,7 +7,7 @@ import { hasAdminPermission, hasModeratorPermission } from '../../config/admins'
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
-import { LiftScreen, LiftHeader, LiftIconButton } from '../../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../../components/LiftLayout';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
 
@@ -237,4 +237,3 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
-

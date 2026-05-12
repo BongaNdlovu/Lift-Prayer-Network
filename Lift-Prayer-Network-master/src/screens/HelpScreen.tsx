@@ -11,7 +11,6 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -889,4 +888,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

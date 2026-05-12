@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
   Animated,
   Dimensions,
@@ -19,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing, fonts, fontSizes } from '../theme/colors';
+import { radius, spacing, fonts, fontSizes } from '../theme/colors';
 import { recordOnboardingAnalytics, type OnboardingAnswers } from '../services/userProfile';
 import { validateDisplayName } from '../utils/security';
 import { CinematicBackground } from '../components/CinematicBackground';
@@ -164,7 +164,7 @@ type Props = {
 };
 
 export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const slides = getSlides(colors);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
@@ -482,12 +482,6 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       </LinearGradient>
     );
   };
-
-  // Memoize gradient colors for performance and stability
-  const gradientColors = useMemo(
-    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
-    [colors.gradientBoldScreen]
-  );
 
   if (showQuestionnaire) {
     return renderQuestion();

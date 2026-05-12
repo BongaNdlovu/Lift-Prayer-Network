@@ -34,7 +34,7 @@ export const FeedScreen: React.FC = () => {
   const [mode, setMode] = useState<'REQUEST' | 'TESTIMONY'>('REQUEST');
   const [activeTab, setActiveTab] = useState<FeedTab>('all');
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { unreadCount } = useUnreadNotifications();
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   

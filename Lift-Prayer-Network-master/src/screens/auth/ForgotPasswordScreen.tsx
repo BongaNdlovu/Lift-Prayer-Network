@@ -13,8 +13,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
-import { spacing, fonts, radius } from '../../theme/colors';
-import { LiftScreen, LiftLogo, LiftCard, LiftButton, LiftHeader } from '../../components/LiftLayout';
+import { fonts, radius } from '../../theme/colors';
+import { LiftScreen, LiftCard, LiftButton, LiftHeader } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;

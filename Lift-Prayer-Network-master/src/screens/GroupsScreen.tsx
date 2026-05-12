@@ -11,7 +11,6 @@ import {
   View,
   Share,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
@@ -29,7 +28,7 @@ import {
 import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, fontSizes, palette, radius, spacing, shadows } from '../theme/colors';
+import { fonts, fontSizes, radius, spacing, shadows } from '../theme/colors';
 import { SkeletonGroups } from '../components/SkeletonCard';
 import { GlassCard, GlassIconButton } from '../components/GlassCard';
 import { LiftScreen } from '../components/LiftLayout';

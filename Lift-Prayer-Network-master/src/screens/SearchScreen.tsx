@@ -30,7 +30,7 @@ import { logPrayer, logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { palette, radius, spacing } from '../theme/colors';
-import { LiftScreen, LiftHeader, LiftIconButton, LiftChip } from '../components/LiftLayout';
+import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 import { RootStackParamList } from '../navigation/types';
 import { PRAYER_CATEGORIES, type PrayerCategory, type FeedItem } from '../types';
 import { SEARCH_LIMIT } from '../config/queryLimits';
