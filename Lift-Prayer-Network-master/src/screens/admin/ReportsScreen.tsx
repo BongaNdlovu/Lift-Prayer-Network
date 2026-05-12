@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ActivityIndicator, Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
@@ -8,7 +7,7 @@ import { hasAdminPermission } from '../../config/admins';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
+import { LiftScreen, LiftHeader, LiftIconButton } from '../../components/LiftLayout';
 
 type Report = {
   id: string;
@@ -50,12 +49,12 @@ export const ReportsScreen: React.FC = () => {
 
   if (!hasAdminPermission(user?.email)) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <Ionicons name="shield" size={32} color={colors.muted} />
           <Text style={[styles.denied, { color: colors.text }]}>Access Denied</Text>
-        </SafeAreaView>
-      </CinematicBackground>
+        </View>
+      </LiftScreen>
     );
   }
 
@@ -95,26 +94,18 @@ export const ReportsScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <ActivityIndicator color={colors.accent} />
-        </SafeAreaView>
-      </CinematicBackground>
+        </View>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.headerSection}>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>MODERATION</Text>
-            <Text style={styles.heading}>
-              Reports<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-        </View>
-        <RoundedPage style={styles.mainContent}>
+    <LiftScreen>
+      <LiftHeader title="Reports" subtitle="Moderation queue" />
+      <View style={styles.content}>
           <FlatList
       data={reports}
       keyExtractor={(item) => item.id}
@@ -148,14 +139,16 @@ export const ReportsScreen: React.FC = () => {
         </View>
       )}
           />
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   

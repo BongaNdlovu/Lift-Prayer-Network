@@ -25,6 +25,8 @@ export type EditRequestData = {
   category?: PrayerCategory;
   isUrgent?: boolean;
   isPrivate?: boolean;
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'GROUP';
+  groupIds?: string[];
 };
 
 /** Data for editing a testimony */

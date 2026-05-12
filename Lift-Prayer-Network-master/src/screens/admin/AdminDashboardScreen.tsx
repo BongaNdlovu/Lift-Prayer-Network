@@ -1,6 +1,5 @@
 import React from 'react';
-import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
@@ -8,8 +7,7 @@ import { hasAdminPermission, hasModeratorPermission } from '../../config/admins'
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
-import { GlassIconButton } from '../../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftIconButton } from '../../components/LiftLayout';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
 
@@ -23,35 +21,19 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
   // Must be at least a moderator to access
   if (!isModerator) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <Ionicons name="shield" size={40} color={colors.muted} />
           <Text style={[styles.denied, { color: colors.text }]}>Moderator access required</Text>
-        </SafeAreaView>
-      </CinematicBackground>
+        </View>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>MANAGEMENT</Text>
-            <Text style={styles.heading}>
-              Admin<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-          <View style={styles.content}>
+    <LiftScreen>
+      <LiftHeader title="Admin" subtitle="Management dashboard" onBack={() => navigation.goBack()} />
+      <View style={styles.content}>
         {/* Reports - Available to Moderators and Admins */}
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -124,9 +106,7 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
           </View>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+    </LiftScreen>
   );
 };
 

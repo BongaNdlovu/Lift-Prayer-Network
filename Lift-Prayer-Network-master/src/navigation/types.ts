@@ -1,3 +1,5 @@
+import type { FeedItem } from '../types';
+
 export type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
@@ -6,7 +8,7 @@ export type RootStackParamList = {
   RequestDetail: {
     id: string;
     type: 'REQUEST' | 'TESTIMONY';
-    item?: any;
+    item?: FeedItem;
   };
   CreateRequest: {
     groupId?: string;
@@ -22,7 +24,7 @@ export type RootStackParamList = {
   EditRequest: {
     id: string;
     type: 'REQUEST' | 'TESTIMONY';
-    item: any;
+    item: FeedItem;
   };
   NotificationsSettings: undefined;
   Reminders: undefined;

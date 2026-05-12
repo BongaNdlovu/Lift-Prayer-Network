@@ -217,7 +217,7 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="Groups"
               component={GroupsScreen}
-              options={{ headerShown: true, title: 'Prayer Groups' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="GroupDetail"

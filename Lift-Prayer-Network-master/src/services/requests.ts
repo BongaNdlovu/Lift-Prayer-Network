@@ -9,7 +9,7 @@ import {
   addDoc,
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
-import { checkActionRateLimit, formatRateLimitError } from '../utils/security';
+import { checkActionRateLimit, formatRateLimitError, sanitizeForFirestore } from '../utils/security';
 
 export const fetchRequestOrTestimony = async (type: 'REQUEST' | 'TESTIMONY', id: string) => {
   if (!firebaseEnabled || !db) return null;
@@ -22,10 +22,11 @@ export const fetchRequestOrTestimony = async (type: 'REQUEST' | 'TESTIMONY', id:
 export const updateRequestContent = async (id: string, content: string) => {
   if (!firebaseEnabled || !db) return;
   const ref = doc(db, 'requests', id);
-  await updateDoc(ref, {
+  const sanitizedData = sanitizeForFirestore({
     content,
     updatedAt: serverTimestamp(),
   });
+  await updateDoc(ref, sanitizedData);
 };
 
 export const deleteRequest = async (id: string) => {
@@ -36,10 +37,11 @@ export const deleteRequest = async (id: string) => {
 export const updateTestimonyContent = async (id: string, content: string) => {
   if (!firebaseEnabled || !db) return;
   const ref = doc(db, 'testimonies', id);
-  await updateDoc(ref, {
+  const sanitizedData = sanitizeForFirestore({
     content,
     updatedAt: serverTimestamp(),
   });
+  await updateDoc(ref, sanitizedData);
 };
 
 export const deleteTestimony = async (id: string) => {
@@ -63,7 +65,7 @@ export const flagContent = async (
   if (!rateLimit.allowed) {
     throw new Error(formatRateLimitError('reports', rateLimit.resetInSeconds));
   }
-  await addDoc(collection(db, 'reports'), {
+  const sanitizedData = sanitizeForFirestore({
     actorUid,
     targetId,
     targetType,
@@ -71,4 +73,5 @@ export const flagContent = async (
     status: 'PENDING',
     createdAt: Timestamp.now(),
   });
+  await addDoc(collection(db, 'reports'), sanitizedData);
 };

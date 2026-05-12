@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  SafeAreaView,
   FlatList,
   StyleSheet,
   Text,
@@ -12,7 +11,6 @@ import {
   Alert,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -35,8 +33,7 @@ import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftIconButton } from '../components/LiftLayout';
 import { SkeletonNotifications } from '../components/SkeletonCard';
 import { RootStackParamList } from '../navigation/types';
 import { NOTIFICATIONS_LIMIT } from '../config/queryLimits';
@@ -360,35 +357,9 @@ export const NotificationsInboxScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>UPDATES</Text>
-            <Text style={styles.heading}>
-              Inbox<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={styles.headerActions}>
-            {unreadCount > 0 && (
-              <GlassIconButton onPress={markAllAsRead}>
-                <Ionicons name="checkmark-done-outline" size={20} color={colors.amber700} />
-              </GlassIconButton>
-            )}
-            {notifications.length > 0 && (
-              <GlassIconButton onPress={handleDeleteAll}>
-                <Ionicons name="trash-outline" size={20} color={colors.rose600} />
-              </GlassIconButton>
-            )}
-          </View>
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+    <LiftScreen>
+      <LiftHeader title="Inbox" subtitle="Your notifications" onBack={() => navigation.goBack()} />
+      <View style={styles.content}>
 
       {loading ? (
         <View style={styles.list}>
@@ -450,14 +421,16 @@ export const NotificationsInboxScreen: React.FC = () => {
           ListFooterComponent={<View style={{ height: 40 }} />}
         />
       )}
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   

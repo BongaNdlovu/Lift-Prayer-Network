@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  SafeAreaView,
   FlatList,
   StyleSheet,
   Text,
@@ -11,7 +10,6 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,8 +31,7 @@ import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { SkeletonCard } from '../components/SkeletonCard';
 import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftIconButton, LiftChip } from '../components/LiftLayout';
 import type { FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 import { MY_PRAYERS_LIMIT } from '../config/queryLimits';
@@ -234,29 +231,9 @@ export const MyPrayersScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR CONTENT</Text>
-            <Text style={styles.heading}>
-              My Prayers<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <GlassIconButton
-            onPress={() => navigation.navigate('CreateRequest')}
-            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
-          >
-            <Ionicons name="add" size={24} color={colors.amber700} />
-          </GlassIconButton>
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+    <LiftScreen>
+      <LiftHeader title="My Prayers" subtitle="Your prayer requests and testimonies" onBack={() => navigation.goBack()} />
+      <View style={styles.content}>
 
         {/* Stats Row */}
         <ScrollView 
@@ -393,14 +370,16 @@ export const MyPrayersScreen: React.FC = () => {
             }
           />
         )}
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   

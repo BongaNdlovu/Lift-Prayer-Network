@@ -29,6 +29,7 @@ import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from
 import { checkUserBlockedFromPosting } from '../services/moderation';
 import type { RootStackParamList } from '../navigation/types';
 import type { PrayerGroup } from '../types';
+import { validatePrivacyFields, normalizePrivacyFields } from '../utils/contentPrivacy';
 
 type VisibilityOption = 'PUBLIC' | 'PRIVATE' | 'GROUP';
 
@@ -80,9 +81,14 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
-    // Validate GROUP visibility has at least one group selected
-    if (visibility === 'GROUP' && selectedGroupIds.length === 0) {
-      Alert.alert('Select Groups', 'Please select at least one group to share with.');
+    // Validate privacy settings
+    const privacyError = validatePrivacyFields({
+      visibility,
+      isPrivate: visibility === 'PRIVATE',
+      groupIds: selectedGroupIds,
+    });
+    if (privacyError) {
+      Alert.alert('Privacy Setting Needed', privacyError);
       return;
     }
 
@@ -175,6 +181,13 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   const proceedWithSubmit = async (sanitizedContent: string) => {
     if (!user) return;
 
+    // Normalize privacy settings
+    const privacy = normalizePrivacyFields({
+      visibility,
+      isPrivate: visibility === 'PRIVATE',
+      groupIds: selectedGroupIds,
+    });
+
     setSubmitting(true);
 
     try {
@@ -182,9 +195,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
         linkedRequestId: linkedRequestId || undefined,
         userEmail: user.email || undefined,
         userPhotoURL: user.photoURL || null,
-        visibility,
-        isPrivate: visibility === 'PRIVATE',
-        groupIds: visibility === 'GROUP' ? selectedGroupIds : undefined,
+        ...privacy,
         isEmailVerified: user.emailVerified || false,
       });
 

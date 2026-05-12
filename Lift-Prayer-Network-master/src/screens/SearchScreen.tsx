@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,7 +12,6 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,8 +30,7 @@ import { logPrayer, logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftIconButton, LiftChip } from '../components/LiftLayout';
 import { RootStackParamList } from '../navigation/types';
 import { PRAYER_CATEGORIES, type PrayerCategory, type FeedItem } from '../types';
 import { SEARCH_LIMIT } from '../config/queryLimits';
@@ -279,24 +276,9 @@ export const SearchScreen: React.FC = () => {
     (filters.timeRange !== 'all' ? 1 : 0);
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>FIND PRAYERS</Text>
-            <Text style={styles.heading}>
-              Search<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+    <LiftScreen>
+      <LiftHeader title="Search" subtitle="Find prayers, testimonies, people" onBack={() => navigation.goBack()} />
+      <View style={styles.content}>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -511,14 +493,16 @@ export const SearchScreen: React.FC = () => {
           }
         />
       )}
-      </RoundedPage>
-    </SafeAreaView>
-  </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   

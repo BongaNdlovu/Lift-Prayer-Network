@@ -21,7 +21,8 @@ import {
   validateContent, 
   checkDailyLimit, 
   checkActionRateLimit, 
-  formatRateLimitError 
+  formatRateLimitError,
+  sanitizeForFirestore
 } from '../utils/security';
 
 // Daily comment limit per user
@@ -94,7 +95,7 @@ export const addComment = async (
   const sanitizedContent = validation.sanitized || content.trim();
 
   try {
-    const commentRef = await addDoc(collection(db, 'comments'), {
+    const sanitizedData = sanitizeForFirestore({
       parentId,
       parentType,
       authorUid,
@@ -103,6 +104,7 @@ export const addComment = async (
       hiddenByOwner: false,
       createdAt: serverTimestamp(),
     });
+    const commentRef = await addDoc(collection(db, 'comments'), sanitizedData);
 
     // Increment comment count on parent
     const parentCollection = parentType === 'REQUEST' ? 'requests' : 'testimonies';

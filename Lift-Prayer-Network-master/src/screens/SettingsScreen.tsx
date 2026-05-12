@@ -5,7 +5,6 @@ import {
   BackHandler,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Switch,
@@ -14,15 +13,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftCard, LiftIconButton, LiftButton } from '../components/LiftLayout';
 import { updateUserSettings } from '../services/userProfile';
 import { getBlockedUsers, unblockUser, syncBlockedUsers } from '../services/moderation';
 import { deletePrayerHistory } from '../services/prayers';
@@ -311,25 +308,10 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>PREFERENCES</Text>
-            <Text style={styles.heading}>
-              Settings<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+    <>
+    <LiftScreen scroll>
+      <LiftHeader title="Settings" subtitle="Preferences and account settings" onBack={() => navigation.goBack()} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* Appearance Section */}
         <View style={[styles.section, dynamicStyles.section]}>
@@ -585,10 +567,10 @@ export const SettingsScreen: React.FC = () => {
           <Text style={[styles.exitButtonText, dynamicStyles.exitButtonText]}>Exit App</Text>
         </TouchableOpacity>
           </ScrollView>
-        </RoundedPage>
+    </LiftScreen>
 
-        {/* Delete Account Modal */}
-        <Modal
+    {/* Delete Account Modal */}
+    <Modal
         visible={showDeleteModal}
         animationType="slide"
         transparent
@@ -639,8 +621,7 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </View>
         </Modal>
-      </SafeAreaView>
-    </CinematicBackground>
+    </>
   );
 };
 

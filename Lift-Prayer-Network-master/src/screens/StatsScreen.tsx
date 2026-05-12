@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,18 +9,16 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { getUserStats, type UserStats } from '../services/stats';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing, shadows } from '../theme/colors';
+import { palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
 import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassStatCard } from '../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftCard, LiftStat } from '../components/LiftLayout';
 
 type StatCardProps = {
   emoji: string;
@@ -89,23 +86,23 @@ export const StatsScreen: React.FC = () => {
 
   if (!user) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <Text style={styles.emoji}>📊</Text>
-          <Text style={[styles.title, { color: colors.stone900 }]}>Sign in to view your stats</Text>
-          <Text style={[styles.subtitle, { color: colors.stone500 }]}>Track your prayer journey</Text>
-        </SafeAreaView>
-      </CinematicBackground>
+          <Text style={[styles.title, { color: colors.text }]}>Sign in to view your stats</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>Track your prayer journey</Text>
+        </View>
+      </LiftScreen>
     );
   }
 
   if (loading) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
-          <ActivityIndicator size="large" color={colors.amber500} />
-        </SafeAreaView>
-      </CinematicBackground>
+      <LiftScreen>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.accentDark} />
+        </View>
+      </LiftScreen>
     );
   }
 
@@ -116,20 +113,9 @@ export const StatsScreen: React.FC = () => {
     : `${stats?.streakDays} days strong! 💪`;
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR JOURNEY</Text>
-          <Text style={styles.heading}>
-            Stats<Text style={styles.headingDot}>.</Text>
-          </Text>
-          <Text style={[styles.subheading, { color: colors.stone500 }]}>Prayer statistics & streaks</Text>
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+    <LiftScreen scroll>
+      <LiftHeader title="Stats" subtitle="Prayer statistics & streaks" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
           <PrayerStreakWidget
             currentStreak={stats?.streakDays || 0}
@@ -215,12 +201,7 @@ export const StatsScreen: React.FC = () => {
             style={styles.galleryLink}
             onPress={() => navigation.navigate('AnsweredPrayers')}
           >
-            <LinearGradient
-              colors={['#10b981', '#059669']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.galleryGradient}
-            >
+            <View style={[styles.galleryGradient, { backgroundColor: colors.accentDark }]}>
               <View style={styles.galleryContent}>
                 <Text style={styles.galleryEmoji}>🎉</Text>
                 <View style={styles.galleryText}>
@@ -229,12 +210,10 @@ export const StatsScreen: React.FC = () => {
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={24} color="#fff" />
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
           </ScrollView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+    </LiftScreen>
   );
 };
 

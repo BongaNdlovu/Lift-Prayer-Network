@@ -20,6 +20,7 @@ import {
   TestimonyEditUpdateData,
 } from './types';
 import { withPermissionCheck, batchDeleteDocuments } from './helpers';
+import { normalizePrivacyFields } from '../../utils/contentPrivacy';
 
 // ============================================================================
 // Edit Functions
@@ -66,9 +67,18 @@ export const editPrayerRequest = async (
           }
         }
       }
-      if (updates.isPrivate !== undefined) {
-        updateData.isPrivate = updates.isPrivate;
-        updateData.visibility = updates.isPrivate ? 'PRIVATE' : 'PUBLIC';
+      
+      // Handle privacy fields using the normalized helper if any privacy field is being updated
+      const hasPrivacyUpdate = updates.isPrivate !== undefined || updates.visibility !== undefined || updates.groupIds !== undefined;
+      if (hasPrivacyUpdate) {
+        const privacy = normalizePrivacyFields({
+          visibility: updates.visibility || docData.visibility,
+          isPrivate: updates.isPrivate !== undefined ? updates.isPrivate : docData.isPrivate,
+          groupIds: updates.groupIds !== undefined ? updates.groupIds : docData.groupIds,
+        });
+        updateData.isPrivate = privacy.isPrivate;
+        updateData.visibility = privacy.visibility;
+        updateData.groupIds = privacy.groupIds;
       }
 
       await updateDoc(docRef, updateData);

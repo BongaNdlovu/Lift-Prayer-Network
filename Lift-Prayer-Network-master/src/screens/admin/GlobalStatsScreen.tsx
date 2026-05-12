@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import { doc, getDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
@@ -8,7 +7,7 @@ import { hasAdminPermission } from '../../config/admins';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
+import { LiftScreen, LiftHeader } from '../../components/LiftLayout';
 
 type GlobalStats = {
   totalPrayers?: number;
@@ -53,37 +52,29 @@ export const GlobalStatsScreen: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <Ionicons name="shield" size={32} color={colors.muted} />
           <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
-        </SafeAreaView>
-      </CinematicBackground>
+        </View>
+      </LiftScreen>
     );
   }
 
   if (loading) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <ActivityIndicator color={colors.accent} />
-        </SafeAreaView>
-      </CinematicBackground>
+        </View>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.headerSection}>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>ANALYTICS</Text>
-            <Text style={styles.heading}>
-              Stats<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-        </View>
-        <RoundedPage style={styles.mainContent}>
+    <LiftScreen>
+      <LiftHeader title="Stats" subtitle="Global prayer activity" />
+      <View style={styles.content}>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.title, { color: colors.text }]}>Global Prayer Activity</Text>
             <View style={styles.row}>
@@ -102,14 +93,16 @@ export const GlobalStatsScreen: React.FC = () => {
               </Text>
             ) : null}
           </View>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   

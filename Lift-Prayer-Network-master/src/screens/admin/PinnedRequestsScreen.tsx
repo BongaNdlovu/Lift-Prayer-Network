@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ActivityIndicator, Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { collection, doc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
@@ -9,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { pinRequest, unpinRequest } from '../../services/prayers';
 import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
+import { LiftScreen, LiftHeader } from '../../components/LiftLayout';
 
 type RequestItem = {
   id: string;
@@ -91,37 +90,29 @@ export const PinnedRequestsScreen: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <Ionicons name="shield" size={32} color={colors.muted} />
           <Text style={[styles.denied, { color: colors.text }]}>Admin access required</Text>
-        </SafeAreaView>
-      </CinematicBackground>
+        </View>
+      </LiftScreen>
     );
   }
 
   if (loading) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
+      <LiftScreen>
+        <View style={styles.center}>
           <ActivityIndicator color={colors.accent} />
-        </SafeAreaView>
-      </CinematicBackground>
+        </View>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.headerSection}>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>FEATURED</Text>
-            <Text style={styles.heading}>
-              Pinned<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-        </View>
-        <RoundedPage style={styles.mainContent}>
+    <LiftScreen>
+      <LiftHeader title="Pinned" subtitle="Featured requests" />
+      <View style={styles.content}>
           <FlatList
       data={items}
       keyExtractor={(item) => item.id}
@@ -156,14 +147,16 @@ export const PinnedRequestsScreen: React.FC = () => {
         </View>
       )}
           />
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   

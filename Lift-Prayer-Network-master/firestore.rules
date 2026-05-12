@@ -238,13 +238,33 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Helper function to validate notification type
+    function isValidNotificationType(type) {
+      return type in ['PRAYER', 'COMMENT', 'FOLLOW', 'GROUP_INVITE', 'GROUP_JOIN', 'ANNOUNCEMENT', 'ADMIN'];
+    }
+
+    // Helper function to check if notification has required fields
+    function hasRequiredNotificationFields(data) {
+      return data.type != null
+        && data.recipientUid != null
+        && data.actorUid != null
+        && data.createdAt != null;
+    }
+
     // Notifications - users can read/update their own notifications
     // Create is restricted to ensure actorUid matches the authenticated user (prevents spoofing)
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
-      // Only allow creating notifications where the actor is the authenticated user
-      // This prevents users from creating fake notifications impersonating others
-      allow create: if isSignedIn() && request.resource.data.actorUid == request.auth.uid;
+      // Hardened create rules:
+      // - Actor must be authenticated user (prevents spoofing)
+      // - Recipient must be different from actor (no self-notifications)
+      // - Notification type must be valid
+      // - Required fields must be present
+      allow create: if isSignedIn()
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.recipientUid != request.auth.uid
+        && isValidNotificationType(request.resource.data.type)
+        && hasRequiredNotificationFields(request.resource.data);
       allow update: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
     }

@@ -116,6 +116,65 @@ export const LiftLogo: React.FC<{ size?: 'sm' | 'lg'; style?: StyleProp<TextStyl
   return <Text style={[size === 'lg' ? styles.logoLarge : styles.logoSmall, { color: colors.accentDark }, style]}>Lift</Text>;
 };
 
+type IconButtonProps = {
+  children: React.ReactNode;
+  onPress: () => void;
+  badge?: number;
+  style?: StyleProp<ViewStyle>;
+};
+
+export const LiftIconButton: React.FC<IconButtonProps> = ({ children, onPress, badge, style }) => {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} style={[styles.liftIconButton, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
+      {children}
+      {badge ? (
+        <View style={[styles.badge, { backgroundColor: colors.danger }]}>
+          <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+};
+
+type ChipProps = {
+  label: string;
+  active?: boolean;
+  onPress: () => void;
+  icon?: React.ReactNode;
+};
+
+export const LiftChip: React.FC<ChipProps> = ({ label, active, onPress, icon }) => {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.chip,
+        { backgroundColor: active ? colors.accentDark : colors.surface, borderColor: active ? colors.accentDark : colors.border },
+      ]}
+    >
+      {icon}
+      <Text style={[styles.chipText, { color: active ? '#FFFDF8' : colors.text }]}>{label}</Text>
+    </Pressable>
+  );
+};
+
+type StatProps = {
+  value: string | number;
+  label: string;
+};
+
+export const LiftStat: React.FC<StatProps> = ({ value, label }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.stat, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { flex: 1, paddingHorizontal: mediumLayout.screenPadding },
@@ -136,4 +195,12 @@ const styles = StyleSheet.create({
   buttonText: { fontFamily: fonts.bodyBold, fontSize: 15 },
   logoLarge: { fontFamily: fonts.heading, fontSize: 42, lineHeight: 48, fontWeight: '500' },
   logoSmall: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 32, fontWeight: '500' },
+  liftIconButton: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  badgeText: { color: '#FFFDF8', fontSize: 10, fontFamily: fonts.bodyBold },
+  chip: { minHeight: 38, borderRadius: 19, borderWidth: 1, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  chipText: { fontFamily: fonts.bodyMedium, fontSize: 14 },
+  stat: { flex: 1, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  statValue: { fontFamily: fonts.heading, fontSize: 22, fontWeight: '500' },
+  statLabel: { fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
 });

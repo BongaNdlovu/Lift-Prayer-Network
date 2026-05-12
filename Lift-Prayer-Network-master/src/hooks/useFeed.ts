@@ -28,6 +28,7 @@ import { incrementUserRequestCount, incrementUserTestimonyCount } from '../servi
 import { checkAndUnlockAchievements } from '../services/achievements';
 import { FEED_PAGE_SIZE } from '../config/queryLimits';
 import { logFirestoreRead } from '../utils/readBudget';
+import { sanitizeForFirestore } from '../utils/security';
 import type { FeedItem, LiftRequest, Testimony } from '../types';
 
 type Mode = 'REQUEST' | 'TESTIMONY';
@@ -361,7 +362,11 @@ export const useFeed = (
       await loadCachedData();
 
       if (!firebaseEnabled || !db) {
-        setItems(Array.from({ length: 8 }).map(() => generateMockItem(mode)));
+        if (__DEV__) {
+          setItems(Array.from({ length: 8 }).map(() => generateMockItem(mode)));
+        } else {
+          setItems([]);
+        }
         setLoading(false);
         return;
       }
@@ -450,7 +455,8 @@ export const submitFeedItem = async (
     }
   }
 
-  const docRef = await addDoc(col, baseDoc);
+  const sanitizedDoc = sanitizeForFirestore(baseDoc);
+  const docRef = await addDoc(col, sanitizedDoc);
 
   // Update user stats and achievements
   if (mode === 'REQUEST') {

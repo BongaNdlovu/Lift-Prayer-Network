@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +10,6 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
@@ -22,8 +20,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { hasAdminPermission } from '../../config/admins';
 import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
-import { GlassIconButton } from '../../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftIconButton } from '../../components/LiftLayout';
 
 type BannedUser = {
   id: string;
@@ -117,36 +114,19 @@ export const BannedUsersScreen: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.center}>
-            <Ionicons name="lock-closed" size={48} color={colors.muted} />
-            <Text style={[styles.noAccessText, { color: colors.text }]}>Admin access required</Text>
-          </View>
-        </SafeAreaView>
-      </CinematicBackground>
+      <LiftScreen>
+        <View style={styles.center}>
+          <Ionicons name="lock-closed" size={48} color={colors.muted} />
+          <Text style={[styles.noAccessText, { color: colors.text }]}>Admin access required</Text>
+        </View>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>MODERATION</Text>
-            <Text style={styles.heading}>
-              Banned<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+    <LiftScreen>
+      <LiftHeader title="Banned Users" subtitle="Manage restricted accounts" onBack={() => navigation.goBack()} />
+      <View style={styles.content}>
 
       {loading ? (
         <View style={styles.center}>
@@ -215,15 +195,17 @@ export const BannedUsersScreen: React.FC = () => {
             </>
           )}
           </ScrollView>
-        )}
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      )}
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   
@@ -292,10 +274,6 @@ const styles = StyleSheet.create({
   noAccessText: {
     marginTop: spacing.md,
     fontSize: 16,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.md,
   },
   countText: {
     fontSize: 14,

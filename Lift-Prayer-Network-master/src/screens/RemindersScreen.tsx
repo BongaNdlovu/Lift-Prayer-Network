@@ -4,7 +4,7 @@ import {
   FlatList,
   Modal,
   Platform,
-  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -28,8 +28,7 @@ import {
 } from '../services/reminders';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftIconButton, LiftButton, LiftCard } from '../components/LiftLayout';
 
 const DAYS = [
   { id: 0, short: 'S', full: 'Sunday' },
@@ -179,22 +178,24 @@ export const RemindersScreen: React.FC = () => {
 
   if (!permissionGranted && Platform.OS !== 'web') {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.emptyEmoji}>🔔</Text>
-        <Text style={styles.emptyTitle}>Enable Notifications</Text>
-        <Text style={styles.emptySubtitle}>
-          Allow notifications to receive prayer reminders
-        </Text>
-        <TouchableOpacity
-          style={styles.enableBtn}
-          onPress={async () => {
-            const granted = await requestNotificationPermissions();
-            setPermissionGranted(granted);
-          }}
-        >
-          <Text style={styles.enableBtnText}>Enable Notifications</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <LiftScreen>
+        <View style={styles.center}>
+          <Text style={styles.emptyEmoji}>🔔</Text>
+          <Text style={styles.emptyTitle}>Enable Notifications</Text>
+          <Text style={styles.emptySubtitle}>
+            Allow notifications to receive prayer reminders
+          </Text>
+          <TouchableOpacity
+            style={styles.enableBtn}
+            onPress={async () => {
+              const granted = await requestNotificationPermissions();
+              setPermissionGranted(granted);
+            }}
+          >
+            <Text style={styles.enableBtnText}>Enable Notifications</Text>
+          </TouchableOpacity>
+        </View>
+      </LiftScreen>
     );
   }
 
@@ -229,29 +230,10 @@ export const RemindersScreen: React.FC = () => {
   );
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>SCHEDULE</Text>
-            <Text style={styles.heading}>
-              Reminders<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <GlassIconButton
-            onPress={handleAddReminder}
-            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
-          >
-            <Ionicons name="add" size={24} color={colors.amber700} />
-          </GlassIconButton>
-        </View>
-
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+    <>
+    <LiftScreen>
+      <LiftHeader title="Reminders" subtitle="Schedule your prayer reminders" onBack={() => navigation.goBack()} />
+      <View style={styles.content}>
 
       {reminders.length === 0 ? (
         <View style={styles.emptyState}>
@@ -273,9 +255,11 @@ export const RemindersScreen: React.FC = () => {
           contentContainerStyle={styles.list}
         />
       )}
+      </View>
+    </LiftScreen>
 
-      {/* Add/Edit Modal */}
-      <Modal
+    {/* Add/Edit Modal */}
+    <Modal
         visible={showModal}
         animationType="slide"
         transparent
@@ -339,17 +323,31 @@ export const RemindersScreen: React.FC = () => {
               ))}
             </View>
 
-            {/* Message */}
-            <Text style={styles.sectionLabel}>Message</Text>
-            <TextInput
-              style={styles.messageInput}
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Reminder message..."
-              placeholderTextColor={palette.muted}
-              maxLength={100}
-            />
+            {/* Message Selector */}
+            <Text style={styles.sectionLabel}>Reminder message</Text>
+            <ScrollView style={styles.messageScroll} horizontal showsHorizontalScrollIndicator={false}>
+              {REMINDER_MESSAGES.map((msg) => (
+                <TouchableOpacity
+                  key={msg}
+                  style={[
+                    styles.messageOption,
+                    message === msg && styles.messageOptionActive,
+                  ]}
+                  onPress={() => setMessage(msg)}
+                >
+                  <Text
+                    style={[
+                      styles.messageText,
+                      message === msg && styles.messageTextActive,
+                    ]}
+                  >
+                    {msg}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
+            {/* Save Button */}
             <TouchableOpacity style={styles.saveBtn} onPress={handleSaveReminder}>
               <Text style={styles.saveBtnText}>
                 {editingReminder ? 'Update Reminder' : 'Create Reminder'}
@@ -358,14 +356,15 @@ export const RemindersScreen: React.FC = () => {
           </View>
         </View>
         </Modal>
-      </RoundedPage>
-    </SafeAreaView>
-  </CinematicBackground>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   
@@ -599,6 +598,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
     marginBottom: spacing.lg,
+  },
+  messageScroll: {
+    maxHeight: 120,
+  },
+  messageOption: {
+    backgroundColor: '#f1f5f9',
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    marginRight: spacing.sm,
+  },
+  messageOptionActive: {
+    backgroundColor: palette.accent,
+  },
+  messageText: {
+    fontSize: 14,
+    color: palette.muted,
+  },
+  messageTextActive: {
+    color: '#1f2937',
   },
   saveBtn: {
     backgroundColor: palette.accent,

@@ -30,6 +30,8 @@ import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from
 import { checkUserBlockedFromPosting } from '../services/moderation';
 import { InlineError } from '../components/InlineError';
 import type { RootStackParamList } from '../navigation/types';
+import { validatePrivacyFields, normalizePrivacyFields } from '../utils/contentPrivacy';
+import type { RequestVisibility } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateRequest'>;
 
@@ -164,6 +166,22 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const proceedWithSubmit = async (sanitizedContent: string, sanitizedTitle: string = title.trim()) => {
     if (!user) return;
 
+    // Validate and normalize privacy settings
+    const privacyInput = {
+      visibility: (groupId ? 'GROUP' : isPrivate ? 'PRIVATE' : 'PUBLIC') as RequestVisibility,
+      isPrivate,
+      groupIds: groupId ? [groupId] : undefined,
+    };
+
+    const privacyError = validatePrivacyFields(privacyInput);
+    if (privacyError) {
+      Alert.alert('Privacy Setting Needed', privacyError);
+      setSubmitting(false);
+      return;
+    }
+
+    const privacy = normalizePrivacyFields(privacyInput);
+
     setSubmitting(true);
 
     try {
@@ -177,7 +195,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
           displayName: requestDisplayName,
           category: selectedCategory,
           isUrgent,
-          isPrivate,
+          isPrivate: privacy.isPrivate,
           isAnonymous,
         });
         
@@ -196,9 +214,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
           category: selectedCategory,
           title: sanitizedTitle,
           isUrgent,
-          isPrivate,
-          visibility: groupId ? 'GROUP' : isPrivate ? 'PRIVATE' : 'PUBLIC',
-          groupIds: groupId ? [groupId] : undefined,
+          ...privacy,
           userEmail: isAnonymous ? undefined : (user.email || undefined),
           userPhotoURL: isAnonymous ? null : (user.photoURL || null),
           isAnonymous,

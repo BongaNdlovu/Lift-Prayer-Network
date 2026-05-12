@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassCard } from '../components/GlassCard';
+import { LiftScreen, LiftHeader, LiftCard, LiftButton } from '../components/LiftLayout';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { archivePrayerPromise, getTodayPrayerPromises, markPromiseAnswered, markPromisePrayed } from '../services/prayerPromises';
@@ -97,7 +96,7 @@ export const TodayScreen: React.FC = () => {
   };
 
   const renderPromise = (item: PrayerPromise) => (
-    <GlassCard key={item.id} padding="md" rounded="xl" style={styles.promiseCard}>
+    <LiftCard key={item.id} style={styles.promiseCard}>
       <View style={styles.promiseHeader}>
         <Text style={[styles.promiseText, { color: colors.text }]} numberOfLines={3}>{item.requestSummary}</Text>
         {item.requestIsUrgent && <Text style={styles.urgentBadge}>URGENT</Text>}
@@ -114,7 +113,7 @@ export const TodayScreen: React.FC = () => {
           <Ionicons name="archive-outline" size={18} color={colors.muted} />
         </TouchableOpacity>
       </View>
-    </GlassCard>
+    </LiftCard>
   );
 
   const renderSection = (title: string, data: PrayerPromise[]) => {
@@ -130,51 +129,45 @@ export const TodayScreen: React.FC = () => {
   const hasAny = items.length > 0;
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.headerSection}>
-          <Text style={[styles.kicker, { color: colors.stone500 }]}>PRAYER PROMISES</Text>
-          <Text style={[styles.heading, { color: colors.stone900 }]}>Today</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>Your prayer promises for today</Text>
-        </View>
+    <LiftScreen scroll>
+      <LiftHeader title="Today" subtitle="Your prayer promises for today" />
+      <View style={styles.content}>
+        {loading ? (
+          <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} showsVerticalScrollIndicator={false}>
+            {!hasAny && (
+              <LiftCard style={styles.emptyCard}>
+                <Ionicons name="sunny-outline" size={40} color={colors.accent} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>No prayer promises yet</Text>
+                <Text style={[styles.emptyText, { color: colors.muted }]}>Tap &quot;I&apos;ll Pray&quot; on a request to add it here.</Text>
+              </LiftCard>
+            )}
 
-        <RoundedPage style={styles.mainContent}>
-          {loading ? (
-            <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
-          ) : (
-            <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} showsVerticalScrollIndicator={false}>
-              {!hasAny && (
-                <GlassCard padding="lg" rounded="xl" style={styles.emptyCard}>
-                  <Ionicons name="sunny-outline" size={40} color={colors.accent} />
-                  <Text style={[styles.emptyTitle, { color: colors.text }]}>No prayer promises yet</Text>
-                  <Text style={[styles.emptyText, { color: colors.muted }]}>Tap &quot;I&apos;ll Pray&quot; on a request to add it here.</Text>
-                </GlassCard>
-              )}
+            {renderSection('Due Today', sections.dueToday)}
+            {renderSection('Ongoing', sections.ongoing)}
+            {renderSection('Recently Prayed', sections.recentlyPrayed)}
+            {renderSection('Answered', sections.answered)}
 
-              {renderSection('Due Today', sections.dueToday)}
-              {renderSection('Ongoing', sections.ongoing)}
-              {renderSection('Recently Prayed', sections.recentlyPrayed)}
-              {renderSection('Answered', sections.answered)}
+            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={() => navigation.navigate('MainTabs')}>
+              <Ionicons name="reader-outline" size={20} color="#1f2937" />
+              <Text style={styles.primaryButtonText}>Browse Prayer Wall</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={() => navigation.navigate('MainTabs')}>
-                <Ionicons name="reader-outline" size={20} color="#1f2937" />
-                <Text style={styles.primaryButtonText}>Browse Prayer Wall</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('CreateRequest')}>
-                <Ionicons name="add-circle-outline" size={20} color={colors.stone700} />
-                <Text style={[styles.secondaryButtonText, { color: colors.stone700 }]}>Create Prayer Request</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          )}
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('CreateRequest')}>
+              <Ionicons name="add-circle-outline" size={20} color={colors.stone700} />
+              <Text style={[styles.secondaryButtonText, { color: colors.stone700 }]}>Create Prayer Request</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        )}
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  content: { flex: 1 },
   headerSection: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
   kicker: { fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.xs },
   heading: { fontSize: 36, fontWeight: '700', letterSpacing: -1 },
@@ -198,8 +191,8 @@ const styles = StyleSheet.create({
   outlineButton: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.md, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e7e5e4' },
   outlineButtonText: { fontWeight: '800' },
   iconButton: { padding: 9 },
-  primaryButton: { minHeight: 52, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm },
-  primaryButtonText: { color: '#1f2937', fontSize: 16, fontWeight: '800' },
-  secondaryButton: { minHeight: 52, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e7e5e4' },
-  secondaryButtonText: { fontSize: 16, fontWeight: '800' },
+  primaryButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: 14, borderRadius: radius.md },
+  primaryButtonText: { fontWeight: '800' },
+  secondaryButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: 14, borderRadius: radius.md, borderWidth: 1, borderColor: '#e7e5e4', backgroundColor: '#fff' },
+  secondaryButtonText: { fontWeight: '800' },
 });
