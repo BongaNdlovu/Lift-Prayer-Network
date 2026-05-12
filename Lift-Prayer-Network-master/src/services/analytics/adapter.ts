@@ -110,15 +110,11 @@ export class FirebaseAnalyticsProvider implements AnalyticsProvider {
   async logEvent(event: AnalyticsEvent): Promise<boolean> {
     if (!this.initialized) return false;
 
-    try {
-      // Firebase Analytics integration
-      // import analytics from '@react-native-firebase/analytics';
-      // await analytics().logEvent(event.name, event.params);
-      return true;
-    } catch (error) {
-      console.warn('[Analytics:Firebase] Failed to log event:', error);
-      return false;
-    }
+    void event;
+    // Firebase Analytics integration
+    // import analytics from '@react-native-firebase/analytics';
+    // await analytics().logEvent(event.name, event.params);
+    return true;
   }
 
   async setUserId(userId: string | null): Promise<void> {

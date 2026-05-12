@@ -38,8 +38,11 @@ import { SkeletonNotifications } from '../components/SkeletonCard';
 import { RootStackParamList } from '../navigation/types';
 import { NOTIFICATIONS_LIMIT } from '../config/queryLimits';
 import { logFirestoreRead } from '../utils/readBudget';
-
-type NotificationType = 'prayer_received' | 'amen_received' | 'comment' | 'reaction' | 'testimony' | 'group_request' | 'new_follower';
+import {
+  DEFAULT_NOTIFICATION_TYPE,
+  NOTIFICATION_TYPES,
+  type NotificationType,
+} from '../types/notifications';
 
 type Notification = {
   id: string;
@@ -59,20 +62,22 @@ const NOTIFICATION_ITEM_HEIGHT = 96;
 
 const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
   switch (type) {
-    case 'prayer_received':
+    case NOTIFICATION_TYPES.PRAYER:
       return { name: 'hand-left', color: '#f59e0b' };
-    case 'amen_received':
+    case NOTIFICATION_TYPES.AMEN:
       return { name: 'sparkles', color: '#10b981' };
-    case 'comment':
+    case NOTIFICATION_TYPES.COMMENT:
       return { name: 'chatbubble', color: '#3b82f6' };
-    case 'reaction':
-      return { name: 'heart', color: '#ec4899' };
-    case 'testimony':
-      return { name: 'sparkles', color: '#10b981' };
-    case 'group_request':
+    case NOTIFICATION_TYPES.GROUP_INVITE:
       return { name: 'people', color: '#8b5cf6' };
-    case 'new_follower':
+    case NOTIFICATION_TYPES.GROUP_JOIN:
+      return { name: 'people', color: '#8b5cf6' };
+    case NOTIFICATION_TYPES.FOLLOW:
       return { name: 'person-add', color: '#8b5cf6' };
+    case NOTIFICATION_TYPES.ANNOUNCEMENT:
+      return { name: 'megaphone', color: '#3b82f6' };
+    case NOTIFICATION_TYPES.ADMIN:
+      return { name: 'shield-checkmark', color: '#dc2626' };
     default:
       return { name: 'notifications', color: palette.muted };
   }
@@ -80,20 +85,22 @@ const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionic
 
 const getNotificationMessage = (notification: Notification): string => {
   switch (notification.type) {
-    case 'prayer_received':
+    case NOTIFICATION_TYPES.PRAYER:
       return `prayed for your request`;
-    case 'amen_received':
-      return `said Amen to your testimony 🙌`;
-    case 'comment':
+    case NOTIFICATION_TYPES.AMEN:
+      return `said Amen to your testimony`;
+    case NOTIFICATION_TYPES.COMMENT:
       return `commented on your ${notification.targetSummary ? 'request' : 'post'}`;
-    case 'reaction':
-      return `reacted ${notification.reactionType === 'heart' ? '❤️' : notification.reactionType === 'fire' ? '🔥' : '💪'} to your post`;
-    case 'testimony':
-      return `shared a testimony you prayed for`;
-    case 'group_request':
+    case NOTIFICATION_TYPES.GROUP_INVITE:
       return `posted a prayer in ${notification.groupName || 'your group'}`;
-    case 'new_follower':
+    case NOTIFICATION_TYPES.GROUP_JOIN:
+      return `approved your request to join ${notification.groupName || 'the group'}`;
+    case NOTIFICATION_TYPES.FOLLOW:
       return `started following you`;
+    case NOTIFICATION_TYPES.ANNOUNCEMENT:
+      return `shared an announcement`;
+    case NOTIFICATION_TYPES.ADMIN:
+      return `sent you an update`;
     default:
       return 'sent you a notification';
   }
@@ -147,7 +154,7 @@ export const NotificationsInboxScreen: React.FC = () => {
         const data = docSnap.data();
         items.push({
           id: docSnap.id,
-          type: data.type || 'prayer_received',
+          type: data.type || DEFAULT_NOTIFICATION_TYPE,
           actorDisplayName: data.actorDisplayName || 'Someone',
           actorPhotoURL: data.actorPhotoURL,
           targetRequestId: data.targetRequestId,
@@ -187,7 +194,7 @@ export const NotificationsInboxScreen: React.FC = () => {
     }
 
     // Navigate to the relevant screen
-    if (notification.type === 'amen_received' && notification.targetTestimonyId) {
+    if (notification.type === NOTIFICATION_TYPES.AMEN && notification.targetTestimonyId) {
       navigation.navigate('RequestDetail', {
         id: notification.targetTestimonyId,
         type: 'TESTIMONY',
@@ -195,7 +202,7 @@ export const NotificationsInboxScreen: React.FC = () => {
     } else if (notification.targetRequestId) {
       navigation.navigate('RequestDetail', {
         id: notification.targetRequestId,
-        type: notification.type === 'testimony' ? 'TESTIMONY' : 'REQUEST',
+        type: 'REQUEST',
       });
     }
   };
@@ -658,3 +665,4 @@ const styles = StyleSheet.create({
 });
 
 export default NotificationsInboxScreen;
+

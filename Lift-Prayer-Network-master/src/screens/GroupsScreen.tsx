@@ -35,6 +35,7 @@ import { GlassCard, GlassIconButton } from '../components/GlassCard';
 import { LiftScreen } from '../components/LiftLayout';
 import type { PrayerGroup } from '../types';
 import type { RootStackParamList } from '../navigation/types';
+import { NOTIFICATION_TYPES } from '../types/notifications';
 
 const GROUP_ITEM_HEIGHT = 220;
 const GROUP_EMOJIS = ['🙏', '⛪', '👨‍👩‍👧‍👦', '❤️', '✝️', '🕊️', '📖', '🌟', '💒', '🤝'];
@@ -98,7 +99,7 @@ export const GroupsScreen: React.FC = () => {
     const notifQuery = query(
       collection(db, 'notifications'),
       where('recipientUid', '==', user.uid),
-      where('type', '==', 'group_join_approved'),
+      where('type', '==', NOTIFICATION_TYPES.GROUP_JOIN),
       where('read', '==', false),
       orderBy('createdAt', 'desc'),
       limit(5)
@@ -845,4 +846,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-

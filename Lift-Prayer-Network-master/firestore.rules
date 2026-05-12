@@ -240,7 +240,7 @@ service cloud.firestore {
 
     // Helper function to validate notification type
     function isValidNotificationType(type) {
-      return type in ['PRAYER', 'COMMENT', 'FOLLOW', 'GROUP_INVITE', 'GROUP_JOIN', 'ANNOUNCEMENT', 'ADMIN'];
+      return type in ['PRAYER', 'AMEN', 'COMMENT', 'FOLLOW', 'GROUP_INVITE', 'GROUP_JOIN', 'ANNOUNCEMENT', 'ADMIN'];
     }
 
     // Helper function to check if notification has required fields

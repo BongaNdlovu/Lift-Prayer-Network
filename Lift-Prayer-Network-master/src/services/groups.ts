@@ -21,6 +21,7 @@ import type { PrayerGroup } from '../types';
 import { checkAndUnlockAchievements } from './achievements';
 import { classifyError, type AppError } from '../types/errors';
 import { checkActionRateLimit, formatRateLimitError } from '../utils/security';
+import { NOTIFICATION_TYPES } from '../types/notifications';
 
 export type GroupResult<T> = 
   | { success: true; data: T }
@@ -292,7 +293,7 @@ export const approveJoinRequest = async (
     // Create notification for the user whose request was approved
     try {
       await addDoc(collection(db, 'notifications'), {
-        type: 'group_join_approved',
+        type: NOTIFICATION_TYPES.GROUP_JOIN,
         recipientUid: userId,
         actorUid: ownerUid,
         groupId,
@@ -734,4 +735,3 @@ export const getGroupMembers = async (groupId: string): Promise<GroupMember[]> =
     return [];
   }
 };
-

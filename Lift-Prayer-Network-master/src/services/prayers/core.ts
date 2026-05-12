@@ -14,6 +14,7 @@ import { updateStreak } from '../stats';
 import { checkAndUnlockAchievements } from '../achievements';
 import { LogPrayerResult, RequestUpdateData } from './types';
 import { checkActionRateLimit, formatRateLimitError } from '../../utils/security';
+import { NOTIFICATION_TYPES } from '../../types/notifications';
 
 /**
  * Check if user has already prayed on a specific request.
@@ -176,7 +177,7 @@ export const logPrayer = async (
       if (!isSelfPrayer && safeTargetOwnerUid !== 'anon' && db) {
         const notificationRef = doc(collection(db, 'notifications'));
         txn.set(notificationRef, {
-          type: 'PRAYER',
+          type: NOTIFICATION_TYPES.PRAYER,
           recipientUid: safeTargetOwnerUid,
           actorUid,
           actorDisplayName: actorDisplayName || 'Someone',
@@ -371,7 +372,7 @@ export const likeTestimony = async (
         if (ownerUid && ownerUid !== 'anon' && db) {
           const notificationRef = doc(collection(db, 'notifications'));
           txn.set(notificationRef, {
-            type: 'amen_received',
+            type: NOTIFICATION_TYPES.AMEN,
             recipientUid: ownerUid,
             actorUid,
             targetTestimonyId: testimonyId,

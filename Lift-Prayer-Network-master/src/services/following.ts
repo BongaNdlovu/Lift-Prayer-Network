@@ -21,6 +21,7 @@ import {
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
 import type { FollowRecord } from '../types';
+import { NOTIFICATION_TYPES } from '../types/notifications';
 
 export type FollowResult = {
   success: boolean;
@@ -64,7 +65,7 @@ export const followUser = async (
     // Create a notification for the target user
     try {
       await addDoc(collection(db, 'notifications'), {
-        type: 'FOLLOW',
+        type: NOTIFICATION_TYPES.FOLLOW,
         recipientUid: targetUid,
         actorUid,
         actorDisplayName: actorDisplayName || 'Someone',

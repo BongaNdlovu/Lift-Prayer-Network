@@ -8,6 +8,7 @@ import * as Notifications from 'expo-notifications';
 import { collection, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { db, firebaseEnabled } from '../services/firebase';
 import { needsNotificationPolling } from '../utils/googlePlayServices';
+import { NOTIFICATION_TYPES } from '../types/notifications';
 
 // Polling interval in milliseconds (45 seconds)
 const POLLING_INTERVAL = 45000;
@@ -112,30 +113,30 @@ export const useNotificationPolling = (userId: string | undefined) => {
     const data = notif as any;
     
     switch (notif.type) {
-      case 'prayer':
+      case NOTIFICATION_TYPES.PRAYER:
         return {
           title: '🙏 Someone prayed for you!',
           body: data.actorName ? `${data.actorName} prayed for your request` : 'Someone lifted you up in prayer',
         };
-      case 'comment':
+      case NOTIFICATION_TYPES.COMMENT:
         return {
           title: '💬 New comment',
           body: data.actorName ? `${data.actorName} commented on your post` : 'You have a new comment',
         };
-      case 'reaction':
+      case NOTIFICATION_TYPES.AMEN:
         return {
-          title: '❤️ New reaction',
-          body: data.actorName ? `${data.actorName} reacted to your post` : 'Someone reacted to your post',
+          title: 'Amen!',
+          body: data.actorName ? `${data.actorName} said Amen to your testimony` : 'Someone said Amen to your testimony',
         };
-      case 'group_join_approved':
+      case NOTIFICATION_TYPES.GROUP_JOIN:
         return {
           title: '✅ Group request approved!',
           body: data.groupName ? `You've been accepted into "${data.groupName}"` : 'Your group request was approved',
         };
-      case 'testimony':
+      case NOTIFICATION_TYPES.GROUP_INVITE:
         return {
-          title: '🎉 New testimony',
-          body: data.actorName ? `${data.actorName} shared a testimony` : 'A new testimony was shared',
+          title: 'New group activity',
+          body: data.groupName ? `There's a new update in "${data.groupName}"` : 'There is a new group update',
         };
       default:
         return {
