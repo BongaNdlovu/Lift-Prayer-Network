@@ -16,12 +16,13 @@ tmp
 # Keep .env.example for reference (it has no real values)
 !.env.example
 
-# Firebase & Google service files (contain API keys)
-# Note: google-services.json is NOT ignored to ensure push notifications work
-# This file contains client-side Firebase config (safe for private repos)
+# Firebase & Google service files (contain client-side API keys)
+# Note: google-services.json and GoogleService-Info.plist are NOT ignored
+# so EAS native builds can include the Firebase app config.
+# These files contain client-side Firebase config (safe for private repos).
 # google-services.json
 # google-services*.json
-GoogleService-Info.plist
+# GoogleService-Info.plist
 client_secret_*.json
 
 # Service account and credentials (NEVER commit these)

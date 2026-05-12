@@ -30,12 +30,13 @@ module.exports = ({ config }) => {
       supportsTablet: true,
       icon: './Lift.png',
       bundleIdentifier: 'com.lift.prayer',
+      googleServicesFile: './GoogleService-Info.plist',
       infoPlist: {
         UIBackgroundModes: ['remote-notification'],
       },
     },
     android: {
-      package: 'Lift.Prayer.App',
+      package: 'com.lift.prayer',
       googleServicesFile: googleServicesPath,
       adaptiveIcon: {
         foregroundImage: './Lift.png',

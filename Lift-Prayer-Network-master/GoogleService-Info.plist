@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>628602476853-o8kgf6rsc68ur92st243sovpmd75klni.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.628602476853-o8kgf6rsc68ur92st243sovpmd75klni</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>628602476853-0u4safhtqtcpqp9j11gqid44r092i0pa.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyC0tjqKRb4v-Fx5LtLry8t5_otEUlxRqk0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>628602476853</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.lift.prayer</string>
+	<key>PROJECT_ID</key>
+	<string>end-of-time-94cd3</string>
+	<key>STORAGE_BUCKET</key>
+	<string>end-of-time-94cd3.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:628602476853:ios:422f96a38057088011147c</string>
+	<key>DATABASE_URL</key>
+	<string>https://end-of-time-94cd3-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>

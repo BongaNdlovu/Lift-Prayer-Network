@@ -28,5 +28,5 @@ if (-not $java) {
   }
 }
 
-firebase.cmd emulators:exec --only firestore "jest --config jest.rules.config.js --runInBand"
+firebase.cmd emulators:exec --project lift-rules-test --only firestore "jest --config jest.rules.config.js --runInBand"
 exit $LASTEXITCODE

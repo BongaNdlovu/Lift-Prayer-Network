@@ -29,6 +29,47 @@
             "package_name": "Lift.Prayer.App",
             "certificate_hash": "7720290239729415324110e7a5878a66304f05be"
           }
+        },
+        {
+          "client_id": "628602476853-qsa9und9m2d42qlphnk5dr2g958teds3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArjsoQnRxcLbQogLpp8dk0DeXzRUImkn4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "628602476853-8cdmr7fmp3a42od8q8vh4uae4ptp4lkl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628602476853:android:b9fece013c8caa7b11147c",
+        "android_client_info": {
+          "package_name": "com.lift.prayer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "628602476853-0u4safhtqtcpqp9j11gqid44r092i0pa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lift.prayer",
+            "certificate_hash": "dcaeafb25b6dac42d34d518fd19956bb28a9cd12"
+          }
+        },
+        {
+          "client_id": "628602476853-qsa9und9m2d42qlphnk5dr2g958teds3.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [

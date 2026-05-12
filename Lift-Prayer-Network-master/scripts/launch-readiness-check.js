@@ -43,6 +43,9 @@ const hasValidSyntax = (relativePath) => {
 const appJson = readJson('app.json').expo;
 const googleServices = readJson('google-services.json');
 const packageJson = readJson('package.json');
+const iosGoogleServicesText = exists('GoogleService-Info.plist')
+  ? fs.readFileSync(path.join(root, 'GoogleService-Info.plist'), 'utf8')
+  : '';
 const envPath = path.join(root, '.env');
 const envText = exists('.env') ? fs.readFileSync(envPath, 'utf8') : '';
 const envValues = Object.fromEntries(
@@ -82,6 +85,14 @@ addCheck(
   'iOS bundle identifier present',
   /^[A-Za-z][A-Za-z0-9-]*(\.[A-Za-z][A-Za-z0-9-]*)+$/.test(iosBundleId || ''),
   `Current iOS bundle identifier is "${iosBundleId || 'missing'}".`
+);
+
+addCheck(
+  'iOS bundle identifier matches GoogleService-Info.plist',
+  iosGoogleServicesText.includes(`<string>${iosBundleId}</string>`),
+  exists('GoogleService-Info.plist')
+    ? `GoogleService-Info.plist should contain bundle ID "${iosBundleId}".`
+    : 'GoogleService-Info.plist is missing.'
 );
 
 addCheck(
