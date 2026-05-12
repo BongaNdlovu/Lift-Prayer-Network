@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Lift",
-    "slug": "lift",
+    "slug": "lift-prayer-network",
     "scheme": "lift",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -68,9 +68,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "122737a1-4d4a-4986-9807-12dbdb314dca"
+        "projectId": "611c7af2-23bb-453b-9036-4aff6edb88bb"
       }
     },
-    "owner": "bonga_10"
+    "owner": "shakhi"
   }
 }

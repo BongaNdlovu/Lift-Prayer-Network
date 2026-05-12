@@ -6,8 +6,8 @@ module.exports = ({ config }) => {
   return {
     ...config,
     name: 'Lift',
-    slug: 'lift',
-    owner: 'bonga_10',
+    slug: 'lift-prayer-network',
+    owner: 'shakhi',
     scheme: 'lift',
     version: '1.0.0',
     orientation: 'portrait',
@@ -71,7 +71,7 @@ module.exports = ({ config }) => {
     },
     extra: {
       eas: {
-        projectId: '122737a1-4d4a-4986-9807-12dbdb314dca',
+        projectId: '611c7af2-23bb-453b-9036-4aff6edb88bb',
       },
     },
   };
