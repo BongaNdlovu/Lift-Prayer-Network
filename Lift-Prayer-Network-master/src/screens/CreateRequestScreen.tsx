@@ -25,7 +25,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { fonts, palette, radius, spacing } from '../theme/colors';
 import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
 import { GlassIconButton } from '../components/GlassCard';
-import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
+import { PRAYER_CATEGORIES, PrayerCategory, SupportPreference } from '../types';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import { checkUserBlockedFromPosting } from '../services/moderation';
 import { InlineError } from '../components/InlineError';
@@ -33,7 +33,7 @@ import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateRequest'>;
 
-export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
+export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
 
@@ -43,12 +43,16 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
     [colors.gradientBoldScreen]
   );
   const netInfo = useNetInfo();
+  const groupId = route.params?.groupId;
+  const groupName = route.params?.groupName;
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PrayerCategory>('other');
   const [isUrgent, setIsUrgent] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(!!groupId);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isShareable, setIsShareable] = useState(true); // Default to shareable
+  const [supportPreference, setSupportPreference] = useState<SupportPreference>('ENCOURAGEMENT_WELCOME');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -56,6 +60,11 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSubmit = async () => {
     setErrorMessage(null);
+    if (!title.trim()) {
+      Alert.alert('Add a title', 'Please add a short summary for this prayer request.');
+      return;
+    }
+
     if (!content.trim()) {
       Alert.alert('Empty', 'Please share what you need prayer for.');
       return;
@@ -105,6 +114,20 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
+    const titleValidation = validateContent(title, {
+      minLength: 3,
+      maxLength: 90,
+      checkProfanity: true,
+      checkSuspicious: true,
+      checkMoneySolicitation: true,
+      contentType: 'REQUEST',
+    });
+
+    if (!titleValidation.isValid) {
+      Alert.alert('Cannot Submit', titleValidation.error || 'Please revise your title.');
+      return;
+    }
+
     // Show warnings if any
     if (validation.warnings && validation.warnings.length > 0) {
       Alert.alert('Notice', validation.warnings.join('\n'), [
@@ -135,10 +158,10 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
-    await proceedWithSubmit(validation.sanitized || content.trim());
+    await proceedWithSubmit(validation.sanitized || content.trim(), titleValidation.sanitized || title.trim());
   };
 
-  const proceedWithSubmit = async (sanitizedContent: string) => {
+  const proceedWithSubmit = async (sanitizedContent: string, sanitizedTitle: string = title.trim()) => {
     if (!user) return;
 
     setSubmitting(true);
@@ -171,12 +194,16 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
         // Submit immediately with sanitized content
         await submitFeedItem('REQUEST', sanitizedContent, user.uid, requestDisplayName, {
           category: selectedCategory,
+          title: sanitizedTitle,
           isUrgent,
           isPrivate,
+          visibility: groupId ? 'GROUP' : isPrivate ? 'PRIVATE' : 'PUBLIC',
+          groupIds: groupId ? [groupId] : undefined,
           userEmail: isAnonymous ? undefined : (user.email || undefined),
           userPhotoURL: isAnonymous ? null : (user.photoURL || null),
           isAnonymous,
           isShareable,
+          supportPreference,
           isEmailVerified: !isAnonymous && user.emailVerified,
         });
 
@@ -243,7 +270,20 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Content Input */}
             <View style={styles.card}>
-              <Text style={styles.label}>Prayer Request</Text>
+              <Text style={styles.label}>Short Summary</Text>
+              <TextInput
+                style={styles.titleInput}
+                placeholder="A short title for this prayer"
+                placeholderTextColor={palette.muted}
+                value={title}
+                onChangeText={setTitle}
+                maxLength={90}
+              />
+              <Text style={styles.charCount}>{title.length}/90</Text>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.label}>Prayer Details</Text>
               <TextInput
                 style={styles.textArea}
                 placeholder="What do you need prayer for?"
@@ -293,6 +333,12 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
             {/* Options */}
             <View style={styles.card}>
               <Text style={styles.label}>Options</Text>
+              {groupName && (
+                <View style={styles.groupNotice}>
+                  <Ionicons name="people-outline" size={16} color="#7c3aed" />
+                  <Text style={styles.groupNoticeText}>Sharing with {groupName}</Text>
+                </View>
+              )}
 
               {/* Urgent Toggle */}
               <View style={styles.optionRow}>
@@ -328,6 +374,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
                 <Switch
                   value={isPrivate}
                   onValueChange={(value) => {
+                    if (groupId) return;
                     setIsPrivate(value);
                     if (Platform.OS !== 'web') {
                       Haptics.selectionAsync();
@@ -336,6 +383,33 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
                   thumbColor={isPrivate ? '#f59e0b' : '#f4f4f5'}
                 />
+              </View>
+
+              <View style={styles.supportBox}>
+                <Text style={styles.supportLabel}>Support preference</Text>
+                {([
+                  ['PRAYER_ONLY', 'Prayer only'],
+                  ['ENCOURAGEMENT_WELCOME', 'Encouragement welcome'],
+                  ['FOLLOW_UP_WELCOME', 'Follow-up welcome'],
+                ] as [SupportPreference, string][]).map(([value, label]) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[
+                      styles.supportOption,
+                      supportPreference === value && styles.supportOptionActive,
+                    ]}
+                    onPress={() => setSupportPreference(value)}
+                  >
+                    <Text
+                      style={[
+                        styles.supportOptionText,
+                        supportPreference === value && styles.supportOptionTextActive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
               {/* Anonymous Toggle */}
@@ -384,7 +458,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {/* Preview */}
-            {content.trim().length > 0 && (
+            {(title.trim().length > 0 || content.trim().length > 0) && (
               <View style={styles.previewCard}>
                 <Text style={styles.previewLabel}>Preview</Text>
                 <View style={styles.previewContent}>
@@ -400,6 +474,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
                       {PRAYER_CATEGORIES.find(c => c.id === selectedCategory)?.label}
                     </Text>
                   </View>
+                  <Text style={styles.previewTitle}>{title || 'Prayer request summary'}</Text>
                   <Text style={styles.previewText}>{content}</Text>
                 </View>
               </View>
@@ -412,7 +487,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ navigation }) => {
                 (!content.trim() || submitting) && styles.submitButtonDisabled,
               ]}
               onPress={handleSubmit}
-              disabled={!content.trim() || submitting}
+              disabled={!content.trim() || !title.trim() || submitting}
             >
               {submitting ? (
                 <ActivityIndicator color="#1f2937" />
@@ -559,6 +634,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
   },
+  titleInput: {
+    fontSize: 15,
+    color: palette.text,
+    padding: spacing.sm,
+    backgroundColor: '#f8fafc',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: palette.border,
+  },
   charCount: {
     textAlign: 'right',
     fontSize: 12,
@@ -608,6 +692,50 @@ const styles = StyleSheet.create({
   optionRowLast: {
     borderBottomWidth: 0,
     paddingBottom: 0,
+  },
+  groupNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: '#ede9fe',
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  groupNoticeText: {
+    color: '#7c3aed',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  supportBox: {
+    paddingTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  supportLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: palette.muted,
+    marginBottom: 2,
+  },
+  supportOption: {
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: '#f8fafc',
+  },
+  supportOptionActive: {
+    backgroundColor: '#fef3c7',
+    borderColor: palette.accent,
+  },
+  supportOptionText: {
+    fontSize: 12,
+    color: palette.muted,
+    fontWeight: '600',
+  },
+  supportOptionTextActive: {
+    color: '#92400e',
   },
   optionInfo: {
     flexDirection: 'row',
@@ -706,6 +834,12 @@ const styles = StyleSheet.create({
     color: palette.text,
     lineHeight: 18,
   },
+  previewTitle: {
+    fontSize: 13,
+    color: palette.text,
+    fontWeight: '800',
+    marginBottom: 3,
+  },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -739,4 +873,3 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 });
-

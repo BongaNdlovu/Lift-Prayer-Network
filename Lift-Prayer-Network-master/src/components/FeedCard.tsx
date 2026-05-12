@@ -70,6 +70,7 @@ type Props = {
   onPray?: (id: string) => void;
   onLike?: (id: string) => void;
   onReact?: (id: string, reaction: ReactionType) => void;
+  onPromise?: (id: string) => void;
   disabled?: boolean;
   hasPrayed?: boolean;
   onPress?: (item: FeedItem) => void;
@@ -687,13 +688,13 @@ export const FeedCard: React.FC<Props> = ({
               styles.statusBadge, 
               displayStatus === 'PENDING' && styles.statusPending,
               displayStatus === 'ACTIVE' && styles.statusActive,
-              displayStatus === 'RESOLVED' && styles.statusResolved,
+              (displayStatus === 'RESOLVED' || displayStatus === 'ANSWERED') && styles.statusResolved,
             ]}>
               <Text style={[
                 styles.statusText,
                 displayStatus === 'PENDING' && styles.statusTextPending,
                 displayStatus === 'ACTIVE' && styles.statusTextActive,
-                displayStatus === 'RESOLVED' && styles.statusTextResolved,
+                (displayStatus === 'RESOLVED' || displayStatus === 'ANSWERED') && styles.statusTextResolved,
               ]}>{displayStatus}</Text>
             </View>
             {currentUserId && (canEdit || canDelete || item.ownerUid !== currentUserId) && (
@@ -711,7 +712,14 @@ export const FeedCard: React.FC<Props> = ({
             )}
           </View>
         </View>
-        <Text style={[styles.content, { color: colors.text }]}>{item.content}</Text>
+        {(item as any).title ? (
+          <>
+            <Text style={[styles.contentTitle, { color: colors.text }]}>{(item as any).title}</Text>
+            <Text style={[styles.contentPreview, { color: colors.text }]} numberOfLines={3}>{item.content}</Text>
+          </>
+        ) : (
+          <Text style={[styles.content, { color: colors.text }]}>{item.content}</Text>
+        )}
         
         {/* Show linked prayer request badge for testimonies */}
         {!isRequest && (item as any).linkedRequestId && (
@@ -1177,6 +1185,22 @@ const styles = StyleSheet.create({
     color: '#1c1917',
     marginBottom: spacing.md,
     letterSpacing: 0.1,
+  },
+  contentTitle: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.md,
+    lineHeight: 22,
+    color: '#1c1917',
+    marginBottom: 4,
+    fontWeight: '700',
+  },
+  contentPreview: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+    lineHeight: 20,
+    color: '#1c1917',
+    marginBottom: spacing.md,
+    opacity: 0.88,
   },
   footer: {
     gap: spacing.sm,

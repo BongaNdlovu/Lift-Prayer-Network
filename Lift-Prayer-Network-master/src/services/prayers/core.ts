@@ -12,7 +12,7 @@ import {
 import { db, firebaseEnabled } from '../firebase';
 import { updateStreak } from '../stats';
 import { checkAndUnlockAchievements } from '../achievements';
-import { LogPrayerResult, RequestUpdateData, PRAYERS_FOR_ACTIVE } from './types';
+import { LogPrayerResult, RequestUpdateData } from './types';
 import { checkActionRateLimit, formatRateLimitError } from '../../utils/security';
 
 /**
@@ -82,17 +82,7 @@ export const logPrayer = async (
     };
   }
 
-  // Check if user has already prayed on this request
-  const alreadyPrayed = await hasUserPrayed(actorUid, targetRequestId);
-  if (alreadyPrayed) {
-    return {
-      success: false,
-      error: 'You have already prayed for this request',
-      alreadyPrayed: true,
-    };
-  }
-
-  const prayerRef = doc(collection(db, 'prayers'));
+  const prayerRef = doc(db, 'prayers', `${actorUid}_${targetRequestId}`);
   const requestRef = doc(db, 'requests', targetRequestId);
   const userRef = doc(db, 'users', actorUid);
   const safeTargetOwnerUid = targetOwnerUid || 'anon';
@@ -105,6 +95,11 @@ export const logPrayer = async (
 
   try {
     await runTransaction(db, async (txn) => {
+      const prayerSnap = await txn.get(prayerRef);
+      if (prayerSnap.exists()) {
+        throw new Error('ALREADY_PRAYED');
+      }
+
       // First, try to get the request
       let requestSnap;
       try {
@@ -119,10 +114,6 @@ export const logPrayer = async (
       }
 
       const requestData = requestSnap.data();
-      const currentPrayers = (requestData?.prayers as number) ?? 0;
-      const newPrayerCount = currentPrayers + 1;
-      const currentStatus = (requestData?.status as string) || 'PENDING';
-
       // Try to get user data, but don't fail if it doesn't exist
       let currentCount = 0;
       try {
@@ -152,12 +143,6 @@ export const logPrayer = async (
       const updateData: RequestUpdateData = {
         prayers: increment(1),
       };
-
-      if (currentStatus === 'PENDING' && newPrayerCount >= PRAYERS_FOR_ACTIVE) {
-        updateData.status = 'ACTIVE';
-        updateData.severity = requestData?.isUrgent ? 'CRITICAL' : 'HIGH';
-        updateData.activatedAt = serverTimestamp();
-      }
 
       txn.update(requestRef, updateData);
 
@@ -216,6 +201,13 @@ export const logPrayer = async (
 
     return { success: true, isSelfPrayer };
   } catch (err: unknown) {
+    if (err instanceof Error && err.message === 'ALREADY_PRAYED') {
+      return {
+        success: false,
+        error: 'You have already prayed for this request',
+        alreadyPrayed: true,
+      };
+    }
     console.error('[Prayers] Error logging prayer:', err);
     const errorMessage = err instanceof Error ? err.message : 'Could not log prayer. Please try again.';
     return { success: false, error: errorMessage };

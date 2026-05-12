@@ -80,7 +80,7 @@ export const addComment = async (
 
   const validation = validateContent(content, {
     minLength: 1,
-    maxLength: 500,
+    maxLength: 300,
     checkProfanity: true,
     checkSuspicious: true,
     checkMoneySolicitation: true,
@@ -100,6 +100,7 @@ export const addComment = async (
       authorUid,
       authorName,
       content: sanitizedContent,
+      hiddenByOwner: false,
       createdAt: serverTimestamp(),
     });
 
@@ -134,10 +135,12 @@ export const getComments = async (
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data(),
-    })) as Comment[];
+    return snapshot.docs
+      .map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }))
+      .filter((comment) => !(comment as Comment).hiddenByOwner) as Comment[];
   } catch (err) {
     console.warn('Error fetching comments:', err);
     return [];
@@ -165,10 +168,12 @@ export const subscribeToComments = (
   return onSnapshot(
     q,
     (snapshot) => {
-      const comments = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      })) as Comment[];
+      const comments = snapshot.docs
+        .map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        }))
+        .filter((comment) => !(comment as Comment).hiddenByOwner) as Comment[];
       callback(comments);
     },
     (error) => {
@@ -209,9 +214,22 @@ export const updateComment = async (
   if (!firebaseEnabled || !db) return false;
 
   try {
+    const validation = validateContent(newContent, {
+      minLength: 1,
+      maxLength: 300,
+      checkProfanity: true,
+      checkSuspicious: true,
+      checkMoneySolicitation: true,
+      contentType: 'REQUEST',
+    });
+
+    if (!validation.isValid) {
+      throw new Error(validation.error || 'Invalid comment content');
+    }
+
     const commentRef = doc(db, 'comments', commentId);
     await updateDoc(commentRef, {
-      content: newContent,
+      content: validation.sanitized || newContent.trim(),
       editedAt: serverTimestamp(),
     });
     return true;
@@ -221,3 +239,17 @@ export const updateComment = async (
   }
 };
 
+export const hideCommentByOwner = async (commentId: string): Promise<boolean> => {
+  if (!firebaseEnabled || !db) return false;
+
+  try {
+    await updateDoc(doc(db, 'comments', commentId), {
+      hiddenByOwner: true,
+      hiddenAt: serverTimestamp(),
+    });
+    return true;
+  } catch (err) {
+    console.warn('Error hiding comment:', err);
+    return false;
+  }
+};

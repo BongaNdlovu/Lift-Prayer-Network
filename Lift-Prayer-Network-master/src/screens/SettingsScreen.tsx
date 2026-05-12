@@ -53,7 +53,7 @@ export const SettingsScreen: React.FC = () => {
   
   // Sync state
   const [pendingCounts, setPendingCounts] = useState<PendingActionCounts>({ 
-    prayers: 0, requests: 0, comments: 0, reactions: 0, total: 0 
+    prayers: 0, requests: 0, comments: 0, reactions: 0, promises: 0, total: 0 
   });
   const [syncing, setSyncing] = useState(false);
 
@@ -967,4 +967,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

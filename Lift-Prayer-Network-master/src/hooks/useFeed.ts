@@ -10,8 +10,11 @@ import {
   doc,
   increment,
   getDocs,
+  startAfter,
+  where,
   type QueryDocumentSnapshot,
   type DocumentData,
+  type QueryConstraint,
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from '../services/firebase';
 import {
@@ -259,11 +262,16 @@ export const useFeed = (
     if (!db) return null;
 
     const col = collection(db, mode === 'REQUEST' ? 'requests' : 'testimonies');
-    const constraints = [orderBy('createdAt', 'desc'), limit(FEED_PAGE_SIZE)];
+    const constraints: QueryConstraint[] = [
+      where('visibility', '==', 'PUBLIC'),
+      orderBy('createdAt', 'desc'),
+    ];
 
     if (startAfterCursor) {
-      constraints.push(startAfterCursor);
+      constraints.push(startAfter(startAfterCursor));
     }
+
+    constraints.push(limit(FEED_PAGE_SIZE));
 
     return query(col, ...constraints);
   }, [mode]);
@@ -273,7 +281,7 @@ export const useFeed = (
     if (!firebaseEnabled || !db) return false;
 
     try {
-      const q = buildFeedQuery(append ? cursor : undefined);
+      const q = buildFeedQuery(append ? cursor ?? undefined : undefined);
       if (!q) return false;
 
       const snapshot = await getDocs(q);
@@ -389,6 +397,8 @@ export const submitFeedItem = async (
   displayName: string | undefined,
   options?: {
     category?: string;
+    title?: string;
+    supportPreference?: string;
     isUrgent?: boolean;
     linkedRequestId?: string; // For testimonies - link to original prayer request
     isPrivate?: boolean;
@@ -414,11 +424,6 @@ export const submitFeedItem = async (
     userPhotoURL: options?.isAnonymous ? null : (options?.userPhotoURL || null),
     isAnonymous: options?.isAnonymous || false,
     isEmailVerified: options?.isAnonymous ? false : (options?.isEmailVerified || false),
-    // Store real info for admin visibility on anonymous posts
-    ...(options?.isAnonymous && {
-      _realDisplayName: displayName || 'Unknown',
-      _realEmail: options?.userEmail || null,
-    }),
     content,
     severity: mode === 'REQUEST' ? 'PENDING' : 'RESOLVED',
     status: mode === 'REQUEST' ? 'PENDING' : 'RESOLVED',
@@ -428,7 +433,9 @@ export const submitFeedItem = async (
 
   if (mode === 'REQUEST') {
     baseDoc.prayers = 0;
+    baseDoc.title = options?.title || content.slice(0, 80);
     baseDoc.category = options?.category || 'other';
+    baseDoc.supportPreference = options?.supportPreference || 'ENCOURAGEMENT_WELCOME';
     baseDoc.isUrgent = options?.isUrgent || false;
     baseDoc.isPrivate = options?.isPrivate || false;
     baseDoc.isAnonymous = options?.isAnonymous || false;

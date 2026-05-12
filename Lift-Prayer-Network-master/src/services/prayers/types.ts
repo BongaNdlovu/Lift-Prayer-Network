@@ -35,7 +35,7 @@ export type EditTestimonyData = {
 /** Update data for request status progression */
 export type RequestUpdateData = {
   prayers: FieldValue;
-  status?: 'PENDING' | 'ACTIVE' | 'RESOLVED';
+  status?: 'PENDING' | 'ACTIVE' | 'RESOLVED' | 'ANSWERED' | 'ARCHIVED';
   severity?: Severity;
   activatedAt?: FieldValue;
   [key: string]: unknown;

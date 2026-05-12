@@ -43,7 +43,7 @@ import { logFirestoreRead } from '../utils/readBudget';
 const FEED_ITEM_HEIGHT = 260;
 
 type FilterType = 'all' | 'requests' | 'testimonies';
-type StatusFilter = 'all' | 'PENDING' | 'ACTIVE' | 'RESOLVED';
+type StatusFilter = 'all' | 'PENDING' | 'ACTIVE' | 'RESOLVED' | 'ANSWERED';
 
 export const MyPrayersScreen: React.FC = () => {
   const { user } = useAuth();
@@ -162,6 +162,7 @@ export const MyPrayersScreen: React.FC = () => {
     const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
     const activeCount = requests.filter((r) => r.status === 'ACTIVE').length;
     const resolvedCount = requests.filter((r) => r.status === 'RESOLVED').length;
+    const answeredCount = requests.filter((r) => r.status === 'ANSWERED').length;
     const totalPrayers = requests.reduce((sum, r) => sum + (r.prayers || 0), 0);
 
     return {
@@ -170,7 +171,7 @@ export const MyPrayersScreen: React.FC = () => {
       testimonies: testimonies.length,
       pending: pendingCount,
       active: activeCount,
-      resolved: resolvedCount,
+      resolved: resolvedCount + answeredCount,
       totalPrayers,
     };
   }, [items]);
@@ -302,7 +303,7 @@ export const MyPrayersScreen: React.FC = () => {
         {/* Status Filter (for requests) */}
         {(filter === 'all' || filter === 'requests') && (
           <View style={styles.statusFilterRow}>
-            {(['all', 'PENDING', 'ACTIVE', 'RESOLVED'] as StatusFilter[]).map((s) => (
+            {(['all', 'PENDING', 'ACTIVE', 'ANSWERED'] as StatusFilter[]).map((s) => (
               <TouchableOpacity
                 key={s}
                 style={[
@@ -627,4 +628,3 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
 });
-

@@ -20,6 +20,22 @@ service cloud.firestore {
     function isMember(data) {
       return isSignedIn() && data.memberUids != null && data.memberUids.hasAny([request.auth.uid]);
     }
+
+    function userGroupIds() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupIds
+        : [];
+    }
+
+    function canReadVisibleContent(data) {
+      let visibility = data.visibility;
+      let groupIds = data.groupIds;
+      return visibility == 'PUBLIC'
+        || (visibility == null && data.isPrivate != true)
+        || isOwner(data)
+        || isAdmin()
+        || (visibility == 'GROUP' && groupIds != null && groupIds.hasAny(userGroupIds()));
+    }
     
     // Validate request privacy flags are consistent
     // - GROUP visibility requires non-empty groupIds
@@ -56,10 +72,7 @@ service cloud.firestore {
     }
 
     match /requests/{requestId} {
-      // Requests are publicly readable for backward compatibility and smooth queries
-      // Privacy filtering (PRIVATE, GROUP visibility) happens client-side
-      // This avoids query permission errors when listing the main feed
-      allow read: if true;
+      allow read: if canReadVisibleContent(resource.data);
       // Create requires: signed in, owns the request, and privacy flags are consistent
       allow create: if isSignedIn() 
         && request.resource.data.ownerUid == request.auth.uid
@@ -74,17 +87,14 @@ service cloud.firestore {
         isAdmin() ||
         // Allow any user to update ONLY prayer-related and reaction fields
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['prayers', 'status', 'severity', 'activatedAt', 'heartCount', 'fireCount', 'strongCount'])
+          .hasOnly(['prayers', 'heartCount', 'fireCount', 'strongCount'])
       );
       // Allow owner OR admin to delete - simplified check
       allow delete: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
     }
 
     match /testimonies/{testimonyId} {
-      // Testimonies are publicly readable for backward compatibility
-      // Privacy filtering happens client-side for a smooth UX
-      // New testimonies with visibility: PRIVATE or GROUP will be filtered by client
-      allow read: if true;
+      allow read: if canReadVisibleContent(resource.data);
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
       // Allow owner OR admin to update - simplified check
       // Also allow any signed-in user to update reaction counts
@@ -164,18 +174,29 @@ service cloud.firestore {
     }
 
     match /comments/{commentId} {
-      // Comments are publicly readable for consistency with requests/testimonies
-      // Privacy filtering happens client-side
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
+      allow read: if resource.data.parentType == 'REQUEST'
+        ? canReadVisibleContent(get(/databases/$(database)/documents/requests/$(resource.data.parentId)).data)
+        : canReadVisibleContent(get(/databases/$(database)/documents/testimonies/$(resource.data.parentId)).data);
+      allow create: if isSignedIn()
+        && request.resource.data.authorUid == request.auth.uid
+        && (
+          request.resource.data.parentType == 'REQUEST'
+            ? canReadVisibleContent(get(/databases/$(database)/documents/requests/$(request.resource.data.parentId)).data)
+            : canReadVisibleContent(get(/databases/$(database)/documents/testimonies/$(request.resource.data.parentId)).data)
+        );
       // Allow comment owner OR admin to update/delete
       // Owner can only update content and editedAt, not change parentId, authorUid, or parentType
       allow update: if isSignedIn() && (
         isAdmin() || (
           request.auth.uid == resource.data.authorUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'editedAt'])
           && request.resource.data.parentId == resource.data.parentId
           && request.resource.data.authorUid == resource.data.authorUid
           && request.resource.data.parentType == resource.data.parentType
+        ) || (
+          resource.data.parentType == 'REQUEST'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hiddenByOwner', 'hiddenAt'])
+          && get(/databases/$(database)/documents/requests/$(resource.data.parentId)).data.ownerUid == request.auth.uid
         )
       );
       allow delete: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.authorUid);
@@ -190,6 +211,14 @@ service cloud.firestore {
       allow update: if isAdmin();
       // Allow admins to delete any report and reporters to delete their own
       allow delete: if isAdmin() || (isSignedIn() && resource.data.actorUid == request.auth.uid);
+    }
+
+    match /prayerRequestUpdates/{updateId} {
+      allow read: if canReadVisibleContent(get(/databases/$(database)/documents/requests/$(resource.data.requestId)).data);
+      allow create: if isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && get(/databases/$(database)/documents/requests/$(request.resource.data.requestId)).data.ownerUid == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
 
     match /stats/{document=**} {

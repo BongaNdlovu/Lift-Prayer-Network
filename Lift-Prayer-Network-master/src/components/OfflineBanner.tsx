@@ -19,6 +19,7 @@ export const OfflineBanner: React.FC<Props> = ({ onSyncPress, showPendingCount =
     requests: 0,
     comments: 0,
     reactions: 0,
+    promises: 0,
     total: 0,
   });
   const [slideAnim] = useState(new Animated.Value(-100));

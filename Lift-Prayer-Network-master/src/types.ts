@@ -3,6 +3,14 @@ import type { FieldValue, Timestamp } from 'firebase/firestore';
 type TimeLike = Timestamp | FieldValue | Date | null;
 
 export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'RESOLVED' | 'PENDING';
+export type RequestVisibility = 'PUBLIC' | 'PRIVATE' | 'GROUP';
+export type SupportPreference = 'PRAYER_ONLY' | 'ENCOURAGEMENT_WELCOME' | 'FOLLOW_UP_WELCOME';
+export type PrayerRequestUpdateType =
+  | 'CONTINUE_PRAYING'
+  | 'IMPROVED'
+  | 'STILL_WAITING'
+  | 'ANSWERED'
+  | 'NO_LONGER_NEEDED';
 
 export type PrayerCategory =
   | 'health'
@@ -44,18 +52,25 @@ export type LiftRequest = {
   userDisplayName: string;
   userEmail?: string;
   userPhotoURL?: string | null;
+  title?: string;
   content: string;
   severity: Severity;
   prayers: number;
-  status: 'PENDING' | 'ACTIVE' | 'RESOLVED';
+  status: 'PENDING' | 'ACTIVE' | 'RESOLVED' | 'ANSWERED' | 'ARCHIVED';
   category?: PrayerCategory;
   isUrgent?: boolean;
   isPrivate?: boolean;
   isAnonymous?: boolean;
   groupIds?: string[];
-  visibility?: 'PUBLIC' | 'PRIVATE' | 'GROUP';
+  visibility?: RequestVisibility;
+  supportPreference?: SupportPreference;
   location?: string;
   createdAt?: TimeLike;
+  updatedAt?: TimeLike;
+  answeredAt?: TimeLike;
+  answerReflection?: string;
+  answerVisibility?: RequestVisibility;
+  linkedTestimonyId?: string;
   commentCount?: number;
   // Reaction counts
   heartCount?: number;
@@ -96,6 +111,16 @@ export type Comment = {
   authorUid: string;
   authorName: string;
   content: string;
+  hiddenByOwner?: boolean;
+  createdAt?: TimeLike;
+};
+
+export type PrayerRequestUpdate = {
+  id: string;
+  requestId: string;
+  ownerUid: string;
+  text: string;
+  updateType: PrayerRequestUpdateType;
   createdAt?: TimeLike;
 };
 

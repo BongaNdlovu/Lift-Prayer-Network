@@ -46,6 +46,7 @@ describe('offlineCache', () => {
         '@lift_last_sync',
         '@lift_pending_prayers',
         '@lift_pending_requests',
+        '@lift_pending_promises',
       ]);
     });
   });

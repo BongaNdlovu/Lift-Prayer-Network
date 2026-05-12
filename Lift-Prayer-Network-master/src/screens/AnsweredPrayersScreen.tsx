@@ -23,6 +23,7 @@ import {
   orderBy,
   limit,
   getDocs,
+  where,
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
@@ -180,6 +181,7 @@ export const AnsweredPrayersScreen: React.FC = () => {
       const testimoniesRef = collection(db, 'testimonies');
       const q = query(
         testimoniesRef,
+        where('visibility', '==', 'PUBLIC'),
         orderBy('createdAt', 'desc'),
         limit(ANSWERED_LIMIT)
       );

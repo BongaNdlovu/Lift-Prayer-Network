@@ -30,14 +30,15 @@ import {
   updateTestimonyContent,
 } from '../../services/requests';
 import { logPrayer } from '../../services/prayers';
-import { addComment, subscribeToComments, deleteComment, updateComment } from '../../services/comments';
+import { addComment, subscribeToComments, deleteComment, updateComment, hideCommentByOwner } from '../../services/comments';
+import { addPrayerRequestUpdate, getPrayerRequestUpdates, markPrayerRequestAnswered } from '../../services/prayerJourney';
 import { checkUserBlockedFromPosting } from '../../services/moderation';
 import { formatRelativeTime } from '../../components/FeedCard';
 import { InlineError } from '../../components/InlineError';
 import { ErrorState } from '../../components/ErrorState';
 import { useOptimisticMutation } from '../../hooks/useOptimisticMutation';
 import { canEditContent, canDeleteContent, hasAdminPermission, getVerifiedBadge, BADGE_STYLES } from '../../config/admins';
-import type { FeedItem, Comment } from '../../types';
+import type { FeedItem, Comment, PrayerRequestUpdate, PrayerRequestUpdateType } from '../../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RequestDetail'>;
 
@@ -66,6 +67,12 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [updates, setUpdates] = useState<PrayerRequestUpdate[]>([]);
+  const [newUpdate, setNewUpdate] = useState('');
+  const [updateType, setUpdateType] = useState<PrayerRequestUpdateType>('CONTINUE_PRAYING');
+  const [answerReflection, setAnswerReflection] = useState('');
+  const [answerPublic, setAnswerPublic] = useState(false);
+  const [shareAsTestimony, setShareAsTestimony] = useState(false);
 
   const isOwner = useMemo(() => user && item && user.uid === (item as any).ownerUid, [user, item]);
   const canEdit = useMemo(() => item && user && canEditContent((item as any).ownerUid, user.uid, user.email), [item, user]);
@@ -96,6 +103,17 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   useEffect(() => {
     const unsub = subscribeToComments(id, type, setComments);
     return () => unsub();
+  }, [id, type]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (type !== 'REQUEST') return undefined;
+    getPrayerRequestUpdates(id).then((next) => {
+      if (mounted) setUpdates(next);
+    });
+    return () => {
+      mounted = false;
+    };
   }, [id, type]);
 
   const { mutate: submitComment, loading: submittingComment } = useOptimisticMutation<
@@ -201,6 +219,68 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         },
       ]
     );
+  };
+
+  const handleHideComment = async (comment: Comment) => {
+    const success = await hideCommentByOwner(comment.id);
+    if (!success) {
+      Alert.alert('Error', 'Could not hide this encouragement.');
+    }
+  };
+
+  const handleAddUpdate = async () => {
+    if (!user || !isOwner || type !== 'REQUEST') return;
+    if (!newUpdate.trim()) {
+      Alert.alert('Update required', 'Write a short update first.');
+      return;
+    }
+
+    setBusyAction(true);
+    try {
+      await addPrayerRequestUpdate(id, user.uid, newUpdate.trim(), updateType);
+      setNewUpdate('');
+      const next = await getPrayerRequestUpdates(id);
+      setUpdates(next);
+      Alert.alert('Update added', 'People praying can now see the latest.');
+    } catch (err: any) {
+      Alert.alert('Could not add update', err.message || 'Please try again.');
+    } finally {
+      setBusyAction(false);
+    }
+  };
+
+  const handleMarkAnswered = async () => {
+    if (!user || !isOwner || type !== 'REQUEST' || !item) return;
+    setBusyAction(true);
+    try {
+      const testimonyId = await markPrayerRequestAnswered({
+        requestId: id,
+        ownerUid: user.uid,
+        reflection: answerReflection.trim(),
+        visibility: answerPublic ? 'PUBLIC' : 'PRIVATE',
+        shareAsTestimony,
+        userDisplayName: user.displayName || 'Anonymous',
+        userEmail: user.email,
+        userPhotoURL: user.photoURL,
+        isAnonymous: (item as any).isAnonymous,
+      });
+
+      setItem({
+        ...item,
+        status: 'ANSWERED',
+        severity: 'RESOLVED',
+        answerReflection: answerReflection.trim(),
+        answerVisibility: answerPublic ? 'PUBLIC' : 'PRIVATE',
+        linkedTestimonyId: testimonyId || undefined,
+      } as FeedItem);
+      const next = await getPrayerRequestUpdates(id);
+      setUpdates(next);
+      Alert.alert('Answered Prayer', shareAsTestimony ? 'Your testimony has been shared.' : 'Saved as a private answered prayer.');
+    } catch (err: any) {
+      Alert.alert('Could not mark answered', err.message || 'Please try again.');
+    } finally {
+      setBusyAction(false);
+    }
   };
 
   const handleReportComment = (commentId: string) => {
@@ -444,7 +524,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <InlineError message={commentError} onDismiss={() => setCommentError(null)} />
         )}
         <Text style={styles.kicker}>{type === 'REQUEST' ? 'Transmission' : 'Verification'}</Text>
-        <Text style={styles.title}>{displayItem.content.slice(0, 100)}</Text>
+        <Text style={styles.title}>{(displayItem as any).title || displayItem.content.slice(0, 100)}</Text>
         
         {/* Author Info with Badge */}
         <View style={styles.authorRow}>
@@ -519,6 +599,17 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           {type === 'TESTIMONY' && <Text style={styles.meta}>Amens: {(item as any).likes ?? 0}</Text>}
         </View>
 
+        {type === 'REQUEST' && (
+          <View style={styles.supportSummary}>
+            <Ionicons name="people-outline" size={18} color="#92400e" />
+            <Text style={styles.supportSummaryText}>
+              {((item as any).prayers ?? 0) === 0
+                ? 'No one has logged a prayer yet.'
+                : `${(item as any).prayers} ${(item as any).prayers === 1 ? 'person is' : 'people are'} praying.`}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.actions}>
           {type === 'REQUEST' ? (
             <TouchableOpacity style={styles.primaryButton} onPress={handlePray} disabled={busyAction}>
@@ -560,6 +651,13 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               Encouragements ({comments.length})
             </Text>
           </View>
+
+          {type === 'REQUEST' && (item as any).supportPreference === 'PRAYER_ONLY' && (
+            <View style={styles.prayerOnlyNotice}>
+              <Ionicons name="heart-outline" size={16} color="#92400e" />
+              <Text style={styles.prayerOnlyText}>The requester asked for prayer only.</Text>
+            </View>
+          )}
 
           {comments.length > 0 ? (
             <View style={styles.commentsList}>
@@ -631,6 +729,15 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                               </TouchableOpacity>
                             </>
                           )}
+                          {isOwner && !isOwnComment && (
+                            <TouchableOpacity
+                              style={styles.commentActionBtn}
+                              onPress={() => handleHideComment(comment)}
+                            >
+                              <Ionicons name="eye-off-outline" size={14} color="#b45309" />
+                              <Text style={[styles.commentActionText, { color: '#b45309' }]}>Hide</Text>
+                            </TouchableOpacity>
+                          )}
                           {user && !isOwnComment && (
                             <TouchableOpacity
                               style={styles.commentActionBtn}
@@ -661,7 +768,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           )}
 
-          {user && (
+          {user && !(type === 'REQUEST' && (item as any).supportPreference === 'PRAYER_ONLY') && (
             <View style={styles.commentInput}>
               <TextInput
                 style={styles.commentTextInput}
@@ -670,7 +777,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 value={newComment}
                 onChangeText={setNewComment}
                 multiline
-                maxLength={500}
+                maxLength={300}
               />
               <TouchableOpacity
                 style={[styles.commentSendButton, !newComment.trim() && styles.commentSendDisabled]}
@@ -686,6 +793,90 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           )}
         </View>
+
+        {type === 'REQUEST' && (
+          <View style={styles.commentsSection}>
+            <View style={styles.commentHeader}>
+              <Ionicons name="trail-sign-outline" size={20} color={palette.text} />
+              <Text style={styles.commentTitle}>Prayer Updates</Text>
+            </View>
+            {updates.length === 0 ? (
+              <Text style={styles.noCommentsText}>No updates yet.</Text>
+            ) : (
+              <View style={styles.commentsList}>
+                {updates.map((update) => (
+                  <View key={update.id} style={styles.updateItem}>
+                    <Text style={styles.updateType}>{update.updateType.replace(/_/g, ' ')}</Text>
+                    <Text style={styles.commentText}>{update.text}</Text>
+                    <Text style={styles.commentTime}>{formatRelativeTime(update.createdAt)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            {isOwner && (item as any).status !== 'ANSWERED' && (
+              <View style={styles.ownerPanel}>
+                <TextInput
+                  style={styles.commentTextInput}
+                  placeholder="Add a short update..."
+                  placeholderTextColor={palette.muted}
+                  value={newUpdate}
+                  onChangeText={setNewUpdate}
+                  multiline
+                  maxLength={700}
+                />
+                <View style={styles.updateTypeRow}>
+                  {([
+                    ['CONTINUE_PRAYING', 'Continue'],
+                    ['IMPROVED', 'Improved'],
+                    ['STILL_WAITING', 'Waiting'],
+                    ['NO_LONGER_NEEDED', 'No longer needed'],
+                  ] as [PrayerRequestUpdateType, string][]).map(([value, label]) => (
+                    <TouchableOpacity
+                      key={value}
+                      style={[styles.updateChip, updateType === value && styles.updateChipActive]}
+                      onPress={() => setUpdateType(value)}
+                    >
+                      <Text style={[styles.updateChipText, updateType === value && styles.updateChipTextActive]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity style={styles.secondaryButton} onPress={handleAddUpdate} disabled={busyAction}>
+                  <Text style={styles.secondaryText}>Add Update</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {type === 'REQUEST' && isOwner && (item as any).status !== 'ANSWERED' && (
+          <View style={styles.answerBox}>
+            <View style={styles.commentHeader}>
+              <Ionicons name="checkmark-circle-outline" size={20} color="#166534" />
+              <Text style={styles.answerTitle}>Mark as Answered</Text>
+            </View>
+            <TextInput
+              style={styles.flagInput}
+              placeholder="Optional reflection or testimony..."
+              placeholderTextColor={palette.muted}
+              value={answerReflection}
+              onChangeText={setAnswerReflection}
+              multiline
+              maxLength={1500}
+            />
+            <TouchableOpacity style={styles.toggleRow} onPress={() => setAnswerPublic((value) => !value)}>
+              <Ionicons name={answerPublic ? 'radio-button-on' : 'radio-button-off'} size={18} color="#166534" />
+              <Text style={styles.toggleText}>Make this answered prayer public</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.toggleRow} onPress={() => setShareAsTestimony((value) => !value)}>
+              <Ionicons name={shareAsTestimony ? 'radio-button-on' : 'radio-button-off'} size={18} color="#166534" />
+              <Text style={styles.toggleText}>Also share as testimony</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.answerButton} onPress={handleMarkAnswered} disabled={busyAction}>
+              <Ionicons name="checkmark-circle" size={18} color="#fff" />
+              <Text style={styles.answerButtonText}>Mark Answered</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.flagBox}>
           <Text style={styles.flagTitle}>Flag / Report</Text>
@@ -971,6 +1162,117 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderWidth: 1,
     borderColor: palette.border,
+  },
+  supportSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: '#fef3c7',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  supportSummaryText: {
+    color: '#92400e',
+    fontWeight: '700',
+    flex: 1,
+  },
+  prayerOnlyNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: '#fffbeb',
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  prayerOnlyText: {
+    color: '#92400e',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  updateItem: {
+    borderLeftWidth: 3,
+    borderLeftColor: palette.accent,
+    paddingLeft: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  updateType: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#92400e',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  ownerPanel: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: palette.border,
+  },
+  updateTypeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  updateChip: {
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    backgroundColor: '#f8fafc',
+  },
+  updateChipActive: {
+    backgroundColor: '#fef3c7',
+    borderColor: palette.accent,
+  },
+  updateChipText: {
+    color: palette.muted,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  updateChipTextActive: {
+    color: '#92400e',
+  },
+  answerBox: {
+    backgroundColor: '#f0fdf4',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    gap: spacing.sm,
+  },
+  answerTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#166534',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 2,
+  },
+  toggleText: {
+    color: '#166534',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  answerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: '#16a34a',
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+  },
+  answerButtonText: {
+    color: '#fff',
+    fontWeight: '800',
   },
   commentHeader: {
     flexDirection: 'row',
