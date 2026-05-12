@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "lift-notification-relay",
+  "name": "lift-prayer-network",
   "main": "worker/index.js",
   "compatibility_date": "2026-05-12",
   "observability": {

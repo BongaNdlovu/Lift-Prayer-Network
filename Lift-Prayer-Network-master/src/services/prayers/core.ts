@@ -15,6 +15,7 @@ import { checkAndUnlockAchievements } from '../achievements';
 import { LogPrayerResult, RequestUpdateData } from './types';
 import { checkActionRateLimit, formatRateLimitError } from '../../utils/security';
 import { NOTIFICATION_TYPES } from '../../types/notifications';
+import { sendPushViaRelay } from '../pushRelay';
 
 /**
  * Check if user has already prayed on a specific request.
@@ -93,6 +94,7 @@ export const logPrayer = async (
   const isSelfPrayer = actorUid === safeTargetOwnerUid;
 
   let prayerCount = 0;
+  let prayerNotificationId: string | undefined;
 
   try {
     await runTransaction(db, async (txn) => {
@@ -176,6 +178,7 @@ export const logPrayer = async (
       // Create a notification document for the request owner
       if (!isSelfPrayer && safeTargetOwnerUid !== 'anon' && db) {
         const notificationRef = doc(collection(db, 'notifications'));
+        prayerNotificationId = notificationRef.id;
         txn.set(notificationRef, {
           type: NOTIFICATION_TYPES.PRAYER,
           recipientUid: safeTargetOwnerUid,
@@ -198,6 +201,22 @@ export const logPrayer = async (
       });
     } catch (err) {
       console.warn('[Prayers] Non-critical: Could not update streak/achievements:', err);
+    }
+
+    if (!isSelfPrayer && safeTargetOwnerUid !== 'anon' && prayerNotificationId) {
+      await sendPushViaRelay({
+        recipientUid: safeTargetOwnerUid,
+        title: 'Someone prayed for you',
+        body: `${actorDisplayName || 'Someone'} prayed for your request`,
+        settingKey: 'notificationsPrayers',
+        notificationId: prayerNotificationId,
+        data: {
+          type: NOTIFICATION_TYPES.PRAYER,
+          actorUid,
+          targetRequestId,
+          notificationId: prayerNotificationId,
+        },
+      });
     }
 
     return { success: true, isSelfPrayer };
@@ -329,6 +348,13 @@ export const likeTestimony = async (
 
   try {
     let liked = false;
+    let amenNotification:
+      | {
+          id: string;
+          recipientUid: string;
+          targetSummary: string;
+        }
+      | undefined;
     
     await runTransaction(db, async (txn) => {
       // First check if this is the user's own testimony
@@ -371,18 +397,39 @@ export const likeTestimony = async (
         // Create notification for testimony owner
         if (ownerUid && ownerUid !== 'anon' && db) {
           const notificationRef = doc(collection(db, 'notifications'));
+          amenNotification = {
+            id: notificationRef.id,
+            recipientUid: ownerUid,
+            targetSummary: (testimonyData?.content as string)?.slice(0, 100) || 'your testimony',
+          };
           txn.set(notificationRef, {
             type: NOTIFICATION_TYPES.AMEN,
             recipientUid: ownerUid,
             actorUid,
             targetTestimonyId: testimonyId,
-            targetSummary: (testimonyData?.content as string)?.slice(0, 100) || 'your testimony',
+            targetSummary: amenNotification.targetSummary,
             createdAt: serverTimestamp(),
             read: false,
           });
         }
       }
     });
+
+    if (liked && amenNotification) {
+      await sendPushViaRelay({
+        recipientUid: amenNotification.recipientUid,
+        title: 'Amen',
+        body: 'Someone said amen to your testimony',
+        settingKey: 'notificationsTestimonies',
+        notificationId: amenNotification.id,
+        data: {
+          type: NOTIFICATION_TYPES.AMEN,
+          actorUid,
+          targetTestimonyId: testimonyId,
+          notificationId: amenNotification.id,
+        },
+      });
+    }
 
     return { success: true, liked };
   } catch (err: unknown) {

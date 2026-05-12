@@ -22,6 +22,7 @@ import {
 import { db, firebaseEnabled } from './firebase';
 import type { FollowRecord } from '../types';
 import { NOTIFICATION_TYPES } from '../types/notifications';
+import { sendPushViaRelay } from './pushRelay';
 
 export type FollowResult = {
   success: boolean;
@@ -64,7 +65,7 @@ export const followUser = async (
 
     // Create a notification for the target user
     try {
-      await addDoc(collection(db, 'notifications'), {
+      const notificationRef = await addDoc(collection(db, 'notifications'), {
         type: NOTIFICATION_TYPES.FOLLOW,
         recipientUid: targetUid,
         actorUid,
@@ -74,6 +75,19 @@ export const followUser = async (
         read: false,
       });
       console.log('[Following] Created follow notification for:', targetUid);
+
+      await sendPushViaRelay({
+        recipientUid: targetUid,
+        title: 'New follower',
+        body: `${actorDisplayName || 'Someone'} followed you`,
+        settingKey: 'notifications',
+        notificationId: notificationRef.id,
+        data: {
+          type: NOTIFICATION_TYPES.FOLLOW,
+          actorUid,
+          notificationId: notificationRef.id,
+        },
+      });
     } catch (notifErr) {
       // Non-critical - don't fail the follow if notification fails
       console.warn('[Following] Could not create notification:', notifErr);
