@@ -6,9 +6,11 @@ import { db, firebaseEnabled } from './firebase';
 
 // Get the project ID from app config
 const getProjectId = (): string => {
+  const legacyManifest = Constants.manifest as { extra?: { eas?: { projectId?: string } } } | null;
+
   // Try to get from Constants.expoConfig first (newer Expo versions)
   const projectId = Constants.expoConfig?.extra?.eas?.projectId 
-    || Constants.manifest?.extra?.eas?.projectId
+    || legacyManifest?.extra?.eas?.projectId
     || Constants.manifest2?.extra?.expoClient?.extra?.eas?.projectId;
   
   if (!projectId) {
