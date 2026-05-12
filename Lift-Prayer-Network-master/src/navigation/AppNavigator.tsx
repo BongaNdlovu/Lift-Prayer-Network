@@ -73,21 +73,21 @@ const MainTabs = () => {
         },
         tabBarIcon: ({ color, size }) => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-            Today: 'sunny-outline',
-            Wall: 'reader-outline',
-            Add: 'add-circle-outline',
-            Answered: 'sparkles-outline',
-            Me: 'person-outline',
+            Home: 'home-outline',
+            Prayers: 'heart-outline',
+            Calendar: 'calendar-outline',
+            Community: 'people-outline',
+            Profile: 'person-outline',
           };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Today" component={TodayScreen} />
-      <Tab.Screen name="Wall" component={FeedScreen} />
-      <Tab.Screen name="Add" component={CreateHubScreen} />
-      <Tab.Screen name="Answered" component={AnsweredPrayersScreen} />
-      <Tab.Screen name="Me" component={ProfileScreen} />
+      <Tab.Screen name="Home" component={FeedScreen} />
+      <Tab.Screen name="Prayers" component={MyPrayersScreen} />
+      <Tab.Screen name="Calendar" component={CalendarScreen} />
+      <Tab.Screen name="Community" component={GroupsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };

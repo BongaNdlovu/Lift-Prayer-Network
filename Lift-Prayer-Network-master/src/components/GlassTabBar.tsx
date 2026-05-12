@@ -13,11 +13,10 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 // Icon mapping for tab routes
 const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
-  Feed: { active: 'home', inactive: 'home-outline' },
-  Groups: { active: 'people', inactive: 'people-outline' },
+  Home: { active: 'home', inactive: 'home-outline' },
+  Prayers: { active: 'heart', inactive: 'heart-outline' },
   Calendar: { active: 'calendar', inactive: 'calendar-outline' },
-  Stats: { active: 'bar-chart', inactive: 'bar-chart-outline' },
-  Donate: { active: 'heart', inactive: 'heart-outline' },
+  Community: { active: 'people', inactive: 'people-outline' },
   Profile: { active: 'person', inactive: 'person-outline' },
 };
 
@@ -108,7 +107,7 @@ const TabBarContent: React.FC<{
 
         const icons = TAB_ICONS[route.name] || { active: 'ellipse', inactive: 'ellipse-outline' };
         const iconName = isFocused ? icons.active : icons.inactive;
-        const iconColor = isFocused ? colors.stone900 : colors.stone400;
+        const iconColor = isFocused ? colors.accentDark : colors.muted;
 
         return (
           <TouchableOpacity
@@ -132,7 +131,7 @@ const TabBarContent: React.FC<{
               />
             </View>
             {isFocused && (
-              <View style={[styles.activeIndicator, { backgroundColor: colors.stone900 }]} />
+              <View style={[styles.activeIndicator, { backgroundColor: colors.accentDark }]} />
             )}
           </TouchableOpacity>
         );
@@ -150,20 +149,21 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   blurContainer: {
-    borderRadius: 20,
+    borderRadius: 28,
     overflow: 'hidden',
     ...shadows.glassNav,
   },
   tabBarInner: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: 'rgba(63,95,59,0.12)',
   },
   tabBar: {
     height: 64,
-    borderRadius: 20,
+    borderRadius: 28,
     borderWidth: 1,
+    borderColor: 'rgba(63,95,59,0.12)',
     ...shadows.glassNav,
   },
   tabsContainer: {

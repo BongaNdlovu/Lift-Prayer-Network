@@ -37,35 +37,35 @@ type OnboardingSlide = {
   color: string;
 };
 
-// Tutorial slides with cross emoji as requested
+// Tutorial slides with Medium-style content
 const getSlides = (colors: any): OnboardingSlide[] => [
   {
     id: '1',
-    emoji: '✝️',
+    emoji: '🌿',
     title: 'Welcome to Lift',
-    description: 'A live network where prayers meet purpose. Share your needs, lift others up.',
+    description: 'A live network where prayers meet purpose. Join believers around the world lifting each other up in real time.',
     color: colors.accentLight,
   },
   {
     id: '2',
-    emoji: '📡',
+    emoji: '✈️',
     title: 'Transmit Your Need',
-    description: 'Post prayer requests and let the community rally around you in support.',
-    color: colors.amber100,
+    description: 'Share what is on your heart. Your community can pray, encourage, and follow up with care.',
+    color: colors.surfaceSecondary,
   },
   {
     id: '3',
-    emoji: '✨',
-    title: 'Verify & Celebrate',
-    description: 'When prayers are answered, share your testimony and inspire others.',
-    color: colors.successLight,
+    emoji: '🔒',
+    title: 'Private & Respectful',
+    description: 'Choose public, private, or group visibility. Your prayer journey stays protected.',
+    color: colors.accentLight,
   },
   {
     id: '4',
     emoji: '🔔',
     title: 'Stay Connected',
-    description: 'We\'ll ask for a few permissions to keep you updated on prayers and community activity.',
-    color: colors.sky100,
+    description: 'Receive prayer updates, reminders, and encouragement without noise or pressure.',
+    color: colors.surfaceSecondary,
   },
 ];
 
@@ -81,19 +81,19 @@ const PERMISSIONS_INFO: PermissionInfo[] = [
   {
     icon: 'notifications-outline',
     title: 'Push Notifications',
-    description: 'Get notified when someone prays for you, answers your request, or when there\'s community activity.',
+    description: 'Get notified when someone prays for you, comments, or answers a request.',
     required: false,
   },
   {
-    icon: 'phone-portrait-outline',
-    title: 'Haptic Feedback',
-    description: 'Feel gentle vibrations when you interact with the app for a more tactile experience.',
+    icon: 'heart-outline',
+    title: 'Prayer Updates',
+    description: 'Receive occasional reminders and community updates connected to your prayers.',
     required: false,
   },
   {
-    icon: 'refresh-outline',
-    title: 'Background Refresh',
-    description: 'Keep your prayer reminders and notifications working even when the app is closed.',
+    icon: 'lock-closed-outline',
+    title: 'Privacy',
+    description: 'We will never spam you or share your information without permission.',
     required: false,
   },
 ];

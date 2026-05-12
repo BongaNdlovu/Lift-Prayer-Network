@@ -32,31 +32,16 @@ import type { FeedItem, LiftRequest, Testimony } from '../types';
 
 type Mode = 'REQUEST' | 'TESTIMONY';
 
-const LOCATIONS = [
-  'SECTOR 07 (NY)',
-  'NEO-TOKYO GRID',
-  'OLD LONDON',
-  'JOHANNESBURG OUTPOST',
-  'DUBAI NODE',
-  'MUMBAI NET',
-  'BERLIN WALL 2',
-  'SAO PAULO ZONE',
-];
-const URGENT_TOPICS = ['Supply Shortage', 'Sickness', 'Protection', 'Guidance', 'Grid Failure', 'Reunification'];
-const NAMES = ['User_992', 'Kael', 'Sera_Phim', 'Unit_734', 'Watcher', 'Nomad', 'Echo_Five'];
-
 const generateMockItem = (mode: Mode): FeedItem => {
   const base = {
     id: Math.random().toString(36).slice(2),
     ownerUid: 'mock',
-    userDisplayName: NAMES[Math.floor(Math.random() * NAMES.length)],
-    location: LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)],
+    userDisplayName: 'Anonymous',
+    location: '',
     content:
       mode === 'REQUEST'
-        ? `Requesting spiritual cover for ${
-            URGENT_TOPICS[Math.floor(Math.random() * URGENT_TOPICS.length)]
-          }. The shadows are lengthening here. We need light.`
-        : 'The intervention arrived at dawn. Supplies secured. The blockade has lifted. Faith confirmed.',
+        ? 'Please pray for this request.'
+        : 'Thank you for your prayers.',
     createdAt: new Date(),
   };
   if (mode === 'REQUEST') {

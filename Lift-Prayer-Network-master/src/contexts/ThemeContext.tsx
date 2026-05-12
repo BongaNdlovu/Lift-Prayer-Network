@@ -5,7 +5,7 @@ import { lightPalette, darkPalette, setPalette, type ThemePalette, spacing, radi
 
 const THEME_KEY = '@lift_theme_preference';
 
-type ThemeMode = 'dark' | 'system';
+type ThemeMode = 'light' | 'system';
 
 // Get system color scheme synchronously for immediate render
 const getInitialColorScheme = () => Appearance.getColorScheme() === 'dark';
@@ -141,15 +141,12 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const systemColorScheme = useColorScheme();
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
   // Use ref to track if we've loaded saved preference (avoids re-render flash)
   const hasLoadedRef = useRef(false);
 
-  // Determine if dark mode based on theme mode and system preference
-  // Use synchronous Appearance API for initial render to avoid flash
-  const isDark: boolean = themeMode === 'system' 
-    ? (systemColorScheme === 'dark' || (systemColorScheme == null && getInitialColorScheme()))
-    : themeMode === 'dark';
+  // Force light mode for consistent brand during overhaul
+  const isDark = false;
 
   const colors = isDark ? darkPalette : lightPalette;
 
@@ -162,14 +159,10 @@ export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) =
     const loadTheme = async () => {
       try {
         const saved = await AsyncStorage.getItem(THEME_KEY);
-        if (saved && ['dark', 'system'].includes(saved)) {
-          setThemeModeState(saved as ThemeMode);
-        } else if (saved === 'light') {
-          // Migrate old 'light' preference to 'system'
-          setThemeModeState('system');
-          await AsyncStorage.setItem(THEME_KEY, 'system');
+        if (saved !== 'light') {
+          await AsyncStorage.setItem(THEME_KEY, 'light');
         }
-        // For fresh install (saved === null), 'system' is already the default
+        setThemeModeState('light');
       } catch (err) {
         console.warn('Error loading theme preference:', err);
       }
@@ -192,9 +185,8 @@ export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) =
   }, []);
 
   const toggleTheme = useCallback(() => {
-    const newMode = isDark ? 'system' : 'dark';
-    setThemeMode(newMode);
-  }, [isDark, setThemeMode]);
+    setThemeMode('light');
+  }, [setThemeMode]);
 
   // Create dynamic styles that update when theme changes
   const styles = useMemo(() => createDynamicStyles(colors, isDark), [colors, isDark]);

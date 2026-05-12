@@ -1,24 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
-import { fonts, fontSizes, palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground } from '../../components/CinematicBackground';
+import { spacing, fonts, radius } from '../../theme/colors';
+import { LiftScreen, LiftLogo, LiftCard, LiftButton } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
@@ -119,260 +115,138 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const isLoading = loading;
-
-  // Memoize gradient colors to prevent re-renders and ensure stability on fresh install
-  const gradientColors = useMemo(
-    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
-    [colors.gradientBoldScreen]
-  );
-
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.logo}>LIFT</Text>
-              <Text style={[styles.tagline, { color: colors.stone500 }]}>Live network of prayer</Text>
-            </View>
+    <LiftScreen scroll contentStyle={styles.screenContent}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+        <View style={styles.header}>
+          <LiftLogo />
+          <Text style={[styles.tagline, { color: colors.muted }]}>live network of prayer</Text>
+        </View>
 
-          {/* Sign In Card */}
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
-            <Text style={[styles.subtitle, { color: colors.muted }]}>Sign in to continue</Text>
+        <LiftCard style={styles.card}>
+          <Text style={[styles.title, { color: colors.text }]}>Sign In</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>Simple, familiar, and trustworthy sign-in.</Text>
 
-            {/* Email Input */}
-            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="mail-outline" size={20} color={colors.muted} style={styles.inputIcon} />
-              <TextInput
-                placeholder="Email address"
-                placeholderTextColor={colors.muted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-                autoComplete="email"
-                style={[styles.input, { color: colors.text }]}
-                value={email}
-                onChangeText={setEmail}
-                editable={!isLoading}
-              />
-            </View>
-
-            {/* Password Input */}
-            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="lock-closed-outline" size={20} color={colors.muted} style={styles.inputIcon} />
-              <TextInput
-                placeholder="Password"
-                placeholderTextColor={colors.muted}
-                secureTextEntry={!showPassword}
-                textContentType="password"
-                autoComplete="password"
-                style={[styles.input, styles.passwordInput, { color: colors.text }]}
-                value={password}
-                onChangeText={setPassword}
-                editable={!isLoading}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-                disabled={isLoading}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color={colors.muted}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Forgot Password */}
-            <TouchableOpacity onPress={handleForgotPassword} disabled={isLoading}>
-              <Text style={[styles.forgotText, { color: colors.muted }]}>Forgot password?</Text>
-            </TouchableOpacity>
-
-            {/* Sign In Button */}
-            <TouchableOpacity
-              style={[
-                styles.button, 
-                styles.primaryButton, 
-                { backgroundColor: colors.accent },
-                isLoading && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
-              ]}
-              onPress={handleSignIn}
-              disabled={isLoading}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.text} />
-              ) : (
-                <Text style={[styles.primaryButtonText, { color: colors.text }]}>Sign In</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Sign Up Link */}
-            <View style={styles.signUpContainer}>
-              <Text style={[styles.signUpText, { color: colors.muted }]}>Don&apos;t have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={isLoading}>
-                <Text style={[styles.signUpLink, { color: colors.accent }]}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput
+              placeholder="you@example.com"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              style={[styles.input, { color: colors.text }]}
+              value={email}
+              onChangeText={setEmail}
+              editable={!loading}
+            />
           </View>
 
-          {/* Guest Sign In */}
-          <TouchableOpacity
-            style={styles.guestButton}
-            onPress={handleGuestSignIn}
-            disabled={isLoading}
-          >
-            <Text style={[styles.guestText, { color: colors.muted }]}>Continue as guest</Text>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput
+              placeholder="Enter your password"
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showPassword}
+              textContentType="password"
+              autoComplete="password"
+              style={[styles.input, styles.passwordInput, { color: colors.text }]}
+              value={password}
+              onChangeText={setPassword}
+              editable={!loading}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton} disabled={loading}>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} disabled={loading}>
+            <Text style={[styles.forgotText, { color: colors.accentDark }]}>Forgot password?</Text>
           </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </CinematicBackground>
+
+          <LiftButton title="Sign In" onPress={handleSignIn} loading={loading} disabled={loading} />
+          <LiftButton title="Continue as guest" onPress={handleGuestSignIn} variant="secondary" disabled={loading} />
+
+          <View style={styles.signUpContainer}>
+            <Text style={[styles.signUpText, { color: colors.muted }]}>Don&apos;t have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={loading}>
+              <Text style={[styles.signUpLink, { color: colors.accentDark }]}>Sign up</Text>
+            </TouchableOpacity>
+          </View>
+        </LiftCard>
+      </KeyboardAvoidingView>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  screenContent: {
+    paddingTop: 40,
   },
   keyboardView: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: spacing.lg,
-    justifyContent: 'center',
-  },
   header: {
-    marginBottom: spacing.xl,
-  },
-  logo: {
-    fontFamily: fonts.heading,
-    fontSize: 48,
-    fontWeight: '500',
-    letterSpacing: -1,
-    color: '#1c1917',
+    marginBottom: 32,
+    alignItems: 'center',
   },
   tagline: {
     fontFamily: fonts.body,
     marginTop: 4,
-    fontSize: fontSizes.sm,
+    fontSize: 12,
   },
   card: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    
-    
-    
-    
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: palette.border,
+    marginTop: 16,
   },
   title: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.xxl,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '500',
     marginBottom: 4,
   },
   subtitle: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
-    marginBottom: spacing.lg,
+    fontSize: 14,
+    marginBottom: 24,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: palette.border,
     borderRadius: radius.md,
-    marginBottom: spacing.md,
-  },
-  inputIcon: {
-    paddingLeft: spacing.md,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   input: {
     fontFamily: fonts.body,
-    flex: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    fontSize: fontSizes.md,
+    fontSize: 16,
   },
   passwordInput: {
     paddingRight: 44,
   },
   eyeButton: {
     position: 'absolute',
-    right: spacing.md,
+    right: 16,
     padding: 4,
   },
   forgotText: {
     fontFamily: fonts.bodyMedium,
     fontWeight: '600',
     textAlign: 'right',
-    marginBottom: spacing.lg,
-    fontSize: fontSizes.sm,
-  },
-  button: {
-    borderRadius: radius.md,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    minHeight: 52,
-    marginBottom: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButton: {
-    
-    
-    
-    
-    elevation: 4,
-  },
-  primaryButtonText: {
-    fontFamily: fonts.bodyBold,
-    fontWeight: '800',
-    fontSize: fontSizes.lg,
+    marginBottom: 24,
+    fontSize: 14,
   },
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.lg,
+    marginTop: 24,
   },
   signUpText: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
+    fontSize: 14,
   },
   signUpLink: {
     fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: fontSizes.sm,
-  },
-  guestButton: {
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    borderRadius: radius.md,
-  },
-  guestText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.md,
-    fontWeight: '600',
+    fontSize: 14,
   },
 });

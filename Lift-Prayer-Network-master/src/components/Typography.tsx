@@ -151,52 +151,13 @@ export const Quote: React.FC<TypographyProps> = ({ children, style, numberOfLine
 };
 
 const styles = StyleSheet.create({
-  h1: {
-    fontFamily: fonts.heading,
-    fontSize: 32,
-    lineHeight: 40,
-  },
-  h2: {
-    fontFamily: fonts.heading,
-    fontSize: 24,
-    lineHeight: 32,
-  },
-  h3: {
-    fontFamily: fonts.heading,
-    fontSize: 20,
-    lineHeight: 28,
-  },
-  body: {
-    fontFamily: fonts.body,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  bodyMedium: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  bodyBold: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  small: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  label: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 12,
-    lineHeight: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  quote: {
-    fontFamily: fonts.headingItalic,
-    fontSize: 20,
-    lineHeight: 28,
-    fontStyle: 'italic',
-  },
+  h1: { fontFamily: fonts.heading, fontSize: 34, lineHeight: 42, fontWeight: '500' },
+  h2: { fontFamily: fonts.heading, fontSize: 26, lineHeight: 34, fontWeight: '500' },
+  h3: { fontFamily: fonts.heading, fontSize: 21, lineHeight: 28, fontWeight: '500' },
+  body: { fontFamily: fonts.body, fontSize: 16, lineHeight: 24 },
+  bodyMedium: { fontFamily: fonts.bodyMedium, fontSize: 16, lineHeight: 24 },
+  bodyBold: { fontFamily: fonts.bodyBold, fontSize: 16, lineHeight: 24 },
+  small: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19 },
+  label: { fontFamily: fonts.bodyMedium, fontSize: 11, lineHeight: 15, textTransform: 'uppercase', letterSpacing: 0.8 },
+  quote: { fontFamily: fonts.headingItalic, fontSize: 21, lineHeight: 30, fontStyle: 'italic' },
 });

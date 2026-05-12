@@ -3,100 +3,100 @@ import { Platform } from 'react-native';
 // Light theme palette
 export const lightPalette = {
   // Core colors
-  background: '#faf9f7',
-  surface: '#ffffff',
-  surfaceSecondary: '#f1f5f9',
-  surfaceDeep: '#f5f0e8',
-  accent: '#eab308',
-  accentDark: '#b45309',
-  accentDeep: '#92400e',
-  accentLight: '#fef3c7',
-  text: '#0f172a',
-  textSecondary: '#374151',
-  muted: '#64748b',
-  border: '#e5e7eb',
-  danger: '#ef4444',
-  dangerLight: '#fef2f2',
-  success: '#10b981',
-  successLight: '#f0fdf4',
-  shadow: 'rgba(0,0,0,0.08)',
+  background: '#F7F3EA',
+  surface: '#FFFDF8',
+  surfaceSecondary: '#F0E8DA',
+  surfaceDeep: '#E8DDCC',
+  accent: '#3F5F3B',
+  accentDark: '#2F4A2C',
+  accentDeep: '#1F3320',
+  accentLight: '#E8EFE2',
+  text: '#1C1917',
+  textSecondary: '#44403C',
+  muted: '#78716C',
+  border: '#DED6C8',
+  danger: '#B42318',
+  dangerLight: '#FDECEC',
+  success: '#3F5F3B',
+  successLight: '#E8EFE2',
+  shadow: 'rgba(28,25,23,0.08)',
 
   // Cinematic Design System - Warm & Glassmorphism
-  cinematicBackground: '#F5F2EA',
-  cinematicBackgroundOuter: '#F0EFEB',
-  
+  cinematicBackground: '#F7F3EA',
+  cinematicBackgroundOuter: '#F3EDE2',
+
   // Glass effects
-  glassWhite: 'rgba(255,255,255,0.7)',
-  glassWhiteLight: 'rgba(255,255,255,0.4)',
-  glassWhiteStrong: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.6)',
-  glassBorderLight: 'rgba(255,255,255,0.4)',
-  
+  glassWhite: 'rgba(255,253,248,0.88)',
+  glassWhiteLight: 'rgba(255,253,248,0.62)',
+  glassWhiteStrong: 'rgba(255,253,248,0.96)',
+  glassBorder: 'rgba(63,95,59,0.12)',
+  glassBorderLight: 'rgba(63,95,59,0.08)',
+
   // Stone palette (warm grays)
-  stone900: '#1c1917',
+  stone900: '#1C1917',
   stone800: '#292524',
-  stone700: '#44403c',
-  stone600: '#57534e',
-  stone500: '#78716c',
-  stone400: '#a8a29e',
-  stone300: '#d6d3d1',
-  stone200: '#e7e5e4',
-  stone100: '#f5f5f4',
-  
+  stone700: '#44403C',
+  stone600: '#57534E',
+  stone500: '#78716C',
+  stone400: '#A8A29E',
+  stone300: '#D6D3D1',
+  stone200: '#E7E5E4',
+  stone100: '#FAFAF9',
+
   // Amber palette
-  amber700: '#b45309',
-  amber600: '#d97706',
-  amber500: '#f59e0b',
-  amber400: '#fbbf24',
-  amber300: '#fcd34d',
-  amber200: '#fde68a',
-  amber100: '#fef3c7',
-  
+  amber700: '#A86924',
+  amber600: '#C7782A',
+  amber500: '#D98A2B',
+  amber400: '#E8A85C',
+  amber300: '#F0C28A',
+  amber200: '#F4D9B5',
+  amber100: '#F8EEE0',
+
   // Orange palette
-  orange600: '#ea580c',
-  orange500: '#f97316',
-  orange400: '#fb923c',
-  orange300: '#fdba74',
-  
+  orange600: '#B85F24',
+  orange500: '#C7782A',
+  orange400: '#E0A05A',
+  orange300: '#F0C28A',
+
   // Rose palette
-  rose500: '#f43f5e',
-  rose400: '#fb7185',
-  rose300: '#fda4af',
-  rose200: '#fecdd3',
-  rose100: '#ffd7e0',
-  rose600: '#e11d48',
-  
+  rose600: '#A63D40',
+  rose500: '#B85A5C',
+  rose400: '#CC7A7C',
+  rose300: '#E2ABAC',
+  rose200: '#F0D4D4',
+  rose100: '#F7E8E8',
+
   // Indigo palette (for badges)
-  indigo700: '#4338ca',
-  indigo100: 'rgba(199,210,254,0.5)',
-  
+  indigo700: '#3F5F3B',
+  indigo100: 'rgba(63,95,59,0.12)',
+
   // Cinematic glow colors
-  warmGlowTop: 'rgba(251,146,60,0.3)',
-  warmGlowTopLight: 'rgba(251,191,36,0.2)',
-  warmGlowBottom: 'rgba(251,113,133,0.3)',
-  warmGlowBottomLight: 'rgba(251,146,60,0.2)',
+  warmGlowTop: 'rgba(255,253,248,0.55)',
+  warmGlowTopLight: 'rgba(232,239,226,0.35)',
+  warmGlowBottom: 'rgba(216,138,43,0.12)',
+  warmGlowBottomLight: 'rgba(63,95,59,0.08)',
 
   // Gradient colors - 3 color
-  gradientWarm: ['#fef3c7', '#fde68a', '#fcd34d'] as const,
-  gradientSunrise: ['#fff7ed', '#fed7aa', '#fdba74'] as const,
-  gradientCool: ['#f0f9ff', '#e0f2fe', '#bae6fd'] as const,
-  gradientPurple: ['#faf5ff', '#f3e8ff', '#e9d5ff'] as const,
-  gradientSuccess: ['#f0fdf4', '#dcfce7', '#bbf7d0'] as const,
-  
+  gradientWarm: ['#F7F3EA', '#F8EEE0', '#FFFDF8'] as const,
+  gradientSunrise: ['#FFFDF8', '#F8EEE0', '#F0E8DA'] as const,
+  gradientCool: ['#F7F3EA', '#E8EFE2', '#FFFDF8'] as const,
+  gradientPurple: ['#F7F3EA', '#F0E8DA', '#FFFDF8'] as const,
+  gradientSuccess: ['#E8EFE2', '#DDE8D8', '#F7F3EA'] as const,
+
   // Background gradients for screens
-  screenGradient: ['#faf9f7', '#fef3c7', '#fff7ed'] as const,
-  cardGradient: ['#ffffff', '#fefbf3'] as const,
+  screenGradient: ['#F7F3EA', '#FFFDF8', '#F0E8DA'] as const,
+  cardGradient: ['#FFFDF8', '#F7F3EA'] as const,
 
   // Bold diagonal gradients - dramatic aesthetic
-  gradientBoldScreen: ['#faf9f7', '#fef3c7', '#fde68a', '#f59e0b', '#d97706'] as const,
-  gradientBoldCard: ['#ffffff', '#fefbf3', '#fef3c7', '#fde68a'] as const,
-  gradientBoldAccent: ['#fcd34d', '#f59e0b', '#d97706', '#b45309'] as const,
-  gradientBoldHeader: ['#fef3c7', '#fde68a', '#fcd34d', '#f59e0b'] as const,
-  gradientBoldButton: ['#f59e0b', '#d97706', '#b45309'] as const,
-  
+  gradientBoldScreen: ['#F7F3EA', '#FFFDF8', '#F0E8DA', '#E8EFE2', '#F7F3EA'] as const,
+  gradientBoldCard: ['#FFFDF8', '#F7F3EA', '#F8EEE0', '#FFFDF8'] as const,
+  gradientBoldAccent: ['#3F5F3B', '#2F4A2C', '#1F3320', '#3F5F3B'] as const,
+  gradientBoldHeader: ['#FFFDF8', '#F7F3EA', '#E8EFE2', '#FFFDF8'] as const,
+  gradientBoldButton: ['#3F5F3B', '#2F4A2C', '#1F3320'] as const,
+
   // Overlay gradients for depth
-  gradientOverlay: ['rgba(250,249,247,0.9)', 'rgba(254,243,199,0.7)', 'rgba(253,230,138,0.5)', 'rgba(245,158,11,0.3)'] as const,
-  gradientFade: ['rgba(255,255,255,1)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)'] as const,
+  gradientOverlay: ['rgba(247,243,234,0.96)', 'rgba(255,253,248,0.9)', 'rgba(232,239,226,0.55)', 'rgba(216,138,43,0.12)'] as const,
+  gradientFade: ['rgba(255,253,248,1)', 'rgba(255,253,248,0.82)', 'rgba(255,253,248,0)'] as const,
 };
 
 // Dark theme palette
@@ -307,6 +307,19 @@ export const radius = {
   xxl: 32,
   xxxl: 40,
   full: 9999,
+};
+
+export const brand = {
+  appName: 'Lift',
+  tagline: 'live network of prayer',
+};
+
+export const mediumLayout = {
+  screenPadding: 20,
+  cardRadius: 18,
+  inputRadius: 10,
+  headerTopPadding: 16,
+  bottomTabHeight: 72,
 };
 
 // Glassmorphism styles

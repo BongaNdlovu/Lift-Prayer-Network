@@ -1,24 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
-import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground } from '../../components/CinematicBackground';
-import { GlassIconButton } from '../../components/GlassCard';
+import { spacing, fonts, radius } from '../../theme/colors';
+import { LiftScreen, LiftLogo, LiftCard, LiftButton, LiftHeader } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
@@ -54,241 +50,121 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  // Memoize gradient colors for stability on fresh install
-  const gradientColors = useMemo(
-    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
-    [colors.gradientBoldScreen]
-  );
-
   if (emailSent) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.content}>
-            <View style={[styles.successCard, { backgroundColor: colors.surface }]}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
-              <Ionicons name="mail" size={48} color={colors.accent} />
-            </View>
-            <Text style={[styles.successTitle, { color: colors.text }]}>Check Your Email</Text>
-            <Text style={[styles.successText, { color: colors.muted }]}>
-              We&apos;ve sent password reset instructions to:
-            </Text>
-            <Text style={[styles.emailText, { color: colors.text }]}>{email.trim()}</Text>
-            <Text style={[styles.successHint, { color: colors.muted }]}>
-              Don&apos;t forget to check your spam folder if you don&apos;t see the email.
-            </Text>
-            <TouchableOpacity
-              style={[styles.button, styles.primaryButton, { backgroundColor: colors.accent }]}
-              onPress={() => navigation.navigate('SignIn')}
-            >
-              <Text style={[styles.primaryButtonText, { color: colors.text }]}>Back to Sign In</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.resendButton}
-              onPress={() => setEmailSent(false)}
-            >
-              <Text style={[styles.resendText, { color: colors.muted }]}>Didn&apos;t receive it? Try again</Text>
-            </TouchableOpacity>
+      <LiftScreen contentStyle={styles.content}>
+        <LiftCard style={styles.successCard}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="mail" size={48} color={colors.accentDark} />
           </View>
-        </View>
-        </SafeAreaView>
-      </CinematicBackground>
+          <Text style={[styles.successTitle, { color: colors.text }]}>Check Your Email</Text>
+          <Text style={[styles.successText, { color: colors.muted }]}>
+            We&apos;ve sent password reset instructions to:
+          </Text>
+          <Text style={[styles.emailText, { color: colors.text }]}>{email.trim()}</Text>
+          <Text style={[styles.successHint, { color: colors.muted }]}>
+            Don&apos;t forget to check your spam folder if you don&apos;t see the email.
+          </Text>
+          <LiftButton title="Back to Sign In" onPress={() => navigation.navigate('SignIn')} />
+          <TouchableOpacity style={styles.resendButton} onPress={() => setEmailSent(false)}>
+            <Text style={[styles.resendText, { color: colors.muted }]}>Didn&apos;t receive it? Try again</Text>
+          </TouchableOpacity>
+        </LiftCard>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <View style={styles.content}>
-            {/* Back Button */}
-            <GlassIconButton
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-            </GlassIconButton>
+    <LiftScreen scroll contentStyle={styles.screenContent}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+        <LiftHeader title="Reset Password" onBack={() => navigation.goBack()} />
 
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.logo}>LIFT</Text>
-              <Text style={[styles.tagline, { color: colors.stone500 }]}>Reset your password</Text>
-            </View>
+        <LiftCard style={styles.card}>
+          <Text style={[styles.title, { color: colors.text }]}>Forgot Password?</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>
+            Enter your email and we&apos;ll send you instructions to reset your password.
+          </Text>
 
-          {/* Reset Card */}
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Forgot Password?</Text>
-            <Text style={[styles.subtitle, { color: colors.muted }]}>
-              Enter your email address and we&apos;ll send you instructions to reset your password.
-            </Text>
-
-            {/* Email Input */}
-            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="mail-outline" size={20} color={colors.muted} style={styles.inputIcon} />
-              <TextInput
-                placeholder="Email address"
-                placeholderTextColor={colors.muted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-                autoComplete="email"
-                style={[styles.input, { color: colors.text }]}
-                value={email}
-                onChangeText={setEmail}
-                editable={!loading}
-                autoFocus
-              />
-            </View>
-
-            {/* Reset Button */}
-            <TouchableOpacity
-              style={[
-                styles.button, 
-                styles.primaryButton, 
-                { backgroundColor: colors.accent },
-                loading && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
-              ]}
-              onPress={handleResetPassword}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.text} />
-              ) : (
-                <Text style={[styles.primaryButtonText, { color: colors.text }]}>Send Reset Email</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Back to Sign In */}
-            <TouchableOpacity
-              style={styles.backToSignIn}
-              onPress={() => navigation.navigate('SignIn')}
-              disabled={loading}
-            >
-              <Ionicons name="arrow-back" size={16} color={colors.accent} />
-              <Text style={[styles.backToSignInText, { color: colors.accent }]}>Back to Sign In</Text>
-            </TouchableOpacity>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput
+              placeholder="you@example.com"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              style={[styles.input, { color: colors.text }]}
+              value={email}
+              onChangeText={setEmail}
+              editable={!loading}
+              autoFocus
+            />
           </View>
-        </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </CinematicBackground>
+
+          <LiftButton title="Send Reset Email" onPress={handleResetPassword} loading={loading} disabled={loading} />
+
+          <TouchableOpacity style={styles.backToSignIn} onPress={() => navigation.navigate('SignIn')} disabled={loading}>
+            <Ionicons name="arrow-back" size={16} color={colors.accentDark} />
+            <Text style={[styles.backToSignInText, { color: colors.accentDark }]}>Back to Sign In</Text>
+          </TouchableOpacity>
+        </LiftCard>
+      </KeyboardAvoidingView>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  screenContent: {
+    paddingTop: 40,
   },
   keyboardView: {
     flex: 1,
   },
   content: {
     flex: 1,
-    padding: spacing.lg,
     justifyContent: 'center',
   },
-  backButton: {
-    position: 'absolute',
-    top: spacing.lg,
-    left: spacing.lg,
-    padding: spacing.sm,
-    zIndex: 1,
-  },
-  header: {
-    marginBottom: spacing.xl,
-  },
-  logo: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
-    fontSize: 48,
-    fontWeight: '500',
-    letterSpacing: -1,
-    color: '#1c1917',
-  },
-  tagline: {
-    marginTop: 4,
-    fontSize: 14,
-  },
   card: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    
-    
-    
-    
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: palette.border,
+    marginTop: 16,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontFamily: fonts.heading,
+    fontSize: 30,
+    fontWeight: '500',
     marginBottom: 8,
   },
   subtitle: {
+    fontFamily: fonts.body,
     fontSize: 14,
-    marginBottom: spacing.lg,
+    marginBottom: 24,
     lineHeight: 20,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: palette.border,
     borderRadius: radius.md,
-    marginBottom: spacing.lg,
-  },
-  inputIcon: {
-    paddingLeft: spacing.md,
+    marginBottom: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   input: {
-    flex: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    fontSize: 16,
-  },
-  button: {
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    minHeight: 48,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButton: {
-  },
-  primaryButtonText: {
-    fontWeight: '700',
+    fontFamily: fonts.body,
     fontSize: 16,
   },
   backToSignIn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.lg,
+    marginTop: 24,
     gap: 4,
   },
   backToSignInText: {
+    fontFamily: fonts.bodyMedium,
     fontWeight: '600',
     fontSize: 14,
   },
-  // Success state styles
   successCard: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    
-    
-    
-    
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: palette.border,
+    marginTop: 16,
     alignItems: 'center',
   },
   iconContainer: {
@@ -297,31 +173,36 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
   successTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: spacing.sm,
+    fontFamily: fonts.heading,
+    fontSize: 30,
+    fontWeight: '500',
+    marginBottom: 8,
   },
   successText: {
+    fontFamily: fonts.body,
     fontSize: 14,
     textAlign: 'center',
   },
   emailText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 16,
     fontWeight: '600',
-    marginVertical: spacing.sm,
+    marginVertical: 12,
   },
   successHint: {
+    fontFamily: fonts.body,
     fontSize: 12,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
   resendButton: {
-    marginTop: spacing.md,
+    marginTop: 16,
   },
   resendText: {
+    fontFamily: fonts.bodyMedium,
     fontWeight: '600',
     fontSize: 14,
   },

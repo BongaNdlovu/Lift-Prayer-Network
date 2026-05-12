@@ -58,9 +58,9 @@ export type RootStackParamList = {
 };
 
 export type MainTabParamList = {
-  Today: undefined;
-  Wall: undefined;
-  Add: undefined;
-  Answered: undefined;
-  Me: undefined;
+  Home: undefined;
+  Prayers: undefined;
+  Calendar: undefined;
+  Community: undefined;
+  Profile: undefined;
 };

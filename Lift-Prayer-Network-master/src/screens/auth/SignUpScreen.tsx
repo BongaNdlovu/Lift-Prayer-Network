@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -6,19 +6,15 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
-import { fonts, fontSizes, palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground } from '../../components/CinematicBackground';
+import { spacing, fonts, radius } from '../../theme/colors';
+import { LiftScreen, LiftLogo, LiftCard, LiftButton } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
@@ -84,320 +80,191 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const isLoading = loading;
-
-  // Memoize gradient colors to prevent re-renders and ensure stability on fresh install
-  const gradientColors = useMemo(
-    () => [...colors.gradientBoldScreen] as [string, string, ...string[]],
-    [colors.gradientBoldScreen]
-  );
-
-  // Fallback background color for smoother initial render
-  const fallbackBg = colors.background;
-
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
-          style={styles.keyboardView}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            contentInsetAdjustmentBehavior="always"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.logo}>LIFT</Text>
-              <Text style={[styles.tagline, { color: colors.stone500 }]}>Join the prayer community</Text>
-            </View>
+    <LiftScreen scroll contentStyle={styles.screenContent}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+        <View style={styles.header}>
+          <LiftLogo />
+          <Text style={[styles.tagline, { color: colors.muted }]}>Join the prayer community</Text>
+        </View>
 
-            {/* Sign Up Card */}
-            <View style={[styles.card, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
-              <Text style={[styles.subtitle, { color: colors.muted }]}>Sign up to get started</Text>
+        <LiftCard style={styles.card}>
+          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>Simple sign-up to start praying together.</Text>
 
-              {/* Display Name Input */}
-              <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Ionicons name="person-outline" size={20} color={colors.muted} style={styles.inputIcon} />
-                <TextInput
-                  placeholder="Display name"
-                  placeholderTextColor={colors.muted}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  textContentType="name"
-                  autoComplete="name"
-                  style={[styles.input, { color: colors.text }]}
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  editable={!isLoading}
-                />
-              </View>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput
+              placeholder="Display name"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="words"
+              autoCorrect={false}
+              textContentType="name"
+              autoComplete="name"
+              style={[styles.input, { color: colors.text }]}
+              value={displayName}
+              onChangeText={setDisplayName}
+              editable={!loading}
+            />
+          </View>
 
-              {/* Email Input */}
-              <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Ionicons name="mail-outline" size={20} color={colors.muted} style={styles.inputIcon} />
-                <TextInput
-                  placeholder="Email address"
-                  placeholderTextColor={colors.muted}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  textContentType="emailAddress"
-                  autoComplete="email"
-                  style={[styles.input, { color: colors.text }]}
-                  value={email}
-                  onChangeText={setEmail}
-                  editable={!isLoading}
-                />
-              </View>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput
+              placeholder="you@example.com"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              style={[styles.input, { color: colors.text }]}
+              value={email}
+              onChangeText={setEmail}
+              editable={!loading}
+            />
+          </View>
 
-              {/* Password Input */}
-              <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Ionicons name="lock-closed-outline" size={20} color={colors.muted} style={styles.inputIcon} />
-                <TextInput
-                  placeholder="Password (min 6 characters)"
-                  placeholderTextColor={colors.muted}
-                  secureTextEntry={!showPassword}
-                  textContentType="newPassword"
-                  autoComplete="password-new"
-                  style={[styles.input, styles.passwordInput, { color: colors.text }]}
-                  value={password}
-                  onChangeText={setPassword}
-                  editable={!isLoading}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeButton}
-                  disabled={isLoading}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={colors.muted}
-                  />
-                </TouchableOpacity>
-              </View>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput
+              placeholder="Password (min 6 characters)"
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showPassword}
+              textContentType="newPassword"
+              autoComplete="password-new"
+              style={[styles.input, styles.passwordInput, { color: colors.text }]}
+              value={password}
+              onChangeText={setPassword}
+              editable={!loading}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton} disabled={loading}>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
 
-              {/* Confirm Password Input */}
-              <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Ionicons name="lock-closed-outline" size={20} color={colors.muted} style={styles.inputIcon} />
-                <TextInput
-                  placeholder="Confirm password"
-                  placeholderTextColor={colors.muted}
-                  secureTextEntry={!showConfirmPassword}
-                  textContentType="newPassword"
-                  style={[styles.input, styles.passwordInput, { color: colors.text }]}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  editable={!isLoading}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={styles.eyeButton}
-                  disabled={isLoading}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={colors.muted}
-                  />
-                </TouchableOpacity>
-              </View>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput
+              placeholder="Confirm password"
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showConfirmPassword}
+              textContentType="newPassword"
+              style={[styles.input, styles.passwordInput, { color: colors.text }]}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              editable={!loading}
+            />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeButton} disabled={loading}>
+              <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
 
-              {/* Password Requirements */}
-              <View style={styles.requirements}>
-                <Text style={[styles.requirement, { color: colors.muted }, password.length >= 6 && styles.requirementMet]}>
-                  <Ionicons
-                    name={password.length >= 6 ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={14}
-                    color={password.length >= 6 ? colors.success : colors.muted}
-                  />{' '}
-                  At least 6 characters
-                </Text>
-                <Text style={[styles.requirement, { color: colors.muted }, password === confirmPassword && password.length > 0 && styles.requirementMet]}>
-                  <Ionicons
-                    name={password === confirmPassword && password.length > 0 ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={14}
-                    color={password === confirmPassword && password.length > 0 ? colors.success : colors.muted}
-                  />{' '}
-                  Passwords match
-                </Text>
-              </View>
-
-              {/* Sign Up Button */}
-              <TouchableOpacity
-                style={[
-                  styles.button, 
-                  styles.primaryButton, 
-                  { backgroundColor: colors.accent },
-                  isLoading && [styles.buttonDisabled, { backgroundColor: colors.muted, opacity: 0.5 }]
-                ]}
-                onPress={handleSignUp}
-                disabled={isLoading}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.text} />
-                ) : (
-                  <Text style={[styles.primaryButtonText, { color: colors.text }]}>Create Account</Text>
-                )}
-              </TouchableOpacity>
-
-              {/* Sign In Link */}
-              <View style={styles.signInContainer}>
-                <Text style={[styles.signInText, { color: colors.muted }]}>Already have an account? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('SignIn')} disabled={isLoading}>
-                  <Text style={[styles.signInLink, { color: colors.accent }]}>Sign In</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Terms */}
-            <Text style={[styles.terms, { color: colors.muted }]}>
-              By creating an account, you agree to our Terms of Service and Privacy Policy.
+          <View style={styles.requirements}>
+            <Text style={[styles.requirement, { color: colors.muted }, password.length >= 6 && styles.requirementMet]}>
+              <Ionicons name={password.length >= 6 ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={password.length >= 6 ? colors.success : colors.muted} />{' '}
+              At least 6 characters
             </Text>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </CinematicBackground>
+            <Text style={[styles.requirement, { color: colors.muted }, password === confirmPassword && password.length > 0 && styles.requirementMet]}>
+              <Ionicons name={password === confirmPassword && password.length > 0 ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={password === confirmPassword && password.length > 0 ? colors.success : colors.muted} />{' '}
+              Passwords match
+            </Text>
+          </View>
+
+          <LiftButton title="Create Account" onPress={handleSignUp} loading={loading} disabled={loading} />
+
+          <View style={styles.signInContainer}>
+            <Text style={[styles.signInText, { color: colors.muted }]}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('SignIn')} disabled={loading}>
+              <Text style={[styles.signInLink, { color: colors.accentDark }]}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        </LiftCard>
+
+        <Text style={[styles.terms, { color: colors.muted }]}>
+          By creating an account, you agree to our Terms of Service and Privacy Policy.
+        </Text>
+      </KeyboardAvoidingView>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  screenContent: {
+    paddingTop: 40,
   },
   keyboardView: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl * 2,
-  },
   header: {
-    marginBottom: spacing.lg,
-  },
-  logo: {
-    fontFamily: fonts.heading,
-    fontSize: 48,
-    fontWeight: '500',
-    letterSpacing: -1,
-    color: '#1c1917',
+    marginBottom: 32,
+    alignItems: 'center',
   },
   tagline: {
     fontFamily: fonts.body,
     marginTop: 4,
-    fontSize: fontSizes.sm,
+    fontSize: 12,
   },
   card: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    
-    
-    
-    
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: palette.border,
+    marginTop: 16,
   },
   title: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.xxl,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '500',
     marginBottom: 4,
   },
   subtitle: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
-    marginBottom: spacing.lg,
+    fontSize: 14,
+    marginBottom: 24,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: palette.border,
     borderRadius: radius.md,
-    marginBottom: spacing.lg,
-  },
-  inputIcon: {
-    paddingLeft: spacing.md,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   input: {
     fontFamily: fonts.body,
-    flex: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    fontSize: fontSizes.md,
+    fontSize: 16,
   },
   passwordInput: {
     paddingRight: 44,
   },
   eyeButton: {
     position: 'absolute',
-    right: spacing.md,
+    right: 16,
     padding: 4,
   },
   requirements: {
-    marginBottom: spacing.lg,
+    marginBottom: 24,
     gap: 4,
   },
   requirement: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.xs,
+    fontSize: 12,
   },
   requirementMet: {
     fontFamily: fonts.bodyMedium,
     fontWeight: '600',
   },
-  button: {
-    borderRadius: radius.md,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    minHeight: 52,
-    marginBottom: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButton: {
-    
-    
-    
-    
-    elevation: 4,
-  },
-  primaryButtonText: {
-    fontFamily: fonts.bodyBold,
-    fontWeight: '800',
-    fontSize: fontSizes.lg,
-  },
   signInContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.lg,
+    marginTop: 24,
   },
   signInText: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
+    fontSize: 14,
   },
   signInLink: {
     fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    fontSize: fontSizes.sm,
+    fontSize: 14,
   },
   terms: {
     fontFamily: fonts.body,
     textAlign: 'center',
-    fontSize: fontSizes.xs,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
+    fontSize: 12,
+    marginTop: 24,
+    paddingHorizontal: 16,
   },
 });

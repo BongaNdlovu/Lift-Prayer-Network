@@ -615,7 +615,7 @@ export const FeedScreen: React.FC = () => {
               <Text style={styles.verseReference}>{getVerseOfDay().reference}</Text>
             </View>
             <Text style={[styles.verseText, { color: colors.stone700 }]}>
-              "{getVerseOfDay().text}"
+              &quot;{getVerseOfDay().text}&quot;
             </Text>
           </View>
 

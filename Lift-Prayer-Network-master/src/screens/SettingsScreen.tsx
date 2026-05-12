@@ -337,11 +337,11 @@ export const SettingsScreen: React.FC = () => {
           
           <View style={styles.themeSelector}>
             <TouchableOpacity
-              style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'dark' && styles.themeOptionActive]}
-              onPress={() => setThemeMode('dark')}
+              style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'light' && styles.themeOptionActive]}
+              onPress={() => setThemeMode('light')}
             >
-              <Ionicons name="moon" size={20} color={themeMode === 'dark' ? '#f59e0b' : colors.muted} />
-              <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'dark' && styles.themeOptionTextActive]}>Dark</Text>
+              <Ionicons name="sunny" size={20} color={themeMode === 'light' ? '#f59e0b' : colors.muted} />
+              <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'light' && styles.themeOptionTextActive]}>Light</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'system' && styles.themeOptionActive]}

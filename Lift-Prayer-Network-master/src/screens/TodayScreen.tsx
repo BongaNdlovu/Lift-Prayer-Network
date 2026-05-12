@@ -147,7 +147,7 @@ export const TodayScreen: React.FC = () => {
                 <GlassCard padding="lg" rounded="xl" style={styles.emptyCard}>
                   <Ionicons name="sunny-outline" size={40} color={colors.accent} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No prayer promises yet</Text>
-                  <Text style={[styles.emptyText, { color: colors.muted }]}>Tap "I'll Pray" on a request to add it here.</Text>
+                  <Text style={[styles.emptyText, { color: colors.muted }]}>Tap &quot;I&apos;ll Pray&quot; on a request to add it here.</Text>
                 </GlassCard>
               )}
 
