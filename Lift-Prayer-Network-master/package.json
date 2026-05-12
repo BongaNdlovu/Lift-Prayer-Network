@@ -10,8 +10,10 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "verify": "npm run lint && npm run typecheck",
+    "check:launch": "node scripts/launch-readiness-check.js",
+    "check:functions": "node --check cloud-functions/index.js",
     "test": "jest",
-    "test:rules": "firebase emulators:exec --only firestore \"jest --config jest.rules.config.js --runInBand\"",
+    "test:rules": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-firestore-rules-tests.ps1",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "analyze": "npx expo-bundle-analyzer"
