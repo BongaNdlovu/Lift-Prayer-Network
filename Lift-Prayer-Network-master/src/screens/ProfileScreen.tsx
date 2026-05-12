@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Switch,
@@ -27,8 +26,8 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, palette, radius, spacing, shadows } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
 import { GlassCard, GlassIconButton } from '../components/GlassCard';
+import { LiftScreen } from '../components/LiftLayout';
 import { db, firebaseEnabled, storage } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
 import { updateUserSettings, updateUserProfile } from '../services/userProfile';
@@ -291,29 +290,26 @@ export const ProfileScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <View>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR ACCOUNT</Text>
-            <Text style={styles.heading}>
-              Profile<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          {user && (
-            <GlassIconButton
-              onPress={handleEditProfile}
-              style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
-            >
-              <Ionicons name="pencil" size={20} color={colors.amber700} />
-            </GlassIconButton>
-          )}
+    <LiftScreen scroll>
+      <View style={styles.headerSection}>
+        <View>
+          <Text style={[styles.kicker, { color: colors.muted }]}>YOUR ACCOUNT</Text>
+          <Text style={styles.heading}>
+            Profile<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        {user && (
+          <GlassIconButton
+            onPress={handleEditProfile}
+            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+          >
+            <Ionicons name="pencil" size={20} color={colors.amber700} />
+          </GlassIconButton>
+        )}
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.mainContent}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
         {/* Profile Avatar */}
         {user && (
@@ -725,7 +721,7 @@ export const ProfileScreen: React.FC = () => {
         </TouchableOpacity>
       )}
           </ScrollView>
-        </RoundedPage>
+        </View>
 
         {/* Edit Profile Modal */}
         <Modal
@@ -766,8 +762,7 @@ export const ProfileScreen: React.FC = () => {
             </View>
           </View>
         </Modal>
-      </SafeAreaView>
-    </CinematicBackground>
+    </LiftScreen>
   );
 };
 

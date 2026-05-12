@@ -4,7 +4,6 @@ import {
   FlatList,
   Modal,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -32,8 +31,8 @@ import { db } from '../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, fontSizes, palette, radius, spacing, shadows } from '../theme/colors';
 import { SkeletonGroups } from '../components/SkeletonCard';
-import { CinematicBackground, RoundedPage, GlassHeader } from '../components/CinematicBackground';
 import { GlassCard, GlassIconButton } from '../components/GlassCard';
+import { LiftScreen } from '../components/LiftLayout';
 import type { PrayerGroup } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -250,11 +249,13 @@ export const GroupsScreen: React.FC = () => {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.emptyEmoji}>👥</Text>
-        <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to join groups</Text>
-        <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Create prayer circles with family & friends</Text>
-      </SafeAreaView>
+      <LiftScreen>
+        <View style={styles.center}>
+          <Text style={styles.emptyEmoji}>👥</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to join groups</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Create prayer circles with family & friends</Text>
+        </View>
+      </LiftScreen>
     );
   }
 
@@ -318,51 +319,48 @@ export const GroupsScreen: React.FC = () => {
   );
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <View style={styles.header}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR CIRCLES</Text>
-            <Text style={styles.heading}>
-              Groups<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={styles.headerButtons}>
-            <GlassIconButton
-              onPress={() => setShowJoinModal(true)}
-            >
-              <Ionicons name="enter-outline" size={22} color={colors.stone700} strokeWidth={1.5} />
-            </GlassIconButton>
-            <GlassIconButton
-              onPress={() => setShowCreateModal(true)}
-              style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
-            >
-              <Ionicons name="add" size={24} color={colors.amber700} strokeWidth={2} />
-            </GlassIconButton>
-          </View>
+    <LiftScreen scroll>
+      <View style={styles.headerSection}>
+        <View style={styles.header}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>YOUR CIRCLES</Text>
+          <Text style={styles.heading}>
+            Groups<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={styles.headerButtons}>
+          <GlassIconButton
+            onPress={() => setShowJoinModal(true)}
+          >
+            <Ionicons name="enter-outline" size={22} color={colors.muted} strokeWidth={1.5} />
+          </GlassIconButton>
+          <GlassIconButton
+            onPress={() => setShowCreateModal(true)}
+            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+          >
+            <Ionicons name="add" size={24} color={colors.amber700} strokeWidth={2} />
+          </GlassIconButton>
+        </View>
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-          {/* Notification Banner */}
-          {notifications.map((notif) => (
-            <View key={notif.id} style={styles.notificationBanner}>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationEmoji}>{notif.groupEmoji || '🙏'}</Text>
-                <View style={styles.notificationText}>
-                  <Text style={[styles.notificationTitle, { color: colors.stone900 }]}>Welcome!</Text>
-                  <Text style={[styles.notificationMessage, { color: colors.stone500 }]}>
-                    You&apos;ve been added to &quot;{notif.groupName}&quot;
-                  </Text>
-                </View>
+      <View style={styles.mainContent}>
+        {/* Notification Banner */}
+        {notifications.map((notif) => (
+          <View key={notif.id} style={styles.notificationBanner}>
+            <View style={styles.notificationContent}>
+              <Text style={styles.notificationEmoji}>{notif.groupEmoji || '🙏'}</Text>
+              <View style={styles.notificationText}>
+                <Text style={[styles.notificationTitle, { color: colors.text }]}>Welcome!</Text>
+                <Text style={[styles.notificationMessage, { color: colors.muted }]}>
+                  You&apos;ve been added to &quot;{notif.groupName}&quot;
+                </Text>
               </View>
-              <TouchableOpacity
-                style={styles.notificationDismiss}
-                onPress={() => dismissNotification(notif.id)}
-              >
-                <Ionicons name="close" size={18} color={colors.stone400} />
-              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={styles.notificationDismiss}
+              onPress={() => dismissNotification(notif.id)}
+            >
+              <Ionicons name="close" size={18} color={colors.muted} />
+            </TouchableOpacity>
             </View>
           ))}
 
@@ -414,8 +412,7 @@ export const GroupsScreen: React.FC = () => {
               })}
             />
           )}
-        </RoundedPage>
-
+        </View>
 
       {/* Create Group Modal */}
       <Modal
@@ -523,8 +520,7 @@ export const GroupsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-      </SafeAreaView>
-    </CinematicBackground>
+    </LiftScreen>
   );
 };
 

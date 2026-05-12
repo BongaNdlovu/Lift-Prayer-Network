@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Alert, FlatList, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { Alert, FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -15,8 +15,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { FeedCard } from '../../components/FeedCard';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { Confetti } from '../../components/Confetti';
-import { CinematicBackground, RoundedPage, GlassHeader } from '../../components/CinematicBackground';
 import { GlassStatCard, GlassChip, GlassIconButton } from '../../components/GlassCard';
+import { LiftScreen } from '../../components/LiftLayout';
 import { queuePendingPrayer, queuePendingPrayerPromise } from '../../services/offlineCache';
 import { createOrUpdatePrayerPromise } from '../../services/prayerPromises';
 import { subscribeToUserGroups } from '../../services/groups';
@@ -419,10 +419,9 @@ export const FeedScreen: React.FC = () => {
   }, [fabPulseAnim]);
 
   return (
-    <CinematicBackground useOuterBackground>
+    <LiftScreen scroll>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-      <SafeAreaView style={styles.container}>
-        {/* === CINEMATIC HEADER SECTION === */}
+        {/* === HEADER SECTION === */}
         <View style={styles.headerSection}>
           {/* Offline Banner */}
           {offline && (
@@ -435,7 +434,7 @@ export const FeedScreen: React.FC = () => {
           {/* Top Row: Logo + Actions */}
           <View style={styles.topRow}>
             <View style={styles.topRowLeft}>
-              <Text style={[styles.heading, { color: colors.stone900 }]}>
+              <Text style={[styles.heading, { color: colors.text }]}>
                 Lift<Text style={styles.headingDot}>.</Text>
               </Text>
             </View>
@@ -444,10 +443,10 @@ export const FeedScreen: React.FC = () => {
                 onPress={() => navigation.navigate('NotificationsInbox')}
                 badge={unreadCount}
               >
-                <Ionicons name="notifications-outline" size={20} color={colors.stone700} />
+                <Ionicons name="notifications-outline" size={20} color={colors.muted} />
               </GlassIconButton>
               <GlassIconButton onPress={() => navigation.navigate('Search')}>
-                <Ionicons name="search-outline" size={20} color={colors.stone700} />
+                <Ionicons name="search-outline" size={20} color={colors.muted} />
               </GlassIconButton>
             </View>
           </View>
@@ -480,10 +479,10 @@ export const FeedScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* === MAIN CONTENT AREA - Rounded "Page" Effect === */}
-        <RoundedPage style={styles.mainContent}>
-          {/* Sticky Nav with Glass Effect */}
-          <GlassHeader style={styles.stickyHeader}>
+        {/* === MAIN CONTENT AREA === */}
+        <View style={styles.mainContent}>
+          {/* Sticky Nav */}
+          <View style={styles.stickyHeader}>
             {/* Tab Navigation */}
             <View style={styles.tabRow}>
               {/* For You Tab */}
@@ -606,7 +605,7 @@ export const FeedScreen: React.FC = () => {
                 </GlassChip>
               )}
             </ScrollView>
-          </GlassHeader>
+          </View>
 
           {/* Verse of the Day */}
           <View style={styles.verseCard}>
@@ -749,9 +748,9 @@ export const FeedScreen: React.FC = () => {
               />
             )}
           </View>
-        </RoundedPage>
+        </View>
 
-        {/* === CINEMATIC FAB - Glowing Orb === */}
+        {/* === FAB === */}
         <View style={styles.fabContainer}>
           <Animated.View style={[
             styles.fabGlow,
@@ -775,8 +774,7 @@ export const FeedScreen: React.FC = () => {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    </CinematicBackground>
+    </LiftScreen>
   );
 };
 

@@ -3,7 +3,6 @@ import {
   Alert,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,8 +17,8 @@ import * as Notifications from 'expo-notifications';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius, spacing, fonts, shadows } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
 import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen } from '../components/LiftLayout';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requestNotificationPermissions } from '../services/reminders';
 import { parseNaturalLanguage, formatParsedEvent, type ParsedEvent } from '../utils/naturalLanguageParser';
@@ -478,27 +477,24 @@ export const CalendarScreen: React.FC = () => {
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <View>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>PLAN YOUR PRAYERS</Text>
-            <Text style={styles.heading}>
-              Calendar<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <GlassIconButton
-            onPress={goToToday}
-            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
-          >
-            <Text style={{ fontWeight: '700', color: colors.amber700, fontSize: 12 }}>TODAY</Text>
-          </GlassIconButton>
+    <LiftScreen scroll>
+      <View style={styles.headerSection}>
+        <View>
+          <Text style={[styles.kicker, { color: colors.muted }]}>PLAN YOUR PRAYERS</Text>
+          <Text style={styles.heading}>
+            Calendar<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <GlassIconButton
+          onPress={goToToday}
+          style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+        >
+          <Text style={{ fontWeight: '700', color: colors.amber700, fontSize: 12 }}>TODAY</Text>
+        </GlassIconButton>
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.mainContent}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
           {/* Quick Add */}
           <View style={[styles.quickAddContainer, { backgroundColor: isDark ? colors.surface : 'rgba(255, 255, 255, 0.9)' }]}>
@@ -649,7 +645,7 @@ export const CalendarScreen: React.FC = () => {
             </View>
           )}
           </ScrollView>
-        </RoundedPage>
+        </View>
 
         {/* Add Event Modal */}
         <Modal
@@ -877,8 +873,7 @@ export const CalendarScreen: React.FC = () => {
           </ScrollView>
         </View>
       </Modal>
-    </SafeAreaView>
-  </CinematicBackground>
+    </LiftScreen>
   );
 };
 
