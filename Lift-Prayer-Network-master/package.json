@@ -14,7 +14,7 @@
     "check:launch": "node scripts/launch-readiness-check.js",
     "reset:data:dry": "node scripts/reset-app-data.js",
     "reset:data": "node scripts/reset-app-data.js --confirm",
-    "check:functions": "node --check cloud-functions/index.js",
+    "check:functions:optional": "node --check cloud-functions/index.js",
     "check:worker": "node --check worker/index.js",
     "deploy:worker": "npx wrangler deploy",
     "test": "jest",

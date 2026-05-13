@@ -63,8 +63,8 @@ export const createAnnouncement = async (
       expiresAt: input.expiresAt ? Timestamp.fromDate(input.expiresAt) : null,
     });
     
-    // Note: Push notifications are sent via Cloud Function (onAnnouncementCreated)
-    // which broadcasts to all users with push tokens enabled
+    // Spark plan note: this writes the announcement only. Push broadcasts need
+    // the optional Cloudflare Worker relay or Firebase Functions on Blaze.
     
     return { success: true, id: docRef.id };
   } catch (err) {

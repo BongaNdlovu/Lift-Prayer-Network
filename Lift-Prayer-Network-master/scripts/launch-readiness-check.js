@@ -147,9 +147,10 @@ addCheck(
 );
 
 addCheck(
-  'Cloud Functions syntax check',
-  hasValidSyntax('cloud-functions/index.js'),
-  'cloud-functions/index.js parses successfully.'
+  'Cloud Functions syntax check (optional on Spark)',
+  !exists('cloud-functions/index.js') || hasValidSyntax('cloud-functions/index.js'),
+  'cloud-functions/index.js parses successfully. Firebase Functions are not required for Spark deploys.',
+  'warn'
 );
 
 const javaPath = findJava();
