@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   filterChipActive: {
     backgroundColor: '#fef3c7',
     borderWidth: 1,
-    borderColor: '#385C3B',
+    borderColor: '#4A5D4E',
   },
   filterChipEmoji: {
     fontSize: 14,

@@ -761,8 +761,8 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                               style={styles.commentActionBtn}
                               onPress={() => handleHideComment(comment)}
                             >
-                              <Ionicons name="eye-off-outline" size={14} color="#b45309" />
-                              <Text style={[styles.commentActionText, { color: '#b45309' }]}>Hide</Text>
+                              <Ionicons name="eye-off-outline" size={14} color="#B8956B" />
+                              <Text style={[styles.commentActionText, { color: '#B8956B' }]}>Hide</Text>
                             </TouchableOpacity>
                           )}
                           {user && !isOwnComment && (
@@ -770,8 +770,8 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                               style={styles.commentActionBtn}
                               onPress={() => handleReportComment(comment.id)}
                             >
-                              <Ionicons name="flag-outline" size={14} color="#b45309" />
-                              <Text style={[styles.commentActionText, { color: '#b45309' }]}>
+                              <Ionicons name="flag-outline" size={14} color="#B8956B" />
+                              <Text style={[styles.commentActionText, { color: '#B8956B' }]}>
                                 Report
                               </Text>
                             </TouchableOpacity>
@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   mainContent: {
     flex: 1,

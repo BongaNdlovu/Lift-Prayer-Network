@@ -9,6 +9,7 @@ import { SignInScreen } from '../screens/auth/SignInScreen';
 import { SignUpScreen } from '../screens/auth/SignUpScreen';
 import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
 import { FeedScreen } from '../screens/home/FeedScreen';
+import { HomeDashboardScreen } from '../screens/home/HomeDashboardScreen';
 import { HistoryScreen } from '../screens/home/HistoryScreen';
 import { PeopleScreen } from '../screens/home/PeopleScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -32,6 +33,7 @@ import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import { NotificationsInboxScreen } from '../screens/NotificationsInboxScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { AnsweredPrayersScreen } from '../screens/AnsweredPrayersScreen';
+import { StatsScreen } from '../screens/StatsScreen';
 import { AnnouncementsScreen } from '../screens/AnnouncementsScreen';
 import { DevotionsScreen } from '../screens/DevotionsScreen';
 import { GuideDetailsScreen } from '../screens/GuideDetailsScreen';
@@ -51,6 +53,8 @@ const HAS_EVER_SIGNED_IN_KEY = '@lift_has_ever_signed_in';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+const CreateTabPlaceholder = () => null;
 
 const MainTabs = () => {
   const { colors } = useTheme();
@@ -76,19 +80,19 @@ const MainTabs = () => {
         tabBarIcon: ({ color, size }) => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
             Home: 'home-outline',
-            Prayers: 'heart-outline',
-            Calendar: 'calendar-outline',
-            Community: 'people-outline',
+            Prayers: 'book-outline',
+            Create: 'add-circle-outline',
+            People: 'people-outline',
             Profile: 'person-outline',
           };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={FeedScreen} />
-      <Tab.Screen name="Prayers" component={MyPrayersScreen} />
-      <Tab.Screen name="Calendar" component={CalendarScreen} />
-      <Tab.Screen name="Community" component={GroupsScreen} />
+      <Tab.Screen name="Home" component={HomeDashboardScreen} />
+      <Tab.Screen name="Prayers" component={FeedScreen} />
+      <Tab.Screen name="Create" component={CreateTabPlaceholder} />
+      <Tab.Screen name="People" component={PeopleScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -229,6 +233,16 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="Groups"
               component={GroupsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Stats"
+              component={StatsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Calendar"
+              component={CalendarScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen

@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#d97706',
+    backgroundColor: '#B8956B',
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     gap: spacing.sm,

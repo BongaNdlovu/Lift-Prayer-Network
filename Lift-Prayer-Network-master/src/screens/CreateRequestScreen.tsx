@@ -367,7 +367,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isUrgent ? '#385C3B' : '#f4f4f5'}
+                  thumbColor={isUrgent ? '#4A5D4E' : '#f4f4f5'}
                 />
               </View>
 
@@ -390,7 +390,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isPrivate ? '#385C3B' : '#f4f4f5'}
+                  thumbColor={isPrivate ? '#4A5D4E' : '#f4f4f5'}
                 />
               </View>
 
@@ -441,7 +441,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isAnonymous ? '#385C3B' : '#f4f4f5'}
+                  thumbColor={isAnonymous ? '#4A5D4E' : '#f4f4f5'}
                 />
               </View>
 
@@ -463,7 +463,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isShareable ? '#385C3B' : '#f4f4f5'}
+                  thumbColor={isShareable ? '#4A5D4E' : '#f4f4f5'}
                 />
               </View>
             </View>
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#d97706',
+    backgroundColor: '#B8956B',
     borderRadius: radius.sm,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,

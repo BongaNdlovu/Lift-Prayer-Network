@@ -520,7 +520,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('MyPrayers')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="bookmark" size={20} color="#385C3B" />
+              <Ionicons name="bookmark" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
               <Text style={[styles.menuTitle, { color: colors.text }]}>My Prayers</Text>
@@ -584,7 +584,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('Achievements')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="trophy" size={20} color="#385C3B" />
+              <Ionicons name="trophy" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>Achievements</Text>
@@ -616,7 +616,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('NotificationsSettings')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="notifications" size={20} color="#385C3B" />
+              <Ionicons name="notifications" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>Notification Settings</Text>
@@ -667,7 +667,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('Help')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="help-circle" size={20} color="#385C3B" />
+              <Ionicons name="help-circle" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>Help & Tutorial</Text>
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#385C3B',
+    backgroundColor: '#4A5D4E',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#385C3B',
+    backgroundColor: '#4A5D4E',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -918,7 +918,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   button: {
-    backgroundColor: '#385C3B',
+    backgroundColor: '#4A5D4E',
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -1040,7 +1040,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   saveButton: {
-    backgroundColor: '#385C3B',
+    backgroundColor: '#4A5D4E',
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',

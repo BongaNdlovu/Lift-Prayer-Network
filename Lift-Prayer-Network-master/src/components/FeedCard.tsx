@@ -49,7 +49,7 @@ const getInitials = (name: string): string => {
 };
 
 const getAvatarColor = (name: string): string => {
-  const colors = ['#385C3B', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
+  const colors = ['#4A5D4E', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -916,7 +916,7 @@ const FeedCardComponent: React.FC<Props> = ({
                     selectedReason === reason.id && styles.reasonLabelSelected,
                   ]}>{reason.label}</Text>
                   {selectedReason === reason.id && (
-                    <Ionicons name="checkmark-circle" size={20} color="#385C3B" />
+                    <Ionicons name="checkmark-circle" size={20} color="#4A5D4E" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -1027,7 +1027,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   pinnedBadge: {
-    backgroundColor: '#385C3B',
+    backgroundColor: '#4A5D4E',
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -1178,7 +1178,7 @@ const styles = StyleSheet.create({
     color: '#dc2626',
   },
   statusTextActive: {
-    color: '#d97706',
+    color: '#B8956B',
   },
   statusTextResolved: {
     color: '#16a34a',
@@ -1247,7 +1247,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#facc15',
   },
   amenButtonPressed: {
-    backgroundColor: '#d97706',
+    backgroundColor: '#B8956B',
   },
   prayEmoji: {
     fontSize: 16,
@@ -1255,7 +1255,7 @@ const styles = StyleSheet.create({
   prayingActive: {
     backgroundColor: '#fde68a',
     borderWidth: 2,
-    borderColor: '#385C3B',
+    borderColor: '#4A5D4E',
   },
   prayingGlow: {
     position: 'absolute',

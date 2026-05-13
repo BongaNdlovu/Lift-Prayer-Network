@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useTheme } from '../contexts/ThemeContext';
 import { getPendingActionCounts, type PendingActionCounts } from '../services/offlineCache';
-import { spacing, radius } from '../theme/colors';
+import { fonts, radius, shadows, spacing } from '../theme/colors';
 
 type Props = {
   onSyncPress?: () => void;
@@ -13,7 +13,7 @@ type Props = {
 
 export const OfflineBanner: React.FC<Props> = ({ onSyncPress, showPendingCount = true }) => {
   const netInfo = useNetInfo();
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   const [pendingCounts, setPendingCounts] = useState<PendingActionCounts>({
     prayers: 0,
     requests: 0,
@@ -56,17 +56,9 @@ export const OfflineBanner: React.FC<Props> = ({ onSyncPress, showPendingCount =
     return null;
   }
 
-  const bannerBg = isOffline 
-    ? (isDark ? '#7f1d1d' : '#fef2f2')
-    : (isDark ? '#1e3a5f' : '#eff6ff');
-  
-  const textColor = isOffline
-    ? (isDark ? '#fecaca' : '#991b1b')
-    : (isDark ? '#93c5fd' : '#1e40af');
-
-  const iconColor = isOffline
-    ? (isDark ? '#f87171' : '#dc2626')
-    : (isDark ? '#60a5fa' : '#2563eb');
+  const bannerBg = isOffline ? colors.dangerLight : (colors as any).infoLight || colors.accentLight;
+  const textColor = isOffline ? colors.danger : (colors as any).info || colors.accent;
+  const iconColor = textColor;
 
   return (
     <Animated.View
@@ -76,6 +68,7 @@ export const OfflineBanner: React.FC<Props> = ({ onSyncPress, showPendingCount =
           backgroundColor: bannerBg,
           transform: [{ translateY: slideAnim }],
         },
+        shadows.md,
       ]}
     >
       <View style={styles.content}>
@@ -119,11 +112,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderBottomLeftRadius: radius.md,
     borderBottomRightRadius: radius.md,
-    
-    
-    
-    
-    elevation: 3,
   },
   content: {
     flexDirection: 'row',
@@ -134,10 +122,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 13,
-    fontWeight: '600',
   },
   subtitle: {
+    fontFamily: fonts.body,
     fontSize: 11,
     marginTop: 1,
   },
@@ -149,7 +138,7 @@ const styles = StyleSheet.create({
   syncButtonText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
   },
 });
 

@@ -599,7 +599,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <View style={styles.memberRoleRow}>
             {isGroupOwner && (
               <View style={styles.ownerBadge}>
-                <Ionicons name="star" size={10} color="#385C3B" />
+                <Ionicons name="star" size={10} color="#4A5D4E" />
                 <Text style={styles.ownerBadgeText}>Group Owner</Text>
               </View>
             )}
@@ -635,7 +635,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const getAvatarColor = (name: string): string => {
-    const colors = ['#385C3B', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
+    const colors = ['#4A5D4E', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
     let hash = 0;
     for (let i = 0; i < (name || '').length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -682,12 +682,12 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             }}
           >
             <View style={styles.pendingBannerContent}>
-              <Ionicons name="person-add" size={20} color="#385C3B" />
+              <Ionicons name="person-add" size={20} color="#4A5D4E" />
               <Text style={styles.pendingBannerText}>
                 {group.pendingRequests!.length} pending join request{group.pendingRequests!.length !== 1 ? 's' : ''}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#385C3B" />
+            <Ionicons name="chevron-forward" size={20} color="#4A5D4E" />
           </TouchableOpacity>
         )}
 
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   mainContent: {
     flex: 1,

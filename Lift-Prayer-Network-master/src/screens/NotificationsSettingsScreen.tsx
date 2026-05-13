@@ -214,7 +214,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
         {/* Permission Status Banner */}
         {permissionStatus !== 'granted' && (
           <TouchableOpacity style={styles.permissionBanner} onPress={requestPermission}>
-            <Ionicons name="alert-circle" size={24} color="#385C3B" />
+            <Ionicons name="alert-circle" size={24} color="#4A5D4E" />
             <View style={styles.permissionBannerContent}>
               <Text style={styles.permissionBannerTitle}>Notifications Disabled</Text>
               <Text style={styles.permissionBannerText}>
@@ -313,7 +313,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
           <View style={styles.settingCard}>
             <SettingRow
               icon="trophy"
-              iconColor="#385C3B"
+              iconColor="#4A5D4E"
               title="Achievement Unlocked"
               value={settings.achievements}
               onToggle={() => handleToggle('achievements')}
@@ -394,7 +394,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
               }}
             >
               <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
-                <Ionicons name="flask" size={20} color="#385C3B" />
+                <Ionicons name="flask" size={20} color="#4A5D4E" />
               </View>
               <View style={styles.debugButtonText}>
                 <Text style={styles.settingTitle}>Send Test Notification</Text>
@@ -477,7 +477,7 @@ const SettingRow: React.FC<SettingRowProps> = ({
       onValueChange={onToggle}
       disabled={disabled}
       trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-      thumbColor={value ? '#385C3B' : '#f4f4f5'}
+      thumbColor={value ? '#4A5D4E' : '#f4f4f5'}
     />
   </View>
 );
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   iconButton: {
     width: 40,
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
   },
   permissionBannerText: {
     fontSize: 13,
-    color: '#b45309',
+    color: '#B8956B',
     marginTop: 2,
   },
   section: {

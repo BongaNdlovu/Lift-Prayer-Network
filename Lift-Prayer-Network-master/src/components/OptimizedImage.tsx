@@ -102,7 +102,7 @@ export const OptimizedAvatar: React.FC<AvatarProps> = ({
 
   // Generate color from text if not provided
   const getAvatarColor = (text: string): string => {
-    const colors = ['#385C3B', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
+    const colors = ['#4A5D4E', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
     let hash = 0;
     for (let i = 0; i < text.length; i++) {
       hash = text.charCodeAt(i) + ((hash << 5) - hash);

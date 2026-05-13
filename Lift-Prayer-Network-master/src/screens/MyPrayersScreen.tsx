@@ -355,8 +355,8 @@ export const MyPrayersScreen: React.FC = () => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={['#385C3B']}
-                tintColor="#385C3B"
+                colors={['#4A5D4E']}
+                tintColor="#4A5D4E"
               />
             }
           />
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     color: '#dc2626',
   },
   statNumberActive: {
-    color: '#d97706',
+    color: '#B8956B',
   },
   statNumberResolved: {
     color: '#16a34a',

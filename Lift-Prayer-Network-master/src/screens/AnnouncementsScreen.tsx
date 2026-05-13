@@ -137,7 +137,7 @@ export const AnnouncementsScreen: React.FC = () => {
   const getPriorityColor = (p: Priority) => {
     switch (p) {
       case 'urgent': return '#dc2626';
-      case 'important': return '#385C3B';
+      case 'important': return '#4A5D4E';
       default: return colors.accent;
     }
   };
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   mainContent: {
     flex: 1,

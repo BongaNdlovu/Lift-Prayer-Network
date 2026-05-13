@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   mainContent: {
     flex: 1,

@@ -63,7 +63,7 @@ const NOTIFICATION_ITEM_HEIGHT = 96;
 const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
   switch (type) {
     case NOTIFICATION_TYPES.PRAYER:
-      return { name: 'hand-left', color: '#385C3B' };
+      return { name: 'hand-left', color: '#4A5D4E' };
     case NOTIFICATION_TYPES.AMEN:
       return { name: 'sparkles', color: '#10b981' };
     case NOTIFICATION_TYPES.COMMENT:
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#385C3B',
+    backgroundColor: '#4A5D4E',
     marginLeft: spacing.sm,
   },
 });

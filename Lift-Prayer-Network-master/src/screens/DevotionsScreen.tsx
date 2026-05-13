@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
 
   // Stats

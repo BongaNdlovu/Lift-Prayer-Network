@@ -69,7 +69,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     emoji: '🌟',
     category: 'prayer',
     requirement: 100,
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   {
     id: 'prayer_500',

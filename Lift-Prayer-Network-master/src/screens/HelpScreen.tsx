@@ -38,7 +38,7 @@ const helpSections: HelpSection[] = [
   {
     id: 'getting-started',
     icon: 'rocket-outline',
-    iconColor: '#385C3B',
+    iconColor: '#4A5D4E',
     iconBg: '#fef3c7',
     title: 'Getting Started',
     content: [
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   iconButton: {
     width: 40,
@@ -680,12 +680,12 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#b45309',
+    color: '#B8956B',
     marginBottom: spacing.xs,
   },
   welcomeSubtitle: {
     fontSize: 14,
-    color: '#b45309',
+    color: '#B8956B',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
   expandButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#b45309',
+    color: '#B8956B',
   },
   section: {
     backgroundColor: '#fff',
@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: 13,
-    color: '#b45309',
+    color: '#B8956B',
     lineHeight: 18,
   },
   quickTipsCard: {
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#b45309',
+    borderColor: '#B8956B',
     marginBottom: spacing.lg,
   },
   quickTipsHeader: {
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   quickTipsTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#b45309',
+    color: '#B8956B',
   },
   quickTipsList: {
     gap: spacing.sm,
@@ -800,14 +800,14 @@ const styles = StyleSheet.create({
   },
   quickTipBullet: {
     fontSize: 14,
-    color: '#b45309',
+    color: '#B8956B',
     marginRight: spacing.sm,
     fontWeight: '700',
   },
   quickTipText: {
     flex: 1,
     fontSize: 14,
-    color: '#b45309',
+    color: '#B8956B',
     lineHeight: 20,
   },
   contactCard: {
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#b45309',
+    backgroundColor: '#B8956B',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#b45309',
+    borderColor: '#B8956B',
     marginBottom: spacing.lg,
   },
   comingSoonHeader: {
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   comingSoonTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#b45309',
+    color: '#B8956B',
   },
   comingSoonList: {
     gap: spacing.sm,
@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
   comingSoonText: {
     flex: 1,
     fontSize: 14,
-    color: '#385C3B',
+    color: '#4A5D4E',
     lineHeight: 20,
   },
 });

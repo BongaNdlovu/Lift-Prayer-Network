@@ -214,7 +214,7 @@ export const RemindersScreen: React.FC = () => {
           value={item.enabled}
           onValueChange={() => handleToggleReminder(item)}
           trackColor={{ false: '#e5e7eb', true: '#fde68a' }}
-          thumbColor={item.enabled ? '#385C3B' : '#9ca3af'}
+          thumbColor={item.enabled ? '#4A5D4E' : '#9ca3af'}
         />
         <TouchableOpacity
           style={styles.deleteBtn}
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles

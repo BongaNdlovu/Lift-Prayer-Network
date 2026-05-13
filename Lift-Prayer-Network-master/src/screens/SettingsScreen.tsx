@@ -322,14 +322,14 @@ export const SettingsScreen: React.FC = () => {
               style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'light' && styles.themeOptionActive]}
               onPress={() => setThemeMode('light')}
             >
-              <Ionicons name="sunny" size={20} color={themeMode === 'light' ? '#385C3B' : colors.muted} />
+              <Ionicons name="sunny" size={20} color={themeMode === 'light' ? '#4A5D4E' : colors.muted} />
               <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'light' && styles.themeOptionTextActive]}>Light</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'system' && styles.themeOptionActive]}
               onPress={() => setThemeMode('system')}
             >
-              <Ionicons name="phone-portrait" size={20} color={themeMode === 'system' ? '#385C3B' : colors.muted} />
+              <Ionicons name="phone-portrait" size={20} color={themeMode === 'system' ? '#4A5D4E' : colors.muted} />
               <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'system' && styles.themeOptionTextActive]}>System</Text>
             </TouchableOpacity>
           </View>
@@ -351,7 +351,7 @@ export const SettingsScreen: React.FC = () => {
               value={shareProfile}
               onValueChange={(val) => handlePrivacyToggle('shareProfile', val)}
               trackColor={{ false: '#e5e7eb', true: '#fde68a' }}
-              thumbColor={shareProfile ? '#385C3B' : '#9ca3af'}
+              thumbColor={shareProfile ? '#4A5D4E' : '#9ca3af'}
             />
           </View>
         </View>
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   },
   themeOptionActive: {
     backgroundColor: '#fef3c7',
-    borderColor: '#385C3B',
+    borderColor: '#4A5D4E',
   },
   themeOptionText: {
     fontSize: 13,

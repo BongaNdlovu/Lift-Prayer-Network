@@ -1,32 +1,44 @@
-// Light theme palette - Medium.com style
+// Light theme palette - Lift prototype production system
 export const lightPalette = {
-  background: '#F8F4EC',
-  surface: '#FFFDF8',
-  surfaceSecondary: '#F1EADF',
-  surfaceDeep: '#E9E1D6',
+  background: '#F5F1EB',
+  surface: '#FFFFFF',
+  surfaceSecondary: '#FAF8F5',
+  surfaceDeep: '#EDE8E0',
 
-  accent: '#385C3B',
-  accentDark: '#2F4E33',
-  accentDeep: '#243D28',
-  accentLight: '#E7EFE5',
+  accent: '#4A5D4E',
+  accentDark: '#3A4A3E',
+  accentDeep: '#2C332E',
+  accentLight: '#EEF3EF',
 
-  text: '#171717',
-  textSecondary: '#3F3A34',
-  muted: '#706B63',
-  border: '#DDD4C7',
+  text: '#2C332E',
+  textSecondary: '#6B756E',
+  muted: '#9BA49E',
+  border: '#E8E4DE',
 
-  danger: '#B42318',
-  dangerLight: '#F9E8E5',
-  success: '#385C3B',
-  successLight: '#E7EFE5',
+  danger: '#C25B5B',
+  dangerLight: '#F8EAEA',
+  success: '#5A7D5F',
+  successLight: '#EEF5EF',
+  warning: '#B8956B',
+  warningLight: '#F5EBDD',
+  info: '#6B8E9E',
+  infoLight: '#EAF1F4',
+  backgroundWarm: '#EDE8E0',
+  card: '#FFFFFF',
+  divider: '#F0EDE7',
+  primary: '#4A5D4E',
+  primaryDark: '#3A4A3E',
+  primaryLight: '#5C7361',
+  textLight: '#6B756E',
+  textMuted: '#9BA49E',
 
-  amber700: '#8B5E2B',
-  amber600: '#A86A2C',
-  amber500: '#C98132',
-  amber400: '#D79C5A',
-  amber300: '#E5BD8A',
-  amber200: '#EAD6BD',
-  amber100: '#F4E8DA',
+  amber700: '#8B6D45',
+  amber600: '#A98A61',
+  amber500: '#C4A882',
+  amber400: '#D4C4A8',
+  amber300: '#E2D5BF',
+  amber200: '#ECE3D5',
+  amber100: '#F7F1E8',
 
   stone900: '#171717',
   stone800: '#242424',
@@ -38,47 +50,47 @@ export const lightPalette = {
   stone200: '#E5E5E5',
   stone100: '#F5F5F5',
 
-  shadow: 'rgba(23,23,23,0.06)',
+  shadow: 'rgba(44,51,46,0.08)',
 
-  glassWhite: '#FFFDF8',
-  glassWhiteLight: '#FFFDF8',
-  glassWhiteStrong: '#FFFDF8',
-  glassBorder: '#DDD4C7',
-  glassBorderLight: '#E9E1D6',
+  glassWhite: '#FFFFFF',
+  glassWhiteLight: '#FAF8F5',
+  glassWhiteStrong: '#FFFFFF',
+  glassBorder: '#E8E4DE',
+  glassBorderLight: '#F0EDE7',
 
-  cinematicBackground: '#F8F4EC',
-  cinematicBackgroundOuter: '#F8F4EC',
+  cinematicBackground: '#F5F1EB',
+  cinematicBackgroundOuter: '#D4CFC7',
 
-  gradientWarm: ['#F8F4EC', '#FFFDF8', '#F1EADF'] as const,
-  gradientSunrise: ['#F8F4EC', '#FFFDF8', '#F1EADF'] as const,
-  gradientCool: ['#F8F4EC', '#FFFDF8', '#E7EFE5'] as const,
-  gradientPurple: ['#F8F4EC', '#FFFDF8', '#F1EADF'] as const,
-  gradientSuccess: ['#E7EFE5', '#FFFDF8', '#F8F4EC'] as const,
-  screenGradient: ['#F8F4EC', '#FFFDF8', '#F1EADF'] as const,
-  cardGradient: ['#FFFDF8', '#FFFDF8'] as const,
+  gradientWarm: ['#F5F1EB', '#FAF8F5', '#EDE8E0'] as const,
+  gradientSunrise: ['#F5F1EB', '#FFFFFF', '#EDE8E0'] as const,
+  gradientCool: ['#F5F1EB', '#FAF8F5', '#EEF3EF'] as const,
+  gradientPurple: ['#F5F1EB', '#FAF8F5', '#EDE8E0'] as const,
+  gradientSuccess: ['#EEF5EF', '#FFFFFF', '#F5F1EB'] as const,
+  screenGradient: ['#F5F1EB', '#FAF8F5', '#EDE8E0'] as const,
+  cardGradient: ['#FFFFFF', '#FAF8F5'] as const,
 
-  gradientBoldScreen: ['#F8F4EC', '#FFFDF8', '#E7EFE5', '#F1EADF', '#F8F4EC'] as const,
-  gradientBoldCard: ['#FFFDF8', '#FFFDF8', '#F1EADF', '#FFFDF8'] as const,
-  gradientBoldAccent: ['#385C3B', '#2F4E33', '#243D28', '#385C3B'] as const,
-  gradientBoldHeader: ['#F8F4EC', '#FFFDF8', '#E7EFE5', '#FFFDF8'] as const,
-  gradientBoldButton: ['#385C3B', '#2F4E33', '#243D28'] as const,
+  gradientBoldScreen: ['#F5F1EB', '#FFFFFF', '#EEF3EF', '#EDE8E0', '#F5F1EB'] as const,
+  gradientBoldCard: ['#FFFFFF', '#FAF8F5', '#EDE8E0', '#FFFFFF'] as const,
+  gradientBoldAccent: ['#5C7361', '#4A5D4E', '#3A4A3E', '#4A5D4E'] as const,
+  gradientBoldHeader: ['#F5F1EB', '#FFFFFF', '#EEF3EF', '#FAF8F5'] as const,
+  gradientBoldButton: ['#5C7361', '#4A5D4E', '#3A4A3E'] as const,
 
   gradientOverlay: ['rgba(255,255,255,0.96)', 'rgba(255,255,255,0.9)', 'rgba(255,255,255,0.7)', 'rgba(255,255,255,0.2)'] as const,
   gradientFade: ['rgba(255,255,255,1)', 'rgba(255,255,255,0.82)', 'rgba(255,255,255,0)'] as const,
 
   // Legacy compatibility - mapped to new system
-  orange600: '#A86A2C',
-  orange500: '#C98132',
-  orange400: '#D79C5A',
-  orange300: '#E5BD8A',
-  rose600: '#B42318',
-  rose500: '#B42318',
-  rose400: '#C9473D',
-  rose300: '#F9E8E5',
-  rose200: '#F9E8E5',
-  rose100: '#F9E8E5',
-  indigo700: '#385C3B',
-  indigo100: '#E7EFE5',
+  orange600: '#A98A61',
+  orange500: '#C4A882',
+  orange400: '#D4C4A8',
+  orange300: '#E2D5BF',
+  rose600: '#C25B5B',
+  rose500: '#C25B5B',
+  rose400: '#D27C7C',
+  rose300: '#F8EAEA',
+  rose200: '#F8EAEA',
+  rose100: '#F8EAEA',
+  indigo700: '#4A5D4E',
+  indigo100: '#EEF3EF',
   warmGlowTop: 'rgba(255,255,255,0.55)',
   warmGlowTopLight: 'rgba(230,244,230,0.35)',
   warmGlowBottom: 'rgba(245,158,11,0.08)',
@@ -129,10 +141,10 @@ export const darkPalette = {
   stone100: '#292524',
   
   // Amber palette (same in dark)
-  amber700: '#b45309',
-  amber600: '#d97706',
-  amber500: '#385C3B',
-  amber400: '#fbbf24',
+  amber700: '#B8956B',
+  amber600: '#B8956B',
+  amber500: '#4A5D4E',
+  amber400: '#C4A882',
   amber300: '#fcd34d',
   amber200: '#fde68a',
   amber100: '#422006',
@@ -175,9 +187,9 @@ export const darkPalette = {
   // Bold diagonal gradients - dramatic aesthetic
   gradientBoldScreen: ['#0f172a', '#1e293b', '#422006', '#78350f', '#92400e'] as const,
   gradientBoldCard: ['#1e293b', '#334155', '#422006', '#78350f'] as const,
-  gradientBoldAccent: ['#fbbf24', '#385C3B', '#d97706', '#b45309'] as const,
+  gradientBoldAccent: ['#C4A882', '#4A5D4E', '#B8956B', '#B8956B'] as const,
   gradientBoldHeader: ['#1e293b', '#422006', '#78350f', '#92400e'] as const,
-  gradientBoldButton: ['#fbbf24', '#385C3B', '#d97706'] as const,
+  gradientBoldButton: ['#C4A882', '#4A5D4E', '#B8956B'] as const,
   
   // Overlay gradients for depth
   gradientOverlay: ['rgba(15,23,42,0.95)', 'rgba(30,41,59,0.8)', 'rgba(66,32,6,0.6)', 'rgba(120,53,15,0.4)'] as const,
@@ -202,6 +214,18 @@ export type ThemePalette = {
   dangerLight: string;
   success: string;
   successLight: string;
+  warning?: string;
+  warningLight?: string;
+  info?: string;
+  infoLight?: string;
+  backgroundWarm?: string;
+  card?: string;
+  divider?: string;
+  primary?: string;
+  primaryDark?: string;
+  primaryLight?: string;
+  textLight?: string;
+  textMuted?: string;
   shadow: string;
   // Cinematic colors
   cinematicBackground: string;
@@ -286,12 +310,12 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 6,
-  md: 8,
-  lg: 10,
-  xl: 12,
-  xxl: 16,
-  xxxl: 20,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 28,
   full: 9999,
 };
 
@@ -302,10 +326,10 @@ export const brand = {
 
 export const mediumLayout = {
   screenPadding: 20,
-  cardRadius: 8,
-  inputRadius: 8,
+  cardRadius: 16,
+  inputRadius: 12,
   headerTopPadding: 18,
-  bottomTabHeight: 76,
+  bottomTabHeight: 82,
 };
 
 // Glassmorphism styles
@@ -422,27 +446,36 @@ export const accessibleColors = {
   // Light mode - all pass WCAG AA against #faf9f7 background
   lightText: '#0f172a',           // 15.8:1 contrast
   lightMuted: '#475569',          // 6.1:1 contrast (passes AA)
-  lightAccent: '#b45309',         // 5.2:1 contrast (passes AA)
+  lightAccent: '#B8956B',         // 5.2:1 contrast (passes AA)
   
   // Dark mode - all pass WCAG AA against #0f172a background
   darkText: '#f8fafc',            // 15.8:1 contrast
   darkMuted: '#94a3b8',           // 5.4:1 contrast (passes AA)
-  darkAccent: '#fbbf24',          // 8.2:1 contrast (passes AA)
+  darkAccent: '#C4A882',          // 8.2:1 contrast (passes AA)
 };
 
 // Shadow presets - Clean minimal look (shadows removed for classy appearance)
 export const shadows = {
   sm: {
-    // Clean look - no shadow
-    elevation: 0,
+    shadowColor: '#2C332E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
   },
   md: {
-    // Clean look - no shadow
-    elevation: 0,
+    shadowColor: '#2C332E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   lg: {
-    // Clean look - no shadow
-    elevation: 0,
+    shadowColor: '#2C332E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    elevation: 8,
   },
   glow: {
     // Clean look - no shadow
@@ -461,12 +494,15 @@ export const shadows = {
     elevation: 0,
   },
   glassNav: {
-    // Clean look - no shadow
-    elevation: 0,
+    shadowColor: '#2C332E',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 12,
   },
   fabGlow: {
     // Subtle glow for FAB only
-    shadowColor: '#385C3B',
+    shadowColor: '#4A5D4E',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,

@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing } from '../theme/colors';
+import { View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LiftButton, LiftEmptyState, LiftTextButton } from './LiftLayout';
 import { lightImpact } from '../utils/haptics';
 
-type EmptyStateType = 
+type EmptyStateType =
   | 'no-prayers'
   | 'no-requests'
   | 'no-testimonies'
@@ -17,63 +17,17 @@ type EmptyStateType =
   | 'error'
   | 'custom';
 
-type EmptyStateConfig = {
-  emoji: string;
-  title: string;
-  subtitle: string;
-};
-
-const EMPTY_STATE_CONFIGS: Record<Exclude<EmptyStateType, 'custom'>, EmptyStateConfig> = {
-  'no-prayers': {
-    emoji: '🙏',
-    title: 'No prayers yet',
-    subtitle: 'Be the first to lift someone up in prayer',
-  },
-  'no-requests': {
-    emoji: '✨',
-    title: 'No prayer requests',
-    subtitle: 'Share what\'s on your heart and let others pray with you',
-  },
-  'no-testimonies': {
-    emoji: '🎉',
-    title: 'No testimonies yet',
-    subtitle: 'Share how God has answered your prayers',
-  },
-  'no-groups': {
-    emoji: '🤝',
-    title: 'No groups yet',
-    subtitle: 'Create a prayer circle or join one with an invite code',
-  },
-  'no-notifications': {
-    emoji: '🔔',
-    title: 'All caught up!',
-    subtitle: 'You\'ll see notifications here when someone prays for you',
-  },
-  'no-search-results': {
-    emoji: '🔍',
-    title: 'No results found',
-    subtitle: 'Try a different search term or filter',
-  },
-  'no-history': {
-    emoji: '📜',
-    title: 'No prayer history',
-    subtitle: 'Your prayer journey will appear here',
-  },
-  'no-comments': {
-    emoji: '💬',
-    title: 'No comments yet',
-    subtitle: 'Be the first to encourage with a comment',
-  },
-  'offline': {
-    emoji: '📡',
-    title: 'You\'re offline',
-    subtitle: 'Connect to the internet to see the latest prayers',
-  },
-  'error': {
-    emoji: '😔',
-    title: 'Something went wrong',
-    subtitle: 'Please try again later',
-  },
+const EMPTY_STATE_CONFIGS: Record<Exclude<EmptyStateType, 'custom'>, { icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }> = {
+  'no-prayers': { icon: 'heart-outline', title: 'No prayers yet', subtitle: 'Be the first to lift someone up in prayer.' },
+  'no-requests': { icon: 'create-outline', title: 'No prayer requests', subtitle: 'Share what is on your heart and let others pray with you.' },
+  'no-testimonies': { icon: 'sparkles-outline', title: 'No testimonies yet', subtitle: 'Share how God has answered your prayers.' },
+  'no-groups': { icon: 'people-outline', title: 'No groups yet', subtitle: 'Create a prayer circle or join one with an invite code.' },
+  'no-notifications': { icon: 'notifications-outline', title: 'All caught up', subtitle: 'You will see notifications here when someone prays for you.' },
+  'no-search-results': { icon: 'search-outline', title: 'No results found', subtitle: 'Try a different search term or filter.' },
+  'no-history': { icon: 'reader-outline', title: 'No prayer history', subtitle: 'Your prayer journey will appear here.' },
+  'no-comments': { icon: 'chatbubble-ellipses-outline', title: 'No encouragements yet', subtitle: 'Be the first to write a kind word.' },
+  offline: { icon: 'cloud-offline-outline', title: 'You are offline', subtitle: 'Connect to the internet to see the latest prayers.' },
+  error: { icon: 'alert-circle-outline', title: 'Something went wrong', subtitle: 'Please try again later.' },
 };
 
 type Props = {
@@ -90,128 +44,35 @@ type Props = {
 
 export const EmptyState: React.FC<Props> = ({
   type,
-  customEmoji,
   customTitle,
   customSubtitle,
   actionLabel,
   onAction,
   secondaryActionLabel,
   onSecondaryAction,
-  compact = false,
 }) => {
-  const { colors } = useTheme();
-  
-  const config = type === 'custom' 
-    ? { emoji: customEmoji || '📭', title: customTitle || '', subtitle: customSubtitle || '' }
+  const config = type === 'custom'
+    ? { icon: 'leaf-outline' as keyof typeof Ionicons.glyphMap, title: customTitle || '', subtitle: customSubtitle || '' }
     : EMPTY_STATE_CONFIGS[type];
-  
-  const emoji = customEmoji || config.emoji;
-  const title = customTitle || config.title;
-  const subtitle = customSubtitle || config.subtitle;
+
+  const action = actionLabel || secondaryActionLabel ? (
+    <View style={{ gap: 8, marginTop: 16, minWidth: 180 }}>
+      {actionLabel && onAction ? (
+        <LiftButton onPress={() => { lightImpact(); onAction(); }}>{actionLabel}</LiftButton>
+      ) : null}
+      {secondaryActionLabel && onSecondaryAction ? (
+        <LiftTextButton onPress={() => { lightImpact(); onSecondaryAction(); }}>{secondaryActionLabel}</LiftTextButton>
+      ) : null}
+    </View>
+  ) : null;
 
   return (
-    <View style={[styles.container, compact && styles.containerCompact]}>
-      <Text style={[styles.emoji, compact && styles.emojiCompact]}>{emoji}</Text>
-      <Text style={[styles.title, { color: colors.text }, compact && styles.titleCompact]}>
-        {title}
-      </Text>
-      <Text style={[styles.subtitle, { color: colors.muted }, compact && styles.subtitleCompact]}>
-        {subtitle}
-      </Text>
-      
-      {(actionLabel || secondaryActionLabel) && (
-        <View style={styles.actions}>
-          {actionLabel && onAction && (
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.accent }]} 
-              onPress={() => {
-                lightImpact();
-                onAction();
-              }}
-            >
-              <Text style={styles.actionButtonText}>{actionLabel}</Text>
-            </TouchableOpacity>
-          )}
-          {secondaryActionLabel && onSecondaryAction && (
-            <TouchableOpacity 
-              style={[styles.secondaryButton, { borderColor: colors.border }]} 
-              onPress={() => {
-                lightImpact();
-                onSecondaryAction();
-              }}
-            >
-              <Text style={[styles.secondaryButtonText, { color: colors.text }]}>
-                {secondaryActionLabel}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-    </View>
+    <LiftEmptyState
+      title={config.title}
+      message={config.subtitle}
+      icon={config.icon}
+      action={action}
+    />
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.md,
-  },
-  containerCompact: {
-    paddingVertical: spacing.md,
-  },
-  emoji: {
-    fontSize: 48,
-    marginBottom: spacing.sm,
-  },
-  emojiCompact: {
-    fontSize: 36,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  titleCompact: {
-    fontSize: 14,
-  },
-  subtitle: {
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 18,
-    maxWidth: 260,
-  },
-  subtitleCompact: {
-    fontSize: 11,
-    maxWidth: 220,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  actionButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-  },
-  actionButtonText: {
-    color: '#1f2937',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  secondaryButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-  },
-  secondaryButtonText: {
-    fontWeight: '600',
-    fontSize: 12,
-  },
-});

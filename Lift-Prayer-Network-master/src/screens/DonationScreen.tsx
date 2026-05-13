@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // Content styles
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   },
   thankYouText: {
     fontSize: 15,
-    color: '#b45309',
+    color: '#B8956B',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: spacing.lg,
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   },
   verseReference: {
     fontSize: 12,
-    color: '#b45309',
+    color: '#B8956B',
     marginTop: spacing.xs,
     fontWeight: '600',
   },

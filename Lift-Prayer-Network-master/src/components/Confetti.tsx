@@ -4,7 +4,7 @@ import { Animated, Dimensions, StyleSheet, View } from 'react-native';
 const { width, height } = Dimensions.get('window');
 
 const CONFETTI_COUNT = 50;
-const COLORS = ['#385C3B', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444', '#fbbf24', '#34d399'];
+const COLORS = ['#4A5D4E', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444', '#C4A882', '#34d399'];
 
 type ConfettiPiece = {
   id: number;

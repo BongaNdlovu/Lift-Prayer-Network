@@ -133,8 +133,8 @@ export const ReportsScreen: React.FC = () => {
               <Text style={styles.actionText}>Dismiss</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn} onPress={() => handleAction(item.id, 'hide')}>
-              <Ionicons name="eye-off" size={16} color="#d97706" />
-              <Text style={[styles.actionText, { color: '#d97706' }]}>Hide</Text>
+              <Ionicons name="eye-off" size={16} color="#B8956B" />
+              <Text style={[styles.actionText, { color: '#B8956B' }]}>Hide</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn} onPress={() => handleAction(item.id, 'delete')}>
               <Ionicons name="trash" size={16} color="#dc2626" />
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   mainContent: {
     flex: 1,

@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   headingDot: {
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   
   // === QUICK ACCESS ROW ===
@@ -965,7 +965,7 @@ const styles = StyleSheet.create({
     right: 0,
     height: 2,
     borderRadius: 1,
-    backgroundColor: '#fbbf24',
+    backgroundColor: '#C4A882',
   },
   tabWithBadge: {
     flexDirection: 'row',
@@ -979,7 +979,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   followingBadgeActive: {
-    backgroundColor: '#fbbf24',
+    backgroundColor: '#C4A882',
   },
   followingBadgeText: {
     fontSize: 10,
@@ -1168,7 +1168,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -8,
     left: 12,
-    backgroundColor: '#385C3B',
+    backgroundColor: '#4A5D4E',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -1200,7 +1200,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs - 1,
     fontWeight: '700',
     fontFamily: fonts.bodyBold,
-    color: '#385C3B',
+    color: '#4A5D4E',
   },
   mostPrayedAuthor: {
     fontSize: fontSizes.xs - 2,
@@ -1229,14 +1229,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: fonts.bodyBold,
     letterSpacing: 1,
-    color: '#b45309',
+    color: '#B8956B',
     opacity: 0.8,
   },
   verseReference: {
     fontSize: fontSizes.xs - 1,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
-    color: '#b45309',
+    color: '#B8956B',
   },
   verseText: {
     fontFamily: fonts.heading,

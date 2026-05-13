@@ -27,7 +27,7 @@ const getInitials = (name: string): string => {
 };
 
 const getAvatarColor = (name: string): string => {
-  const colors = ['#385C3B', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
+  const colors = ['#4A5D4E', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);

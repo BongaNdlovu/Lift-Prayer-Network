@@ -101,7 +101,7 @@ const setupAndroidNotificationChannels = async () => {
     name: 'Default',
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
-    lightColor: '#385C3B',
+    lightColor: '#4A5D4E',
     sound: 'default',
   });
 
@@ -120,7 +120,7 @@ const setupAndroidNotificationChannels = async () => {
     name: 'Prayer Updates',
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 250],
-    lightColor: '#385C3B',
+    lightColor: '#4A5D4E',
   });
 
   // Announcements channel

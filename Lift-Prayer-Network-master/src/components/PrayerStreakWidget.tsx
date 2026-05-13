@@ -51,7 +51,7 @@ export const PrayerStreakWidget: React.FC<Props> = ({
     if (currentStreak >= 30) return '#ef4444';
     if (currentStreak >= 14) return '#f97316';
     if (currentStreak >= 7) return '#eab308';
-    return '#fbbf24';
+    return '#C4A882';
   };
 
   const getStreakEmoji = () => {

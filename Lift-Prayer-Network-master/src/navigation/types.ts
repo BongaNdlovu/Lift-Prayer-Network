@@ -46,6 +46,7 @@ export type RootStackParamList = {
   AnsweredPrayers: undefined;
   Search: undefined;
   Stats: undefined;
+  Calendar: undefined;
   Announcements: undefined;
   Devotions: undefined;
   Following: undefined;
@@ -62,7 +63,7 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Prayers: undefined;
-  Calendar: undefined;
-  Community: undefined;
+  Create: undefined;
+  People: undefined;
   Profile: undefined;
 };
