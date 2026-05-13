@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { db, firebaseEnabled } from '../../services/firebase';
 import { radius, spacing } from '../../theme/colors';
-import { LiftEmptyState, LiftHeader, LiftScreen } from '../../components/LiftLayout';
+import { LiftAvatar, LiftEmptyState, LiftHeader, LiftInput, LiftScreen, LiftTabs } from '../../components/LiftLayout';
 import type { PeopleStat } from '../../types';
 
 export const PeopleScreen: React.FC = () => {
@@ -15,6 +16,11 @@ export const PeopleScreen: React.FC = () => {
   const { colors } = useTheme();
   const [people, setPeople] = useState<PeopleStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const filteredPeople = people.filter((person) => {
+    const label = `${person.targetName || ''} ${person.targetOwnerUid || ''}`.toLowerCase();
+    return label.includes(search.trim().toLowerCase());
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -62,19 +68,39 @@ export const PeopleScreen: React.FC = () => {
     <LiftScreen scroll>
       <LiftHeader title="People" subtitle="Your prayer network" onBack={() => navigation.goBack()} />
       <View style={styles.mainContent}>
+        <LiftInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search people you've prayed for..."
+          right={<Ionicons name="search-outline" size={18} color={colors.muted} />}
+          style={styles.searchInput}
+        />
+        <LiftTabs
+          tabs={[
+            { value: 'people', label: 'People' },
+            { value: 'following', label: 'Following' },
+          ]}
+          active="people"
+          onChange={(value) => {
+            if (value === 'following') navigation.navigate('Following' as never);
+          }}
+        />
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={colors.accent} />
           </View>
         ) : (
           <FlatList
-            data={people}
+            data={filteredPeople}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
             renderItem={({ item }) => (
               <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={[styles.summary, { color: colors.text }]}>{item.targetName || item.targetOwnerUid}</Text>
-                <Text style={[styles.meta, { color: colors.muted }]}>Prayers: {item.count}</Text>
+                <LiftAvatar name={item.targetName || item.targetOwnerUid} size={42} />
+                <View style={styles.personText}>
+                  <Text style={[styles.summary, { color: colors.text }]}>{item.targetName || item.targetOwnerUid}</Text>
+                  <Text style={[styles.meta, { color: colors.muted }]}>Prayers: {item.count}</Text>
+                </View>
               </View>
             )}
             ListEmptyComponent={
@@ -103,10 +129,19 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
     marginBottom: spacing.sm,
+  },
+  searchInput: {
+    marginBottom: spacing.sm,
+  },
+  personText: {
+    flex: 1,
   },
   summary: {
     fontWeight: '700',

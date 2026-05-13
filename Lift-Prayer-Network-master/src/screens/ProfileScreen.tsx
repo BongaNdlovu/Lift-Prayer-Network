@@ -23,7 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, radius, spacing } from '../theme/colors';
-import { LiftScreen } from '../components/LiftLayout';
+import { LiftJourneyList, LiftScreen, LiftStatsRow, LiftVerseCard } from '../components/LiftLayout';
 import { db, firebaseEnabled } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
 import { updateUserSettings, updateUserProfile } from '../services/userProfile';
@@ -32,6 +32,7 @@ import { RootStackParamList } from '../navigation/types';
 import { getVerifiedBadge, BADGE_STYLES, hasAdminPermission } from '../config/admins';
 import { validateDisplayName, validateEmail } from '../utils/security';
 import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
+import { getVerseOfDay } from '../services/verseOfDay';
 
 export const ProfileScreen: React.FC = () => {
   const { user, signOut, resendVerification, linkGuestToEmail } = useAuth();
@@ -53,6 +54,7 @@ export const ProfileScreen: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const isAdminUser = hasAdminPermission(user?.email);
+  const verseOfDay = getVerseOfDay();
   const [streakData, setStreakData] = useState({
     currentStreak: 0,
     longestStreak: 0,
@@ -349,6 +351,32 @@ export const ProfileScreen: React.FC = () => {
             <Text style={[styles.email, { color: colors.muted }]}>{user.email || (user.isAnonymous ? 'Guest account' : 'No email')}</Text>
             
           </View>
+        )}
+
+        {user && (
+          <>
+            <LiftStatsRow
+              style={styles.profileStats}
+              stats={[
+                { label: 'Prayers Shared', value: '-' },
+                { label: 'Answered Prayers', value: '-' },
+                { label: 'Day Streak', value: streakData.currentStreak },
+              ]}
+            />
+            <Text style={[styles.sectionLabel, { color: colors.muted }]}>Continue Your Journey</Text>
+            <LiftJourneyList
+              style={styles.journeyList}
+              items={[
+                { title: 'My Prayers', subtitle: 'View your requests and testimonies', icon: 'bookmark-outline', onPress: () => navigation.navigate('MyPrayers') },
+                { title: 'Answered Prayers', subtitle: 'Celebrate what God has done', icon: 'checkmark-circle-outline', onPress: () => navigation.navigate('AnsweredPrayers') },
+                { title: 'Prayer History', subtitle: 'Review your prayer activity', icon: 'time-outline', onPress: () => navigation.navigate('History') },
+                { title: 'Following', subtitle: 'Manage people you follow', icon: 'people-outline', onPress: () => navigation.navigate('Following') },
+                { title: 'Achievements', subtitle: 'View badges and progress', icon: 'trophy-outline', onPress: () => navigation.navigate('Achievements') },
+                { title: 'Reminders', subtitle: 'Set daily prayer notifications', icon: 'alarm-outline', onPress: () => navigation.navigate('Reminders') },
+              ]}
+            />
+            <LiftVerseCard text={verseOfDay.text} reference={verseOfDay.reference} style={styles.profileVerse} />
+          </>
         )}
 
         {user && (
@@ -796,7 +824,8 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: 'center',
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   avatarContainer: {
     position: 'relative',
@@ -844,9 +873,25 @@ const styles = StyleSheet.create({
   },
   displayName: {
     fontFamily: fonts.heading,
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     color: '#2C332E',
+  },
+  profileStats: {
+    marginTop: -spacing.sm,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: -spacing.sm,
+  },
+  journeyList: {
+    marginBottom: spacing.sm,
+  },
+  profileVerse: {
+    marginBottom: spacing.sm,
   },
   verifiedBadgeProfile: {
     flexDirection: 'row',

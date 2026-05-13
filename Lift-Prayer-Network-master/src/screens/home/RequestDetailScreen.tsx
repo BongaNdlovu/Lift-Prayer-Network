@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { fonts, radius, spacing } from '../../theme/colors';
-import { LiftScreen } from '../../components/LiftLayout';
+import { LiftAvatar, LiftAvatarPrayerRow, LiftButton, LiftHeader, LiftScreen } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -95,6 +95,13 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const badgeStyle = authorBadge ? BADGE_STYLES[authorBadge.badgeType] : null;
   const badgeLabel = authorBadge?.badgeLabel || null;
   const showEmailVerifiedTick = !authorBadge && isEmailVerified;
+  const supporterUsers = useMemo(
+    () => comments.slice(0, 5).map((comment) => ({
+      id: comment.authorUid || comment.id,
+      name: comment.authorName,
+    })),
+    [comments],
+  );
 
   // Subscribe to comments
   useEffect(() => {
@@ -482,14 +489,14 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch { /* ignore haptics errors */ }
         }
-        Alert.alert('Logged', 'Prayer recorded. 🙏');
+        Alert.alert('Logged', 'Prayer recorded.');
         
         // If self-prayer, send a local notification
         if (result.isSelfPrayer && Platform.OS !== 'web') {
           try {
             await Notifications.scheduleNotificationAsync({
               content: {
-                title: '🙏 Prayer Recorded',
+                title: 'Prayer Recorded',
                 body: 'Your prayer for your own request has been recorded. Keep praying!',
                 sound: true,
               },
@@ -501,7 +508,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         }
       } else {
         if (result.alreadyPrayed) {
-          Alert.alert('Already Prayed', 'You have already prayed for this request. Thank you for your prayer! 🙏');
+          Alert.alert('Already Prayed', 'You have already prayed for this request. Thank you for your prayer.');
         } else {
           Alert.alert('Unable to log', result.error || 'Please try again.');
         }
@@ -526,36 +533,29 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <LiftScreen>
-      {/* === HEADER SECTION === */}
-      <View style={styles.headerSection}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.kickerHeader, { color: colors.muted }]}>
-            {type === 'REQUEST' ? 'PRAYER REQUEST' : 'PRAISE REPORT'}
-          </Text>
-          <Text style={[styles.heading, { color: colors.text }]}>
-            Details
-          </Text>
-        </View>
-        <TouchableOpacity onPress={openOverflowMenu} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
-        </TouchableOpacity>
-      </View>
-
+      <LiftHeader
+        title={type === 'REQUEST' ? 'Prayer Request' : 'Praise Report'}
+        onBack={() => navigation.goBack()}
+        right={
+          <TouchableOpacity onPress={openOverflowMenu} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
+          </TouchableOpacity>
+        }
+      />
       {/* === MAIN CONTENT === */}
       <View style={styles.mainContent}>
           <ScrollView contentContainerStyle={styles.content}>
         {commentError && (
           <InlineError message={commentError} onDismiss={() => setCommentError(null)} />
         )}
-        <Text style={[styles.kicker, { color: colors.muted }]}>{type === 'REQUEST' ? 'Prayer Request' : 'Praise Report'}</Text>
         <Text style={[styles.title, { color: colors.text }]}>{(displayItem as any).title || displayItem.content.slice(0, 100)}</Text>
         
         {/* Author Info with Badge */}
         <View style={styles.authorRow}>
-          <Text style={[styles.meta, { color: colors.muted }]}>By {displayItem.userDisplayName}</Text>
+          <LiftAvatar name={displayItem.userDisplayName} photoURL={(displayItem as any).userPhotoURL} size={44} />
+          <View style={styles.authorInfo}>
+            <View style={styles.authorNameRow}>
+              <Text style={[styles.authorName, { color: colors.text }]}>{displayItem.userDisplayName}</Text>
           {badgeStyle && badgeLabel && (
             <View style={[styles.authorBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
               <Ionicons name={badgeStyle.icon as any} size={10} color={badgeStyle.textColor} />
@@ -564,15 +564,17 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               </Text>
             </View>
           )}
-          {showEmailVerifiedTick && (
-            <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
-          )}
+              {showEmailVerifiedTick && (
+                <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+              )}
+            </View>
+            <Text style={[styles.meta, { color: colors.muted }]}>{formatDate((item as any).createdAt)}</Text>
+          </View>
         </View>
         
         {item.location && (
           <Text style={[styles.body, { color: colors.text }]}>{item.location}</Text>
         )}
-        <Text style={[styles.meta, { color: colors.muted }]}>Created: {formatDate((item as any).createdAt)}</Text>
         
         {/* Admin viewing banner */}
         {isAdmin && !isOwner && (
@@ -627,22 +629,14 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         {type === 'REQUEST' && (
-          <View style={styles.supportSummary}>
-            <Ionicons name="people-outline" size={18} color="#92400e" />
-            <Text style={styles.supportSummaryText}>
-              {((item as any).prayers ?? 0) === 0
-                ? 'No one has logged a prayer yet.'
-                : `${(item as any).prayers} ${(item as any).prayers === 1 ? 'person is' : 'people are'} praying.`}
-            </Text>
-          </View>
+          <LiftAvatarPrayerRow users={supporterUsers} totalCount={(item as any).prayers ?? 0} style={styles.supportSummary} />
         )}
 
         <View style={styles.actions}>
           {type === 'REQUEST' ? (
-            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={handlePray} disabled={busyAction}>
-              <Ionicons name="heart" size={16} color="#2C332E" />
-              <Text style={styles.primaryText}>Pray</Text>
-            </TouchableOpacity>
+            <LiftButton style={styles.primaryButton} onPress={handlePray} disabled={busyAction}>
+              {busyAction ? 'Praying...' : "I'll Pray"}
+            </LiftButton>
           ) : null}
           
           {/* Quick Edit - for simple content changes */}
@@ -790,7 +784,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           ) : (
             <View style={styles.noComments}>
-              <Text style={styles.noCommentsEmoji}>💬</Text>
+              <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.muted} />
               <Text style={[styles.noCommentsText, { color: colors.muted }]}>Be the first to encourage!</Text>
             </View>
           )}
@@ -1001,6 +995,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  authorInfo: {
+    flex: 1,
+  },
+  authorNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  authorName: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 15,
   },
   authorBadge: {
     flexDirection: 'row',

@@ -14,7 +14,15 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { FeedCard } from '../../components/FeedCard';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { Confetti } from '../../components/Confetti';
-import { LiftScreen, LiftCard } from '../../components/LiftLayout';
+import {
+  LiftButton,
+  LiftChips,
+  LiftEmptyState,
+  LiftPrayerWallHeader,
+  LiftScreen,
+  LiftTabs,
+  LiftVerseCard,
+} from '../../components/LiftLayout';
 import { queuePendingPrayer, queuePendingPrayerPromise } from '../../services/offlineCache';
 import { createOrUpdatePrayerPromise } from '../../services/prayerPromises';
 import { subscribeToUserGroups } from '../../services/groups';
@@ -182,7 +190,7 @@ export const FeedScreen: React.FC = () => {
         if (result.alreadyPrayed) {
           // Mark as prayed locally so button shows correct state
           setPrayedIds((prev) => new Set(prev).add(id));
-          Alert.alert('Already Prayed', 'You have already prayed for this request. Thank you for your prayer! 🙏');
+          Alert.alert('Already Prayed', 'You have already prayed for this request. Thank you for your prayer.');
         } else if (result.isSelfPrayer) {
           Alert.alert('Your Request', 'You cannot pray on your own request. Share it with others to receive prayers!');
         } else {
@@ -358,7 +366,7 @@ export const FeedScreen: React.FC = () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch { /* ignore */ }
       }
-      Alert.alert('Promise Made', 'You have committed to pray for this request. 🙏');
+      Alert.alert('Promise Made', 'You have committed to pray for this request.');
     } catch (err: any) {
       console.error('[FeedScreen] Promise error:', err);
       Alert.alert('Unable to make promise', err.message ?? 'An unexpected error occurred. Please try again.');
@@ -461,147 +469,52 @@ export const FeedScreen: React.FC = () => {
   return (
     <LiftScreen>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-        {/* === HEADER SECTION === */}
         <View style={styles.headerSection}>
-          {/* Offline Banner */}
           {offline && (
             <View style={styles.offlineBanner}>
               <Ionicons name="cloud-offline" size={14} color="#b91c1c" />
-              <Text style={styles.offlineText}>Offline — viewing cached data</Text>
+              <Text style={styles.offlineText}>Offline - viewing cached data</Text>
             </View>
           )}
-          
-          {/* Top Row: Logo + Actions */}
-          <View style={styles.topRow}>
-            <View style={styles.topRowLeft}>
-              <Text style={[styles.heading, { color: colors.text }]}>
-                Lift
-              </Text>
-            </View>
-            <View style={styles.topRowRight}>
-              <TouchableOpacity onPress={() => navigation.navigate('NotificationsInbox')} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Ionicons name="notifications-outline" size={20} color={colors.muted} />
-                {unreadCount > 0 && <View style={[styles.badgeDot, { backgroundColor: colors.danger }]} />}
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('Search')} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Ionicons name="search-outline" size={20} color={colors.muted} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Quick Access: Announcements & Devotions */}
-          <View style={styles.quickAccessRow}>
-            <TouchableOpacity
-              style={[styles.quickAccessButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('Announcements')}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="megaphone-outline" size={18} color={colors.amber600} />
-              <Text style={[styles.quickAccessText, { color: colors.stone700 }]}>Announcements</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.quickAccessButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('Devotions')}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="book-outline" size={18} color={colors.amber600} />
-              <Text style={[styles.quickAccessText, { color: colors.stone700 }]}>Devotions</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Stats Strip - Compact */}
-          <View style={styles.statsRow}>
-            <LiftCard style={styles.statCard}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{headerCounts.items}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Requests</Text>
-            </LiftCard>
-            <LiftCard style={styles.statCard}>
-              <Text style={[styles.statValue, { color: colors.accentDark }]}>{headerCounts.totalPrayers}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Prayers</Text>
-            </LiftCard>
-            <LiftCard style={styles.statCard}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{user ? '🔥' : '—'}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Streak</Text>
-            </LiftCard>
-          </View>
+          <LiftPrayerWallHeader
+            title="Lift"
+            subtitle="Prayer wall"
+            unreadCount={unreadCount}
+            onNotifications={() => navigation.navigate('NotificationsInbox')}
+            onSearch={() => navigation.navigate('Search')}
+          />
+          <LiftChips
+            chips={[
+              { value: 'announcements', label: 'Announcements' },
+              { value: 'devotions', label: 'Devotions' },
+            ]}
+            onChange={(value) => navigation.navigate(value === 'announcements' ? 'Announcements' : 'Devotions')}
+          />
         </View>
-
         {/* === MAIN CONTENT AREA === */}
         <View style={styles.mainContent}>
-          {/* Sticky Nav */}
           <View style={styles.stickyHeader}>
-            {/* Tab Navigation */}
-            <View style={styles.tabRow}>
-              {/* For You Tab */}
-              <TouchableOpacity
-                onPress={() => {
+            <LiftTabs
+              tabs={[
+                { value: 'all', label: 'For You' },
+                ...(user ? [{ value: 'following', label: 'Following' }] : []),
+                { value: 'answered', label: 'Answered' },
+              ]}
+              active={activeTab}
+              onChange={(value) => {
+                if (value === 'all') {
                   setActiveTab('all');
                   setMode('REQUEST');
-                }}
-                style={styles.tabButton}
-              >
-                <Text style={[
-                  styles.tabText,
-                  { color: colors.stone400 },
-                  activeTab === 'all' && mode === 'REQUEST' && styles.tabTextActive,
-                  activeTab === 'all' && mode === 'REQUEST' && { color: colors.stone900 },
-                ]}>
-                  For You
-                </Text>
-                {activeTab === 'all' && mode === 'REQUEST' && <View style={styles.tabIndicator} />}
-              </TouchableOpacity>
-
-              {/* Following Tab - only show if user is logged in */}
-              {user && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setActiveTab('following');
-                    setMode('REQUEST');
-                  }}
-                  style={styles.tabButton}
-                >
-                  <View style={styles.tabWithBadge}>
-                    <Text style={[
-                      styles.tabText,
-                      { color: colors.stone400 },
-                      activeTab === 'following' && styles.tabTextActive,
-                      activeTab === 'following' && { color: colors.stone900 },
-                    ]}>
-                      Following
-                    </Text>
-                    {followingUids.length > 0 && (
-                      <View style={[styles.followingBadge, activeTab === 'following' && styles.followingBadgeActive]}>
-                        <Text style={[styles.followingBadgeText, activeTab === 'following' && styles.followingBadgeTextActive]}>
-                          {followingUids.length}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  {activeTab === 'following' && <View style={styles.tabIndicator} />}
-                </TouchableOpacity>
-              )}
-
-              {/* Answered Tab */}
-              <TouchableOpacity
-                onPress={() => {
+                } else if (value === 'following') {
+                  setActiveTab('following');
+                  setMode('REQUEST');
+                } else {
                   setActiveTab('answered');
                   setMode('TESTIMONY');
-                }}
-                style={styles.tabButton}
-              >
-                <Text style={[
-                  styles.tabText,
-                  { color: colors.stone400 },
-                  activeTab === 'answered' && styles.tabTextActive,
-                  activeTab === 'answered' && { color: colors.stone900 },
-                ]}>
-                  Answered
-                </Text>
-                {activeTab === 'answered' && <View style={styles.tabIndicator} />}
-              </TouchableOpacity>
-            </View>
+                }
+              }}
+            />
 
-            {/* Filter Chips */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -612,13 +525,7 @@ export const FeedScreen: React.FC = () => {
                 onPress={() => setSelectedCategory('all')}
                 style={[styles.chip, { backgroundColor: colors.surfaceSecondary }, selectedCategory === 'all' && [styles.chipActive, { backgroundColor: colors.accentLight, borderColor: colors.accentDark }]]}
               >
-                <Text style={[
-                  styles.chipText,
-                  { color: colors.muted },
-                  selectedCategory === 'all' && { color: colors.text },
-                ]}>
-                  All
-                </Text>
+                <Text style={[styles.chipText, { color: selectedCategory === 'all' ? colors.text : colors.muted }]}>All</Text>
               </TouchableOpacity>
               {PRAYER_CATEGORIES.map((cat) => (
                 <TouchableOpacity
@@ -626,44 +533,20 @@ export const FeedScreen: React.FC = () => {
                   onPress={() => setSelectedCategory(selectedCategory === cat.id ? 'all' : cat.id)}
                   style={[styles.chip, { backgroundColor: colors.surfaceSecondary }, selectedCategory === cat.id && [styles.chipActive, { backgroundColor: colors.accentLight, borderColor: colors.accentDark }]]}
                 >
-                  <Text style={styles.chipEmoji}>{cat.emoji}</Text>
-                  <Text style={[
-                    styles.chipText,
-                    { color: colors.muted },
-                    selectedCategory === cat.id && { color: colors.text },
-                  ]}>
-                    {cat.label}
-                  </Text>
+                  <Text style={[styles.chipText, { color: selectedCategory === cat.id ? colors.text : colors.muted }]}>{cat.label}</Text>
                 </TouchableOpacity>
               ))}
-              {/* Urgent filter */}
               {mode === 'REQUEST' && headerCounts.urgentCount > 0 && (
                 <TouchableOpacity
                   onPress={() => setShowUrgentOnly(!showUrgentOnly)}
                   style={[styles.chip, { backgroundColor: colors.surfaceSecondary }, showUrgentOnly && styles.chipActiveUrgent]}
                 >
-                  <Text style={styles.chipEmoji}>🚨</Text>
-                  <Text style={[
-                    styles.chipText,
-                    { color: showUrgentOnly ? '#fff' : '#dc2626' },
-                  ]}>
-                    Urgent ({headerCounts.urgentCount})
-                  </Text>
+                  <Text style={[styles.chipText, { color: showUrgentOnly ? '#fff' : '#dc2626' }]}>Urgent ({headerCounts.urgentCount})</Text>
                 </TouchableOpacity>
               )}
             </ScrollView>
           </View>
-
-          {/* Verse of the Day */}
-          <View style={styles.verseCard}>
-            <View style={styles.verseHeader}>
-              <Text style={styles.verseLabel}>VERSE OF THE DAY</Text>
-              <Text style={styles.verseReference}>{getVerseOfDay().reference}</Text>
-            </View>
-            <Text style={[styles.verseText, { color: colors.stone700 }]}>
-              &quot;{getVerseOfDay().text}&quot;
-            </Text>
-          </View>
+          <LiftVerseCard text={getVerseOfDay().text} reference={getVerseOfDay().reference} style={styles.verseCard} />
 
           {/* Error/Offline Banner */}
           {(error || isOffline) && !loading && (
@@ -703,23 +586,21 @@ export const FeedScreen: React.FC = () => {
                 ))}
               </View>
             ) : filteredItems.length === 0 && !error ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>
-                  {activeTab === 'following' ? '👥' : mode === 'REQUEST' ? '🙏' : '✨'}
-                </Text>
-                <Text style={[styles.emptyTitle, { color: colors.stone900 }]}>
-                  {activeTab === 'following'
+              <LiftEmptyState
+                icon={activeTab === 'following' ? 'people-outline' : mode === 'REQUEST' ? 'heart-outline' : 'sparkles-outline'}
+                title={
+                  activeTab === 'following'
                     ? followingUids.length === 0
                       ? 'Not following anyone yet'
                       : 'No posts from people you follow'
-                    : searchQuery || selectedCategory !== 'all' 
+                    : searchQuery || selectedCategory !== 'all'
                       ? 'No matching prayers found'
-                      : mode === 'REQUEST' 
-                        ? 'No prayer requests yet' 
-                        : 'No testimonies yet'}
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.stone500 }]}>
-                  {activeTab === 'following'
+                      : mode === 'REQUEST'
+                        ? 'No prayer requests yet'
+                        : 'No testimonies yet'
+                }
+                message={
+                  activeTab === 'following'
                     ? followingUids.length === 0
                       ? 'Follow users from the feed to see their posts here'
                       : 'Check back later for new posts'
@@ -727,18 +608,14 @@ export const FeedScreen: React.FC = () => {
                       ? 'Try adjusting your filters'
                       : mode === 'REQUEST'
                         ? 'Be the first to share a prayer request!'
-                        : 'Share how God has answered your prayers!'}
-                </Text>
-                {activeTab === 'following' && followingUids.length === 0 && (
-                  <TouchableOpacity
-                    style={[styles.emptyActionButton, { backgroundColor: colors.accent }]}
-                    onPress={() => setActiveTab('all')}
-                  >
-                    <Text style={styles.emptyActionButtonText}>Browse Feed</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ) : (
+                        : 'Share how God has answered your prayers!'
+                }
+                action={
+                  activeTab === 'following' && followingUids.length === 0
+                    ? <LiftButton onPress={() => setActiveTab('all')} style={styles.emptyActionButton}>Browse Feed</LiftButton>
+                    : null
+                }
+              />            ) : (
               <FlatList
                 data={filteredItems}
                 keyExtractor={(item) => item.id}

@@ -416,6 +416,106 @@ export const LiftBadge: React.FC<{ label: string; tone?: 'neutral' | 'success' |
   );
 };
 
+export const LiftPrayerWallHeader: React.FC<{
+  title?: string;
+  subtitle?: string;
+  unreadCount?: number;
+  onNotifications?: () => void;
+  onSearch?: () => void;
+}> = ({ title = 'Lift', subtitle, unreadCount = 0, onNotifications, onSearch }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.wallHeader}>
+      <View style={styles.wallHeaderText}>
+        <Text style={[styles.wallTitle, { color: colors.text }]}>{title}</Text>
+        {subtitle ? <Text style={[styles.wallSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
+      </View>
+      <View style={styles.wallActions}>
+        {onNotifications ? (
+          <View>
+            <LiftIconButton icon="notifications-outline" onPress={onNotifications} color={colors.textSecondary} />
+            {unreadCount > 0 ? <View style={[styles.unreadDot, { backgroundColor: colors.danger }]} /> : null}
+          </View>
+        ) : null}
+        {onSearch ? <LiftIconButton icon="search-outline" onPress={onSearch} color={colors.textSecondary} /> : null}
+      </View>
+    </View>
+  );
+};
+
+export const LiftStatsRow: React.FC<{ stats: { label: string; value: string | number }[]; style?: StyleProp<ViewStyle> }> = ({ stats, style }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.statsRow, style]}>
+      {stats.slice(0, 3).map((stat) => (
+        <View key={stat.label} style={[styles.statCol, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.statNum, { color: colors.text }]}>{stat.value}</Text>
+          <Text style={[styles.statName, { color: colors.textSecondary }]}>{stat.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+export const LiftVerseCard: React.FC<{ label?: string; text: string; reference?: string; style?: StyleProp<ViewStyle> }> = ({ label = 'Verse of the Day', text, reference, style }) => {
+  const { colors } = useTheme();
+  return (
+    <LiftFlatCard style={[styles.verseCard, { borderLeftColor: colors.accent }, style]}>
+      <Text style={[styles.verseLabel, { color: colors.accent }]}>{label}</Text>
+      <Text style={[styles.verseText, { color: colors.text }]}>{text}</Text>
+      {reference ? <Text style={[styles.verseRef, { color: colors.textSecondary }]}>{reference}</Text> : null}
+    </LiftFlatCard>
+  );
+};
+
+export const LiftJourneyList: React.FC<{
+  items: {
+    title: string;
+    subtitle?: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    onPress?: () => void;
+    destructive?: boolean;
+  }[];
+  style?: StyleProp<ViewStyle>;
+}> = ({ items, style }) => {
+  const { colors } = useTheme();
+  return (
+    <LiftListGroup style={style}>
+      {items.map((item) => (
+        <LiftListItem
+          key={item.title}
+          title={item.title}
+          subtitle={item.subtitle}
+          destructive={item.destructive}
+          onPress={item.onPress}
+          icon={<Ionicons name={item.icon} size={20} color={item.destructive ? colors.danger : colors.accent} />}
+        />
+      ))}
+    </LiftListGroup>
+  );
+};
+
+export const LiftAvatarPrayerRow: React.FC<{
+  label?: string;
+  users: { id?: string; name?: string; photoURL?: string | null }[];
+  totalCount?: number;
+  style?: StyleProp<ViewStyle>;
+}> = ({ label = 'Praying for you', users, totalCount, style }) => {
+  const { colors } = useTheme();
+  const count = totalCount ?? users.length;
+  return (
+    <View style={[styles.prayerRow, style]}>
+      <Text style={[styles.prayerRowLabel, { color: colors.text }]}>{label}</Text>
+      <View style={styles.prayerRowBody}>
+        <LiftAvatarRow users={users} max={5} />
+        <Text style={[styles.prayerRowCount, { color: colors.textSecondary }]}>
+          {count > 0 ? `${count} ${count === 1 ? 'person' : 'people'} praying` : 'Be the first to pray'}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { flex: 1, paddingHorizontal: mediumLayout.screenPadding },
@@ -481,4 +581,22 @@ const styles = StyleSheet.create({
   liftIconButton: { width: 44, height: 44, borderRadius: 22, borderWidth: 0, alignItems: 'center', justifyContent: 'center' },
   badgePill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
   badgePillText: { fontFamily: fonts.bodyMedium, fontSize: 11 },
+  wallHeader: { paddingTop: mediumLayout.headerTopPadding, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 16 },
+  wallHeaderText: { flex: 1 },
+  wallTitle: { fontFamily: fonts.heading, fontSize: 34, lineHeight: 38, fontWeight: '500', letterSpacing: 0 },
+  wallSubtitle: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, marginTop: 2 },
+  wallActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  unreadDot: { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5, borderColor: '#fff' },
+  statsRow: { flexDirection: 'row', gap: 10 },
+  statCol: { flex: 1, borderRadius: radius.lg, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', ...shadows.sm },
+  statNum: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 28, fontWeight: '600' },
+  statName: { fontFamily: fonts.bodyMedium, fontSize: 11, lineHeight: 15, textAlign: 'center', marginTop: 3 },
+  verseCard: { borderLeftWidth: 3 },
+  verseLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
+  verseText: { fontFamily: fonts.heading, fontSize: 17, lineHeight: 25, fontWeight: '500' },
+  verseRef: { fontFamily: fonts.body, fontSize: 13, marginTop: 8 },
+  prayerRow: { gap: 10 },
+  prayerRowLabel: { fontFamily: fonts.bodyMedium, fontSize: 13 },
+  prayerRowBody: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  prayerRowCount: { flex: 1, fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
 });

@@ -59,10 +59,10 @@ const getAvatarColor = (name: string): string => {
 
 type ReactionType = 'heart' | 'fire' | 'strong';
 
-const REACTIONS: { type: ReactionType; emoji: string; label: string }[] = [
-  { type: 'heart', emoji: '❤️', label: 'Love' },
-  { type: 'fire', emoji: '🔥', label: 'Fire' },
-  { type: 'strong', emoji: '💪', label: 'Strength' },
+const REACTIONS: { type: ReactionType; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { type: 'heart', icon: 'heart-outline', label: 'Love' },
+  { type: 'fire', icon: 'flame-outline', label: 'Fire' },
+  { type: 'strong', icon: 'fitness-outline', label: 'Strength' },
 ];
 
 type Props = {
@@ -371,7 +371,7 @@ const FeedCardComponent: React.FC<Props> = ({
         ? item.content.substring(0, 150) + '...' 
         : item.content;
 
-      const shareMessage = `🙏 Prayer Request from ${authorName}\n\n"${contentPreview}"\n\n${prayerCount} people are praying for this.\n\nJoin us in prayer on Lift! 💛`;
+      const shareMessage = `Prayer Request from ${authorName}\n\n"${contentPreview}"\n\n${prayerCount} people are praying for this.\n\nJoin us in prayer on Lift.`;
 
       await Share.share({
         message: shareMessage,
@@ -597,7 +597,7 @@ const FeedCardComponent: React.FC<Props> = ({
         )}
         {isUrgent && !isPinned && (
           <View style={styles.urgentBadge}>
-            <Text style={styles.urgentBadgeText}>🚨 URGENT</Text>
+            <Text style={styles.urgentBadgeText}>URGENT</Text>
           </View>
         )}
         <View style={styles.header}>
@@ -720,7 +720,7 @@ const FeedCardComponent: React.FC<Props> = ({
         {!isRequest && (item as any).linkedRequestId && (
           <View style={styles.linkedBadge}>
             <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
-            <Text style={styles.linkedBadgeText}>Answered Prayer ✨</Text>
+            <Text style={styles.linkedBadgeText}>Answered Prayer</Text>
           </View>
         )}
         
@@ -749,14 +749,14 @@ const FeedCardComponent: React.FC<Props> = ({
                     ]} 
                   />
                 )}
-                <Animated.Text 
+                <Animated.View
                   style={[
                     styles.prayEmoji,
                     isPraying && { transform: [{ scale: pulseAnim }] }
                   ]}
                 >
-                  {hasPrayed ? '✓' : '🙏'}
-                </Animated.Text>
+                  <Ionicons name={hasPrayed ? 'checkmark' : 'heart-outline'} size={16} color={hasPrayed ? '#4A5D4E' : '#6B756E'} />
+                </Animated.View>
                 <Text style={[styles.actionText, isPraying && styles.prayingText, hasPrayed && styles.prayedText]}>
                   {isOwner ? 'Your Request' : isPraying ? 'Praying...' : hasPrayed ? 'Prayed' : 'Pray'}
                 </Text>
@@ -796,7 +796,7 @@ const FeedCardComponent: React.FC<Props> = ({
                       }}
                       disabled={disabled}
                     >
-                      <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                      <Ionicons name={reaction.icon} size={15} color={activeReaction === reaction.type ? colors.accent : colors.muted} />
                       {count > 0 && <Text style={styles.reactionCount}>{count}</Text>}
                     </TouchableOpacity>
                   );
@@ -815,14 +815,14 @@ const FeedCardComponent: React.FC<Props> = ({
                 ]}
                 disabled={disabled || isOwner}
               >
-                <Text style={styles.amenEmoji}>🙌</Text>
+                <Ionicons name="heart-outline" size={16} color={colors.muted} />
                 <Text style={styles.actionText}>{isOwner ? 'Your Testimony' : 'Amen'}</Text>
                 <Text style={styles.counter}>{item.likes ?? 0}</Text>
               </Pressable>
 
               {/* Additional Reactions for Testimonies */}
               <View style={styles.extraReactions}>
-                {[{ type: 'heart' as ReactionType, emoji: '❤️' }, { type: 'fire' as ReactionType, emoji: '🔥' }].map((reaction) => {
+                {[{ type: 'heart' as ReactionType, icon: 'heart-outline' as const }, { type: 'fire' as ReactionType, icon: 'flame-outline' as const }].map((reaction) => {
                   const countMap: Record<string, number> = {
                     heart: (item as any).heartCount ?? 0,
                     fire: (item as any).fireCount ?? 0,
@@ -851,7 +851,7 @@ const FeedCardComponent: React.FC<Props> = ({
                       }}
                       disabled={disabled}
                     >
-                      <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                      <Ionicons name={reaction.icon} size={15} color={activeReaction === reaction.type ? colors.accent : colors.muted} />
                       {count > 0 && <Text style={styles.reactionCount}>{count}</Text>}
                     </TouchableOpacity>
                   );
@@ -948,7 +948,7 @@ const FeedCardComponent: React.FC<Props> = ({
             <View style={[styles.optionsHeader, { borderBottomColor: colors.border }]}>
               <View style={styles.optionsHandle} />
               <Text style={[styles.optionsTitle, { color: colors.text }]}>
-                {isOwner ? 'Manage Your Post' : (isAdmin ? '🛡️ Admin Options' : 'Options')}
+                {isOwner ? 'Manage Your Post' : (isAdmin ? 'Admin Options' : 'Options')}
               </Text>
               {isAdmin && !isOwner && (
                 <Text style={[styles.optionsSubtitle, { color: colors.muted }]}>Viewing: {item.userDisplayName}</Text>
@@ -1004,7 +1004,8 @@ export const FeedCard = memo(FeedCardComponent);
 
 const styles = StyleSheet.create({
   mediumCard: {
-    marginVertical: spacing.xs,
+    marginVertical: 0,
+    padding: 20,
   },
   card: {
     borderRadius: radius.lg,
@@ -1020,7 +1021,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   cardPinned: {
-    borderColor: 'rgba(245,158,11,0.4)',
+    borderColor: 'rgba(196,168,130,0.45)',
     borderWidth: 1,
   },
   pinnedCardWrapper: {
@@ -1048,7 +1049,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: spacing.xs,
+    marginBottom: 12,
     gap: spacing.xs,
   },
   userInfo: {
@@ -1185,19 +1186,19 @@ const styles = StyleSheet.create({
   },
   content: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.md,
-    lineHeight: 22,
+    fontSize: 18,
+    lineHeight: 25,
     color: '#2C332E',
     marginBottom: spacing.md,
     letterSpacing: 0.1,
   },
   contentTitle: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.md,
-    lineHeight: 22,
+    fontSize: 18,
+    lineHeight: 25,
     color: '#2C332E',
     marginBottom: 4,
-    fontWeight: '700',
+    fontWeight: '500',
   },
   contentPreview: {
     fontFamily: fonts.body,
@@ -1240,17 +1241,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     gap: spacing.xs,
-    backgroundColor: '#2C332E',
+    backgroundColor: '#FAF8F5',
+    borderWidth: 1,
+    borderColor: '#E8E4DE',
     minHeight: 36,
   },
   amenButton: {
-    backgroundColor: '#facc15',
+    backgroundColor: '#FAF8F5',
   },
   amenButtonPressed: {
-    backgroundColor: '#B8956B',
+    backgroundColor: '#F7F1E8',
   },
   prayEmoji: {
-    fontSize: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   prayingActive: {
     backgroundColor: '#fde68a',
@@ -1285,14 +1289,14 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
-    color: '#F7F1E8',
+    color: '#6B756E',
     letterSpacing: 0.2,
   },
   counter: {
     fontSize: fontSizes.xs,
     fontWeight: '500',
     fontFamily: fonts.body,
-    color: 'rgba(255,251,235,0.6)',
+    color: '#9BA49E',
     marginLeft: 2,
   },
   footerSpacer: {
