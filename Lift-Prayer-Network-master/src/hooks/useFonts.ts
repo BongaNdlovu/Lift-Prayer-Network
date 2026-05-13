@@ -4,11 +4,11 @@ import {
   PlayfairDisplay_700Bold_Italic,
 } from '@expo-google-fonts/playfair-display';
 import {
-  useFonts as useNunito,
-  Nunito_400Regular,
-  Nunito_600SemiBold,
-  Nunito_700Bold,
-} from '@expo-google-fonts/nunito';
+  useFonts as useInter,
+  Inter_400Regular,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 export const useAppFonts = () => {
   const [playfairLoaded] = usePlayfair({
@@ -16,13 +16,13 @@ export const useAppFonts = () => {
     PlayfairDisplay_700Bold_Italic,
   });
 
-  const [nunitoLoaded] = useNunito({
-    Nunito_400Regular,
-    Nunito_600SemiBold,
-    Nunito_700Bold,
+  const [interLoaded] = useInter({
+    Inter_400Regular,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
 
-  const fontsLoaded = playfairLoaded && nunitoLoaded;
+  const fontsLoaded = playfairLoaded && interLoaded;
 
   return { fontsLoaded };
 };

@@ -372,14 +372,10 @@ export const NotificationsInboxScreen: React.FC = () => {
         right={
           <View style={styles.headerActions}>
             {unreadCount > 0 ? (
-              <LiftIconButton onPress={markAllAsRead}>
-                <Ionicons name="checkmark-done" size={18} color={colors.text} />
-              </LiftIconButton>
+              <LiftIconButton icon="checkmark-done" onPress={markAllAsRead} />
             ) : null}
             {notifications.length > 0 ? (
-              <LiftIconButton onPress={handleDeleteAll}>
-                <Ionicons name="trash-outline" size={18} color={colors.danger} />
-              </LiftIconButton>
+              <LiftIconButton icon="trash-outline" onPress={handleDeleteAll} />
             ) : null}
           </View>
         }

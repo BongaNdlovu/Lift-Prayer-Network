@@ -164,8 +164,8 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={[styles.forgotText, { color: colors.accentDark }]}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <LiftButton title="Sign In" onPress={handleSignIn} loading={loading} disabled={loading} />
-          <LiftButton title="Continue as guest" onPress={handleGuestSignIn} variant="secondary" disabled={loading} />
+          <LiftButton onPress={handleSignIn} disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</LiftButton>
+          <LiftButton onPress={handleGuestSignIn} variant="secondary" disabled={loading}>Continue as guest</LiftButton>
 
           <View style={styles.signUpContainer}>
             <Text style={[styles.signUpText, { color: colors.muted }]}>Don&apos;t have an account? </Text>

@@ -302,7 +302,7 @@ export const brand = {
 
 export const mediumLayout = {
   screenPadding: 20,
-  cardRadius: 10,
+  cardRadius: 8,
   inputRadius: 8,
   headerTopPadding: 18,
   bottomTabHeight: 76,
@@ -328,9 +328,9 @@ export const glass = {
 export const fonts = {
   heading: 'PlayfairDisplay_700Bold',
   headingItalic: 'PlayfairDisplay_700Bold_Italic',
-  body: 'Nunito_400Regular',
-  bodyMedium: 'Nunito_600SemiBold',
-  bodyBold: 'Nunito_700Bold',
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
   content: 'PlayfairDisplay_700Bold',
 };
 

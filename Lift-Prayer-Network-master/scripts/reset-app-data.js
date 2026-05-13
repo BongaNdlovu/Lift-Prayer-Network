@@ -39,6 +39,7 @@ async function initAdmin() {
   return {
     auth: admin.auth(),
     db: admin.firestore(),
+    storage: admin.storage(),
   };
 }
 
@@ -126,13 +127,54 @@ async function clearFirestore(db, keepUid) {
   console.log(`[Firestore] Docs queued for deletion: ${docsToDelete}`);
 }
 
+async function clearStorage(storage, keepUid) {
+  try {
+    const bucket = storage.bucket();
+    const [files] = await bucket.getFiles();
+    
+    let totalFiles = files.length;
+    let filesToDelete = 0;
+    let keptFiles = 0;
+
+    console.log(`[Storage] Total files found: ${totalFiles}`);
+
+    for (const file of files) {
+      const fileName = file.name;
+      // Keep profile photos of the keep user
+      const shouldKeep = fileName.includes(`profile-${keepUid}`) || fileName.includes(`avatars/${keepUid}`);
+      
+      if (shouldKeep) {
+        keptFiles++;
+        console.log(`[Storage] Keeping ${fileName}`);
+        continue;
+      }
+
+      filesToDelete++;
+      console.log(`[Storage] ${DRY_RUN ? 'Would delete' : 'Deleting'} ${fileName}`);
+      
+      if (!DRY_RUN) {
+        await file.delete().catch((err) => {
+          console.warn(`[Storage] Failed to delete ${fileName}: ${err.message}`);
+        });
+      }
+    }
+
+    console.log(`[Storage] Files kept: ${keptFiles}`);
+    console.log(`[Storage] Files queued for deletion: ${filesToDelete}`);
+  } catch (error) {
+    console.error('[Storage] Error clearing storage:', error.message);
+    // Don't fail the entire reset if storage cleanup fails
+  }
+}
+
 async function main() {
   console.log(DRY_RUN ? '[Reset] Dry run only. Re-run with --confirm to delete.' : '[Reset] CONFIRMED destructive reset.');
-  const { auth, db } = await initAdmin();
+  const { auth, db, storage } = await initAdmin();
   const keepUser = await findKeepUser(auth);
   console.log(`[Reset] Keeping ${KEEP_EMAIL} (${keepUser.uid})`);
 
   await clearFirestore(db, keepUser.uid);
+  await clearStorage(storage, keepUser.uid);
   await deleteOtherAuthUsers(auth, keepUser.uid);
 
   console.log(DRY_RUN ? '[Reset] Dry run complete. No data deleted.' : '[Reset] Reset complete.');

@@ -167,7 +167,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           </View>
 
-          <LiftButton title="Create Account" onPress={handleSignUp} loading={loading} disabled={loading} />
+          <LiftButton onPress={handleSignUp} disabled={loading}>{loading ? 'Creating account...' : 'Create Account'}</LiftButton>
 
           <View style={styles.signInContainer}>
             <Text style={[styles.signInText, { color: colors.muted }]}>Already have an account? </Text>

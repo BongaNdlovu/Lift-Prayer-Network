@@ -65,7 +65,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={[styles.successHint, { color: colors.muted }]}>
             Don&apos;t forget to check your spam folder if you don&apos;t see the email.
           </Text>
-          <LiftButton title="Back to Sign In" onPress={() => navigation.navigate('SignIn')} />
+          <LiftButton onPress={() => navigation.navigate('SignIn')}>Back to Sign In</LiftButton>
           <TouchableOpacity style={styles.resendButton} onPress={() => setEmailSent(false)}>
             <Text style={[styles.resendText, { color: colors.muted }]}>Didn&apos;t receive it? Try again</Text>
           </TouchableOpacity>
@@ -102,7 +102,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             />
           </View>
 
-          <LiftButton title="Send Reset Email" onPress={handleResetPassword} loading={loading} disabled={loading} />
+          <LiftButton onPress={handleResetPassword} disabled={loading}>{loading ? 'Sending...' : 'Send Reset Email'}</LiftButton>
 
           <TouchableOpacity style={styles.backToSignIn} onPress={() => navigation.navigate('SignIn')} disabled={loading}>
             <Ionicons name="arrow-back" size={16} color={colors.accentDark} />

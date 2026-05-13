@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -104,103 +105,47 @@ export const LiftCard: React.FC<CardProps> = ({ children, style, onPress }) => {
 };
 
 type ButtonProps = {
-  title: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
-  disabled?: boolean;
-  loading?: boolean;
-  style?: StyleProp<ViewStyle>;
-};
-
-export const LiftButton: React.FC<ButtonProps> = ({ title, onPress, variant = 'primary', disabled, loading, style }) => {
-  const { colors } = useTheme();
-  const backgroundColor = variant === 'primary' ? colors.accentDark : variant === 'danger' ? colors.dangerLight : colors.surface;
-  const borderColor = variant === 'primary' ? colors.accentDark : variant === 'danger' ? colors.danger : colors.border;
-  const color = variant === 'primary' ? '#FFFDF8' : variant === 'danger' ? colors.danger : colors.text;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled || loading}
-      style={[styles.button, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }, style]}
-    >
-      {loading ? <ActivityIndicator color={color} /> : <Text style={[styles.buttonText, { color }]}>{title}</Text>}
-    </Pressable>
-  );
-};
-
-export const LiftLogo: React.FC<{ size?: 'sm' | 'lg'; style?: StyleProp<TextStyle> }> = ({ size = 'lg', style }) => {
-  const { colors } = useTheme();
-  return <Text style={[size === 'lg' ? styles.logoLarge : styles.logoSmall, { color: colors.accentDark }, style]}>Lift</Text>;
-};
-
-type IconButtonProps = {
   children: React.ReactNode;
-  onPress: () => void;
-  badge?: number;
+  onPress?: () => void;
+  variant?: 'primary' | 'secondary' | 'outline';
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
-export const LiftIconButton: React.FC<IconButtonProps> = ({ children, onPress, badge, style }) => {
+export const LiftButton: React.FC<ButtonProps> = ({ children, onPress, variant = 'primary', disabled, style }) => {
   const { colors } = useTheme();
+  
+  const buttonStyle = [
+    styles.button,
+    variant === 'primary' && { backgroundColor: colors.accent, borderColor: colors.accent },
+    variant === 'secondary' && { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+    variant === 'outline' && { backgroundColor: 'transparent', borderColor: colors.border },
+    disabled && styles.buttonDisabled,
+    style,
+  ];
+
+  const textStyle = [
+    styles.buttonText,
+    variant === 'primary' && { color: '#fff' },
+    variant === 'secondary' && { color: colors.text },
+    variant === 'outline' && { color: colors.text },
+  ];
+
   return (
-    <Pressable onPress={onPress} style={[styles.liftIconButton, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
-      {children}
-      {badge ? (
-        <View style={[styles.badge, { backgroundColor: colors.danger }]}>
-          <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
-        </View>
-      ) : null}
+    <Pressable onPress={onPress} disabled={disabled} style={buttonStyle}>
+      <Text style={textStyle}>{children}</Text>
     </Pressable>
-  );
-};
-
-type ChipProps = {
-  label: string;
-  active?: boolean;
-  onPress: () => void;
-  icon?: React.ReactNode;
-};
-
-export const LiftChip: React.FC<ChipProps> = ({ label, active, onPress, icon }) => {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.chip,
-        { backgroundColor: active ? colors.accentDark : colors.surface, borderColor: active ? colors.accentDark : colors.border },
-      ]}
-    >
-      {icon}
-      <Text style={[styles.chipText, { color: active ? '#FFFDF8' : colors.text }]}>{label}</Text>
-    </Pressable>
-  );
-};
-
-type StatProps = {
-  value: string | number;
-  label: string;
-};
-
-export const LiftStat: React.FC<StatProps> = ({ value, label }) => {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.stat, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text>
-    </View>
   );
 };
 
 type InputProps = {
-  value?: string;
-  onChangeText?: (text: string) => void;
+  value: string;
+  onChangeText: (text: string) => void;
   placeholder?: string;
   secureTextEntry?: boolean;
-  keyboardType?: any;
   multiline?: boolean;
   right?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 };
 
 export const LiftInput: React.FC<InputProps> = ({
@@ -208,23 +153,22 @@ export const LiftInput: React.FC<InputProps> = ({
   onChangeText,
   placeholder,
   secureTextEntry,
-  keyboardType,
-  multiline,
+  multiline = false,
   right,
+  style,
 }) => {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View style={[styles.inputWrap, { borderColor: colors.border }, style]}>
       <TextInput
+        style={[styles.input, { color: colors.text }, multiline && styles.inputMultiline]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
         secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
         multiline={multiline}
-        style={[styles.input, multiline && styles.inputMultiline, { color: colors.text }]}
       />
       {right ? <View style={styles.inputRight}>{right}</View> : null}
     </View>
@@ -240,14 +184,7 @@ type ListItemProps = {
   destructive?: boolean;
 };
 
-export const LiftListItem: React.FC<ListItemProps> = ({
-  icon,
-  title,
-  subtitle,
-  right,
-  onPress,
-  destructive = false,
-}) => {
+export const LiftListItem: React.FC<ListItemProps> = ({ icon, title, subtitle, right, onPress, destructive }) => {
   const { colors } = useTheme();
 
   return (
@@ -294,6 +231,43 @@ export const LiftSegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, 
   );
 };
 
+type AvatarProps = {
+  photoURL?: string | null;
+  name?: string;
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+};
+
+export const LiftAvatar: React.FC<AvatarProps> = ({ photoURL, name, size = 40, style }) => {
+  const { colors } = useTheme();
+  const initials = name
+    ? name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : '?';
+
+  return (
+    <View
+      style={[
+        styles.avatar,
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surfaceSecondary },
+        style,
+      ]}
+    >
+      {photoURL ? (
+        <Image source={{ uri: photoURL }} style={styles.avatarImage} resizeMode="cover" />
+      ) : (
+        <Text style={[styles.avatarInitials, { color: colors.textSecondary, fontSize: size * 0.4 }]}>
+          {initials}
+        </Text>
+      )}
+    </View>
+  );
+};
+
 type BadgeProps = {
   label: string;
   tone?: 'neutral' | 'success' | 'danger' | 'accent';
@@ -326,6 +300,44 @@ export const LiftBadge: React.FC<BadgeProps> = ({ label, tone = 'neutral' }) => 
   );
 };
 
+type SectionTitleProps = {
+  title: string;
+  style?: StyleProp<TextStyle>;
+};
+
+export const LiftSectionTitle: React.FC<SectionTitleProps> = ({ title, style }) => {
+  const { colors } = useTheme();
+  return (
+    <Text style={[styles.sectionTitle, { color: colors.muted }, style]}>{title}</Text>
+  );
+};
+
+type ListRowProps = {
+  icon?: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+};
+
+export const LiftListRow: React.FC<ListRowProps> = ({ icon, title, subtitle, right, onPress, style }) => {
+  const { colors } = useTheme();
+
+  return (
+    <Pressable onPress={onPress} style={[styles.listRow, style]}>
+      {icon ? <View style={styles.listRowIcon}>{icon}</View> : null}
+      <View style={styles.listRowContent}>
+        <Text style={[styles.listRowTitle, { color: colors.text }]}>{title}</Text>
+        {subtitle ? (
+          <Text style={[styles.listRowSubtitle, { color: colors.muted }]}>{subtitle}</Text>
+        ) : null}
+      </View>
+      {right ?? <Ionicons name="chevron-forward" size={18} color={colors.muted} />}
+    </Pressable>
+  );
+};
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { flex: 1, paddingHorizontal: mediumLayout.screenPadding },
@@ -344,6 +356,7 @@ const styles = StyleSheet.create({
 
   card: { borderWidth: 1, borderRadius: mediumLayout.cardRadius, padding: 16 },
   button: { minHeight: 50, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  buttonDisabled: { opacity: 0.5 },
   buttonText: { fontFamily: fonts.bodyBold, fontSize: 15 },
 
   inputWrap: { minHeight: 48, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
@@ -365,6 +378,19 @@ const styles = StyleSheet.create({
   badgePill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
   badgePillText: { fontFamily: fonts.bodyMedium, fontSize: 11 },
 
+  sectionTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 24, marginBottom: 12 },
+
+  listRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
+  listRowIcon: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  listRowContent: { flex: 1 },
+  listRowTitle: { fontFamily: fonts.bodyMedium, fontSize: 15 },
+  listRowSubtitle: { fontFamily: fonts.body, fontSize: 13, marginTop: 2 },
+
+  // Avatar styles
+  avatar: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarInitials: { fontFamily: fonts.bodyMedium },
+
   // Legacy components
   logoLarge: { fontFamily: fonts.heading, fontSize: 42, lineHeight: 48, fontWeight: '500' },
   logoSmall: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 32, fontWeight: '500' },
@@ -376,4 +402,37 @@ const styles = StyleSheet.create({
   stat: { flex: 1, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
   statValue: { fontFamily: fonts.heading, fontSize: 22, fontWeight: '500' },
   statLabel: { fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
+
+  // TopBar styles
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: mediumLayout.screenPadding, paddingTop: 12, paddingBottom: 8, minHeight: 56 },
+  topBarLeft: { minWidth: 44 },
+  topBarRight: { minWidth: 44, alignItems: 'flex-end' },
+  topBarIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  topBarIconPlaceholder: { width: 44 },
+  topBarTitle: { fontFamily: fonts.heading, fontSize: 18, flex: 1, textAlign: 'center', marginHorizontal: 44 },
+  topBarSpacer: { flex: 1, marginHorizontal: 44 },
 });
+
+export const LiftLogo: React.FC<{ style?: StyleProp<TextStyle> }> = ({ style }) => {
+  const { colors } = useTheme();
+  return (
+    <Text style={[styles.logoLarge, { color: colors.accentDark }, style]}>Lift.</Text>
+  );
+};
+
+type IconButtonProps = {
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  size?: number;
+  color?: string;
+  style?: StyleProp<ViewStyle>;
+};
+
+export const LiftIconButton: React.FC<IconButtonProps> = ({ icon, onPress, size = 24, color, style }) => {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} style={[styles.liftIconButton, { borderColor: colors.border }, style]}>
+      <Ionicons name={icon} size={size} color={color || colors.text} />
+    </Pressable>
+  );
+};
