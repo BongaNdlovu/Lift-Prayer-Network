@@ -351,13 +351,6 @@ export const useFeed = (
     };
   }, []);
 
-  // Re-fetch when viewerUid changes (user signs in/out)
-  useEffect(() => {
-    if (viewerUid !== undefined) {
-      refresh();
-    }
-  }, [viewerUid, refresh]);
-
   // Initial data fetch
   useEffect(() => {
     const fetchData = async () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, InteractionManager, View, Text } from 'react-native';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -118,13 +118,16 @@ export const AppNavigator: React.FC = () => {
     
     const checkInitialState = async () => {
       try {
-        // Validate and repair any corrupted cache data first
-        await validateAndRepairCache();
-        
         const [onboardingComplete, signedInBefore] = await Promise.all([
           checkOnboardingComplete(),
           AsyncStorage.getItem(HAS_EVER_SIGNED_IN_KEY),
         ]);
+
+        // Cache repair can scan several AsyncStorage keys, so keep it off the
+        // startup render path and let navigation become ready first.
+        validateAndRepairCache().catch((cacheErr) => {
+          console.warn('[AppNavigator] Cache validation failed:', cacheErr);
+        });
         
         if (isMounted) {
           setShowOnboarding(!onboardingComplete);
@@ -155,8 +158,13 @@ export const AppNavigator: React.FC = () => {
   }, [user, hasEverSignedIn]);
 
   useEffect(() => {
-    const stopSync = startOfflineSyncListener(user);
+    let stopSync: (() => void) | undefined;
+    const task = InteractionManager.runAfterInteractions(() => {
+      stopSync = startOfflineSyncListener(user);
+    });
+
     return () => {
+      task.cancel();
       stopSync?.();
     };
   }, [user]);

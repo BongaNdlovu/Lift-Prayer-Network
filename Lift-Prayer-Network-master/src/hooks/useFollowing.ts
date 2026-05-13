@@ -8,9 +8,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   subscribeToFollowing,
-  subscribeToFollowingUids,
   followUser,
   unfollowUser,
+  subscribeToFollowingUids,
 } from '../services/following';
 import type { FollowRecord } from '../types';
 
@@ -53,20 +53,14 @@ export const useFollowing = (uid: string | undefined, options?: UseFollowingOpti
 
     setLoading(true);
 
-    // Subscribe to full following list
     const unsubFollowing = subscribeToFollowing(uid, (list) => {
       setFollowing(list);
+      setFollowingUids(list.map((item) => item.targetUid));
       setLoading(false);
-    });
-
-    // Subscribe to UIDs only (lighter weight for feed filtering)
-    const unsubUids = subscribeToFollowingUids(uid, (uids) => {
-      setFollowingUids(uids);
     });
 
     return () => {
       unsubFollowing();
-      unsubUids();
     };
   }, [uid, refreshKey]);
 

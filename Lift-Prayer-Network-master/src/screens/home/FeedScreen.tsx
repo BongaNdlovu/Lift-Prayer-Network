@@ -5,7 +5,7 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFeed } from '../../hooks/useFeed';
-import { useFollowing, useFollowingUids } from '../../hooks/useFollowing';
+import { useFollowing } from '../../hooks/useFollowing';
 import { useUnreadNotifications } from '../../hooks/useUnreadNotifications';
 import { logPrayer, logReaction, likeTestimony, pinRequest, unpinRequest } from '../../services/prayers';
 import type { ReactionType } from '../../services/prayers';
@@ -51,11 +51,10 @@ export const FeedScreen: React.FC = () => {
   }, [user?.uid]);
   
   // Get following data for feed prioritization and follow actions
-  const { follow, unfollow, isFollowing } = useFollowing(user?.uid, {
+  const { follow, unfollow, isFollowing, followingUids } = useFollowing(user?.uid, {
     displayName: user?.displayName || undefined,
     photoURL: user?.photoURL,
   });
-  const followingUids = useFollowingUids(user?.uid);
   
   // Pass current user's profile to useFeed for instant profile updates on their own posts
   const { items, loading, error, errorType, isOffline, refresh, loadMore, hasMore } = useFeed(

@@ -116,12 +116,14 @@ export const FeedCard: React.FC<Props> = ({
   // Animation refs for pray button
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const prayerLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
   // Praying animation effect
   useEffect(() => {
     if (isPraying) {
       // Start pulse and glow animation
-      Animated.loop(
+      prayerLoopRef.current?.stop();
+      prayerLoopRef.current = Animated.loop(
         Animated.parallel([
           Animated.sequence([
             Animated.timing(pulseAnim, {
@@ -148,16 +150,23 @@ export const FeedCard: React.FC<Props> = ({
             }),
           ]),
         ])
-      ).start();
+      );
+      prayerLoopRef.current.start();
       
       // Stop after 1.5 seconds
       const timer = setTimeout(() => {
+        prayerLoopRef.current?.stop();
+        prayerLoopRef.current = null;
         setIsPraying(false);
         pulseAnim.setValue(1);
         glowAnim.setValue(0);
       }, 1500);
       
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        prayerLoopRef.current?.stop();
+        prayerLoopRef.current = null;
+      };
     }
   }, [isPraying, pulseAnim, glowAnim]);
 
