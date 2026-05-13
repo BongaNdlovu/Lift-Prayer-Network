@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
 import { hasAdminPermission } from '../../config/admins';
@@ -27,6 +27,7 @@ export const ReportsScreen: React.FC = () => {
 
   useEffect(() => {
     if (!db) return;
+    let mounted = true;
 
     const q = query(
       collection(db, 'reports'),
@@ -34,17 +35,20 @@ export const ReportsScreen: React.FC = () => {
       orderBy('createdAt', 'desc'),
     );
 
-    const unsub = onSnapshot(
-      q,
-      (snapshot) => {
+    getDocs(q)
+      .then((snapshot) => {
+        if (!mounted) return;
         const data = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Report[];
         setReports(data);
         setLoading(false);
-      },
-      () => setLoading(false),
-    );
+      })
+      .catch(() => {
+        if (mounted) setLoading(false);
+      });
 
-    return unsub;
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (!hasAdminPermission(user?.email)) {
@@ -86,6 +90,7 @@ export const ReportsScreen: React.FC = () => {
           await updateDoc(doc(db, 'reports', reportId), { status: 'RESOLVED' });
         }
       }
+      setReports((prev) => prev.filter((item) => item.id !== reportId));
       Alert.alert('Done', `Report ${action}ed successfully`);
     } catch {
       Alert.alert('Error', 'Could not process report');

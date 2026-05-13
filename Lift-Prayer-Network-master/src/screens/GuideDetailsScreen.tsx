@@ -19,7 +19,7 @@ import {
   StudyGuide,
   Lesson,
   getStudyGuide,
-  subscribeToLessons,
+  getLessons,
 } from '../services/studyGuides';
 import { RootStackParamList } from '../navigation/types';
 
@@ -41,24 +41,26 @@ export const GuideDetailsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get guide details
+    let mounted = true;
+
     const fetchGuide = async () => {
       const guideData = await getStudyGuide(guideId);
-      if (guideData) {
+      if (guideData && mounted) {
         setGuide(guideData);
       }
     };
     fetchGuide();
 
-    // Subscribe to lessons
-    const unsubscribe = subscribeToLessons(guideId, (data) => {
-      if (data.length > 0) {
+    getLessons(guideId).then((data) => {
+      if (mounted) {
         setLessons(data);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      mounted = false;
+    };
   }, [guideId]);
 
   const handleSelectLesson = (lesson: Lesson) => {

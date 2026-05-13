@@ -34,8 +34,6 @@ import { Confetti } from '../components/Confetti';
 import { ANSWERED_LIMIT } from '../config/queryLimits';
 import { logFirestoreRead } from '../utils/readBudget';
 
-const TESTIMONY_ITEM_HEIGHT = 220;
-
 type TestimonyWithMeta = Testimony & {
   id: string;
 };
@@ -333,11 +331,6 @@ export const AnsweredPrayersScreen: React.FC = () => {
           maxToRenderPerBatch={10}
           updateCellsBatchingPeriod={50}
           removeClippedSubviews={Platform.OS !== 'web'}
-          getItemLayout={(_, index) => ({
-            length: TESTIMONY_ITEM_HEIGHT,
-            offset: TESTIMONY_ITEM_HEIGHT * index,
-            index,
-          })}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl

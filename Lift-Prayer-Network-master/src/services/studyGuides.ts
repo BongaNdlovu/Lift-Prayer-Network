@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   Timestamp,
   getDoc,
+  getDocs,
   where,
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
@@ -383,6 +384,24 @@ export const subscribeToStudyGuides = (
   );
 };
 
+export const getStudyGuides = async (activeOnly: boolean = false): Promise<StudyGuide[]> => {
+  if (!firebaseEnabled || !db) {
+    if (!useMockStudyData) return [];
+    return activeOnly ? MOCK_STUDY_GUIDES.filter(g => g.isActive) : MOCK_STUDY_GUIDES;
+  }
+
+  try {
+    const q = activeOnly
+      ? query(collection(db, 'studyGuides'), where('isActive', '==', true), orderBy('year', 'desc'))
+      : query(collection(db, 'studyGuides'), orderBy('year', 'desc'), orderBy('quarter', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as StudyGuide[];
+  } catch (error) {
+    console.error('Error getting study guides:', error);
+    return [];
+  }
+};
+
 /**
  * Get a single study guide by ID
  */
@@ -435,6 +454,24 @@ export const subscribeToLessons = (
       callback([]);
     }
   );
+};
+
+export const getLessons = async (guideId: string): Promise<Lesson[]> => {
+  if (!firebaseEnabled || !db) {
+    return useMockStudyData ? MOCK_LESSONS[guideId] || [] : [];
+  }
+
+  try {
+    const q = query(
+      collection(db, 'studyGuides', guideId, 'lessons'),
+      orderBy('number', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Lesson[];
+  } catch (error) {
+    console.error('Error getting lessons:', error);
+    return [];
+  }
 };
 
 /**

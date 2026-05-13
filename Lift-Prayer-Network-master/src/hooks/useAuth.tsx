@@ -70,6 +70,24 @@ const registerPushTokenInBackground = (uid: string): void => {
   })();
 };
 
+const hydrateUserProfileInBackground = (
+  nextUser: User,
+  shouldEnsureProfile: boolean,
+  syncOnboardingToProfile: (user: User) => Promise<void>
+): void => {
+  void (async () => {
+    try {
+      if (shouldEnsureProfile) {
+        await ensureUserProfile(nextUser);
+      }
+      await syncOnboardingToProfile(nextUser);
+      registerPushTokenInBackground(nextUser.uid);
+    } catch (err) {
+      console.error('[Auth] Error hydrating user profile:', err);
+    }
+  })();
+};
+
 // Firebase error code to user-friendly message mapping
 const getAuthErrorMessage = (error: AuthError): string => {
   const errorMessages: Record<string, string> = {
@@ -164,20 +182,9 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       
       setUser(nextUser);
       if (nextUser) {
-        try {
-          // Skip ensureUserProfile if we just signed up (it was already called in signUp)
-          if (!justSignedUp.current) {
-            await ensureUserProfile(nextUser);
-          }
-          justSignedUp.current = false;
-          // Sync onboarding data to user profile (if they completed onboarding before signing in)
-          await syncOnboardingToProfile(nextUser);
-          
-          // Auto-register push notifications without blocking initial app render.
-          registerPushTokenInBackground(nextUser.uid);
-        } catch (err) {
-          console.error('[Auth] Error ensuring user profile:', err);
-        }
+        const shouldEnsureProfile = !justSignedUp.current;
+        justSignedUp.current = false;
+        hydrateUserProfileInBackground(nextUser, shouldEnsureProfile, syncOnboardingToProfile);
       }
       setInitializing(false);
     });

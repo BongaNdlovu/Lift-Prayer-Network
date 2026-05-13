@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { memo, useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, TouchableOpacity, Alert, Modal, Image, Animated, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -84,7 +84,7 @@ type Props = {
   currentUserEmail?: string | null;
 };
 
-export const FeedCard: React.FC<Props> = ({ 
+const FeedCardComponent: React.FC<Props> = ({ 
   item, 
   onPray, 
   onLike, 
@@ -883,66 +883,67 @@ export const FeedCard: React.FC<Props> = ({
         </View>
       </LiftCard>
 
-      {/* Report Modal */}
-      <Modal
-        visible={showReportModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowReportModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Report Content</Text>
-              <TouchableOpacity onPress={() => setShowReportModal(false)}>
-                <Ionicons name="close" size={24} color={colors.muted} />
+      {showReportModal ? (
+        <Modal
+          visible={showReportModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowReportModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Report Content</Text>
+                <TouchableOpacity onPress={() => setShowReportModal(false)}>
+                  <Ionicons name="close" size={24} color={colors.muted} />
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.modalSubtitle, { color: colors.muted }]}>Why are you reporting this?</Text>
+              
+              {REPORT_REASONS.map((reason) => (
+                <TouchableOpacity
+                  key={reason.id}
+                  style={[
+                    styles.reasonOption,
+                    selectedReason === reason.id && [styles.reasonOptionSelected, { borderColor: colors.accent }],
+                  ]}
+                  onPress={() => setSelectedReason(reason.id)}
+                >
+                  <Text style={styles.reasonEmoji}>{reason.emoji}</Text>
+                  <Text style={[
+                    styles.reasonLabel,
+                    { color: colors.text },
+                    selectedReason === reason.id && styles.reasonLabelSelected,
+                  ]}>{reason.label}</Text>
+                  {selectedReason === reason.id && (
+                    <Ionicons name="checkmark-circle" size={20} color="#f59e0b" />
+                  )}
+                </TouchableOpacity>
+              ))}
+
+              <TouchableOpacity
+                style={[styles.reportButton, !selectedReason && styles.reportButtonDisabled]}
+                onPress={handleReport}
+                disabled={!selectedReason || reporting}
+              >
+                <Text style={styles.reportButtonText}>
+                  {reporting ? 'Submitting...' : 'Submit Report'}
+                </Text>
               </TouchableOpacity>
             </View>
-            <Text style={[styles.modalSubtitle, { color: colors.muted }]}>Why are you reporting this?</Text>
-            
-            {REPORT_REASONS.map((reason) => (
-              <TouchableOpacity
-                key={reason.id}
-                style={[
-                  styles.reasonOption,
-                  selectedReason === reason.id && [styles.reasonOptionSelected, { borderColor: colors.accent }],
-                ]}
-                onPress={() => setSelectedReason(reason.id)}
-              >
-                <Text style={styles.reasonEmoji}>{reason.emoji}</Text>
-                <Text style={[
-                  styles.reasonLabel,
-                  { color: colors.text },
-                  selectedReason === reason.id && styles.reasonLabelSelected,
-                ]}>{reason.label}</Text>
-                {selectedReason === reason.id && (
-                  <Ionicons name="checkmark-circle" size={20} color="#f59e0b" />
-                )}
-              </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              style={[styles.reportButton, !selectedReason && styles.reportButtonDisabled]}
-              onPress={handleReport}
-              disabled={!selectedReason || reporting}
-            >
-              <Text style={styles.reportButtonText}>
-                {reporting ? 'Submitting...' : 'Submit Report'}
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      ) : null}
 
-      {/* Options ActionSheet Modal */}
-      <Modal
-        visible={showOptionsModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowOptionsModal(false)}
-      >
-        <Pressable style={styles.optionsOverlay} onPress={() => setShowOptionsModal(false)}>
-          <Pressable style={styles.optionsSheet} onPress={(e) => e.stopPropagation()}>
+      {showOptionsModal ? (
+        <Modal
+          visible={showOptionsModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowOptionsModal(false)}
+        >
+          <Pressable style={styles.optionsOverlay} onPress={() => setShowOptionsModal(false)}>
+            <Pressable style={styles.optionsSheet} onPress={(e) => e.stopPropagation()}>
             {/* Header */}
             <View style={[styles.optionsHeader, { borderBottomColor: colors.border }]}>
               <View style={styles.optionsHandle} />
@@ -991,12 +992,15 @@ export const FeedCard: React.FC<Props> = ({
             >
               <Text style={[styles.optionsCancelText, { color: colors.muted }]}>Cancel</Text>
             </TouchableOpacity>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
+      ) : null}
     </Pressable>
   );
 };
+
+export const FeedCard = memo(FeedCardComponent);
 
 const styles = StyleSheet.create({
   mediumCard: {

@@ -36,8 +36,6 @@ import type { RootStackParamList } from '../navigation/types';
 import { MY_PRAYERS_LIMIT } from '../config/queryLimits';
 import { logFirestoreRead } from '../utils/readBudget';
 
-const FEED_ITEM_HEIGHT = 260;
-
 type FilterType = 'all' | 'requests' | 'testimonies';
 type StatusFilter = 'all' | 'PENDING' | 'ACTIVE' | 'RESOLVED' | 'ANSWERED';
 
@@ -351,11 +349,6 @@ export const MyPrayersScreen: React.FC = () => {
             maxToRenderPerBatch={10}
             updateCellsBatchingPeriod={50}
             removeClippedSubviews={Platform.OS !== 'web'}
-            getItemLayout={(_, index) => ({
-              length: FEED_ITEM_HEIGHT,
-              offset: FEED_ITEM_HEIGHT * index,
-              index,
-            })}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={

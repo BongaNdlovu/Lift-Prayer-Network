@@ -23,7 +23,7 @@ import { HapticPatterns } from '../utils/haptics';
 import {
   StudyGuide,
   UserStats,
-  subscribeToStudyGuides,
+  getStudyGuides,
   getUserStats,
 } from '../services/studyGuides';
 import { RootStackParamList } from '../navigation/types';
@@ -58,8 +58,10 @@ export const DevotionsScreen: React.FC = () => {
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    // Subscribe to study guides
-    const unsubscribe = subscribeToStudyGuides((data) => {
+    let mounted = true;
+
+    getStudyGuides().then((data) => {
+      if (!mounted) return;
       setGuides(data);
       setLoading(false);
     });
@@ -73,7 +75,9 @@ export const DevotionsScreen: React.FC = () => {
       });
     }
 
-    return unsubscribe;
+    return () => {
+      mounted = false;
+    };
   }, [user?.uid]);
 
   const handleSelectGuide = useCallback((guide: StudyGuide) => {

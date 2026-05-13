@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +18,7 @@ export const PeopleScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     if (!user || !firebaseEnabled || !db) {
       setLoading(false);
       return undefined;
@@ -26,16 +27,23 @@ export const PeopleScreen: React.FC = () => {
       collection(db, 'userPrayedFor', user.uid, 'people'),
       orderBy('lastPrayedAt', 'desc'),
     );
-    const unsub = onSnapshot(q, (snap) => {
-      setPeople(
-        snap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...(docSnap.data() as any),
-        })) as PeopleStat[],
-      );
-      setLoading(false);
-    });
-    return unsub;
+    getDocs(q)
+      .then((snap) => {
+        if (!mounted) return;
+        setPeople(
+          snap.docs.map((docSnap) => ({
+            id: docSnap.id,
+            ...(docSnap.data() as any),
+          })) as PeopleStat[],
+        );
+        setLoading(false);
+      })
+      .catch(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   if (!user) {

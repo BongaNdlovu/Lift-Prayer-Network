@@ -36,8 +36,6 @@ import { PRAYER_CATEGORIES, type PrayerCategory, type FeedItem } from '../types'
 import { SEARCH_LIMIT } from '../config/queryLimits';
 import { logFirestoreRead } from '../utils/readBudget';
 
-const SEARCH_ITEM_HEIGHT = 260;
-
 type SearchFilter = {
   category: PrayerCategory | 'all';
   type: 'REQUEST' | 'TESTIMONY' | 'all';
@@ -480,11 +478,6 @@ export const SearchScreen: React.FC = () => {
           maxToRenderPerBatch={10}
           updateCellsBatchingPeriod={50}
           removeClippedSubviews={Platform.OS !== 'web'}
-          getItemLayout={(_, index) => ({
-            length: SEARCH_ITEM_HEIGHT,
-            offset: SEARCH_ITEM_HEIGHT * index,
-            index,
-          })}
           contentContainerStyle={styles.resultsList}
           ListHeaderComponent={
             <Text style={[styles.resultsCount, { color: colors.muted }]}>

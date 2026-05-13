@@ -36,7 +36,6 @@ import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GroupDetail'>;
 
-const GROUP_FEED_ITEM_HEIGHT = 260;
 const GROUP_MEMBER_ITEM_HEIGHT = 72;
 const GROUP_PENDING_ITEM_HEIGHT = 72;
 
@@ -777,11 +776,6 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         maxToRenderPerBatch={10}
         updateCellsBatchingPeriod={50}
         removeClippedSubviews={Platform.OS !== 'web'}
-        getItemLayout={(_, index) => ({
-          length: GROUP_FEED_ITEM_HEIGHT,
-          offset: GROUP_FEED_ITEM_HEIGHT * index,
-          index,
-        })}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

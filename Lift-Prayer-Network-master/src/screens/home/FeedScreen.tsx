@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Alert, FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -69,13 +69,13 @@ export const FeedScreen: React.FC = () => {
   );
   
   // Follow/unfollow handlers for FeedCard
-  const handleFollow = async (targetUid: string, displayName: string, photoURL?: string | null): Promise<boolean> => {
+  const handleFollow = useCallback(async (targetUid: string, displayName: string, photoURL?: string | null): Promise<boolean> => {
     return await follow(targetUid, displayName, photoURL);
-  };
+  }, [follow]);
   
-  const handleUnfollow = async (targetUid: string): Promise<boolean> => {
+  const handleUnfollow = useCallback(async (targetUid: string): Promise<boolean> => {
     return await unfollow(targetUid);
-  };
+  }, [unfollow]);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
@@ -140,7 +140,7 @@ export const FeedScreen: React.FC = () => {
 
   const offline = netInfo.isConnected === false;
 
-  const handlePray = async (id: string) => {
+  const handlePray = useCallback(async (id: string) => {
     if (!user) {
       Alert.alert('Sign in required', 'Create an account or continue as guest to log prayers.');
       return;
@@ -204,9 +204,9 @@ export const FeedScreen: React.FC = () => {
         return next;
       });
     }
-  };
+  }, [items, offline, refresh, user]);
 
-  const handleLike = async (id: string) => {
+  const handleLike = useCallback(async (id: string) => {
     if (!user) {
       Alert.alert('Sign in required', 'Create an account or continue as guest to react.');
       return;
@@ -238,22 +238,22 @@ export const FeedScreen: React.FC = () => {
         return next;
       });
     }
-  };
+  }, [refresh, user]);
 
-  const handleOpen = (feedItem: FeedItem) => {
+  const handleOpen = useCallback((feedItem: FeedItem) => {
     navigation.navigate('RequestDetail', { id: feedItem.id, type: feedItem.type, item: feedItem });
-  };
+  }, [navigation]);
 
-  const handleEdit = (feedItem: FeedItem) => {
+  const handleEdit = useCallback((feedItem: FeedItem) => {
     navigation.navigate('EditRequest', { id: feedItem.id, type: feedItem.type, item: feedItem });
-  };
+  }, [navigation]);
 
-  const handleDelete = (_feedItem: FeedItem) => {
+  const handleDelete = useCallback((_feedItem: FeedItem) => {
     // Refresh the feed after delete
     refresh();
-  };
+  }, [refresh]);
 
-  const handlePin = async (id: string, shouldPin: boolean) => {
+  const handlePin = useCallback(async (id: string, shouldPin: boolean) => {
     if (!user) return;
     
     try {
@@ -283,9 +283,9 @@ export const FeedScreen: React.FC = () => {
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not update pin status.');
     }
-  };
+  }, [refresh, user]);
 
-  const handleReact = async (id: string, reactionType: ReactionType) => {
+  const handleReact = useCallback(async (id: string, reactionType: ReactionType) => {
     if (!user) {
       Alert.alert('Sign in required', 'Create an account to react to prayers.');
       return;
@@ -313,9 +313,9 @@ export const FeedScreen: React.FC = () => {
       console.error('[FeedScreen] Reaction error:', err);
       Alert.alert('Error', 'Could not save reaction. Please try again.');
     }
-  };
+  }, [items, refresh, user]);
 
-  const handlePromise = async (id: string, reminderFrequency: 'daily' | 'weekly' | 'once' | 'none' = 'daily') => {
+  const handlePromise = useCallback(async (id: string, reminderFrequency: 'daily' | 'weekly' | 'once' | 'none' = 'daily') => {
     if (!user) {
       Alert.alert('Sign in required', 'Create an account to make prayer promises.');
       return;
@@ -364,9 +364,9 @@ export const FeedScreen: React.FC = () => {
         return next;
       });
     }
-  };
+  }, [items, offline, user]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     // Haptic feedback on pull-to-refresh
     if (Platform.OS !== 'web') {
       try {
@@ -383,15 +383,52 @@ export const FeedScreen: React.FC = () => {
     
     // Add a small delay for UX feedback
     setTimeout(() => setRefreshing(false), 800);
-  };
+  }, [refresh]);
 
-  const navigateToCreate = () => {
+  const navigateToCreate = useCallback(() => {
     if (mode === 'REQUEST') {
       navigation.navigate('CreateRequest');
     } else {
       navigation.navigate('CreateTestimony');
     }
-  };
+  }, [mode, navigation]);
+
+  const renderFeedItem = useCallback(({ item }: { item: FeedItem }) => (
+    <FeedCard
+      item={item}
+      onPray={handlePray}
+      onLike={handleLike}
+      onReact={handleReact}
+      onPromise={handlePromise}
+      disabled={busyIds.has(item.id)}
+      hasPrayed={prayedIds.has(item.id)}
+      onPress={handleOpen}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      onPin={handlePin}
+      onFollow={handleFollow}
+      onUnfollow={handleUnfollow}
+      isFollowing={isFollowing(item.ownerUid)}
+      currentUserId={user?.uid}
+      currentUserEmail={user?.email}
+    />
+  ), [
+    busyIds,
+    handleDelete,
+    handleEdit,
+    handleFollow,
+    handleLike,
+    handleOpen,
+    handlePin,
+    handlePray,
+    handlePromise,
+    handleReact,
+    handleUnfollow,
+    isFollowing,
+    prayedIds,
+    user?.email,
+    user?.uid,
+  ]);
 
   // FAB pulse animation
   const fabPulseAnim = useRef(new Animated.Value(1)).current;
@@ -699,26 +736,7 @@ export const FeedScreen: React.FC = () => {
               <FlatList
                 data={filteredItems}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <FeedCard
-                    item={item}
-                    onPray={handlePray}
-                    onLike={handleLike}
-                    onReact={handleReact}
-                    onPromise={handlePromise}
-                    disabled={busyIds.has(item.id)}
-                    hasPrayed={prayedIds.has(item.id)}
-                    onPress={handleOpen}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onPin={handlePin}
-                    onFollow={handleFollow}
-                    onUnfollow={handleUnfollow}
-                    isFollowing={isFollowing(item.ownerUid)}
-                    currentUserId={user?.uid}
-                    currentUserEmail={user?.email}
-                  />
-                )}
+                renderItem={renderFeedItem}
                 ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
                 contentContainerStyle={styles.feedList}
                 showsVerticalScrollIndicator={false}
@@ -727,11 +745,6 @@ export const FeedScreen: React.FC = () => {
                 maxToRenderPerBatch={8}
                 updateCellsBatchingPeriod={50}
                 removeClippedSubviews
-                getItemLayout={(_, index) => ({
-                  length: 200,
-                  offset: 200 * index,
-                  index,
-                })}
                 onEndReached={() => {
                   if (hasMore && !loading) {
                     loadMore();

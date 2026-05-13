@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
-  Unsubscribe,
   collection,
+  getDocs,
   limit,
-  onSnapshot,
   orderBy,
   query,
   where,
@@ -26,7 +25,7 @@ export const HistoryScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsub: Unsubscribe | undefined;
+    let mounted = true;
     if (!user || !firebaseEnabled || !db) {
       setLoading(false);
       return undefined;
@@ -42,24 +41,25 @@ export const HistoryScreen: React.FC = () => {
       limit(50),
     );
     
-    unsub = onSnapshot(
-      q,
-      (snap) => {
+    getDocs(q)
+      .then((snap) => {
+        if (!mounted) return;
         const next = snap.docs.map((docSnap) => ({ ...(docSnap.data() as any), id: docSnap.id }));
         console.log('[History] Loaded', next.length, 'prayers received');
         setItems(next as PrayerRecord[]);
         setLoading(false);
-      },
-      (error) => {
-        console.error('[History] Query error:', error.code, error.message);
+      })
+      .catch((error) => {
+        console.error('[History] Query error:', error?.code, error?.message);
         // Handle missing index error
-        if (error.code === 'failed-precondition') {
+        if (error?.code === 'failed-precondition') {
           console.error('[History] Missing Firestore index. Please create a composite index for prayers collection: targetOwnerUid (==) + prayedAt (desc)');
         }
-        setLoading(false);
-      }
-    );
-    return () => unsub?.();
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   if (!user) {
