@@ -33,13 +33,15 @@ export const SkeletonCard: React.FC<Props> = ({
     // Announce loading state for screen readers
     AccessibilityInfo.announceForAccessibility(accessibilityLabel);
     
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.timing(shimmer, {
         toValue: 1,
         duration: 1200,
         useNativeDriver: true,
       }),
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [shimmer, accessibilityLabel]);
 
   const translateX = shimmer.interpolate({

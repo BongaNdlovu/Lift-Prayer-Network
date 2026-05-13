@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Alert, FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -85,6 +85,7 @@ export const FeedScreen: React.FC = () => {
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
   const netInfo = useNetInfo();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     if (items.length > 0) {
@@ -434,6 +435,7 @@ export const FeedScreen: React.FC = () => {
   const fabPulseAnim = useRef(new Animated.Value(1)).current;
   
   useEffect(() => {
+    if (!isFocused) return undefined;
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(fabPulseAnim, {
@@ -450,7 +452,7 @@ export const FeedScreen: React.FC = () => {
     );
     pulse.start();
     return () => pulse.stop();
-  }, [fabPulseAnim]);
+  }, [fabPulseAnim, isFocused]);
 
   return (
     <LiftScreen>

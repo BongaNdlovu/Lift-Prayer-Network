@@ -1,4 +1,4 @@
-const { onDocumentCreated, onDocumentDeleted } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 // const { onUserDeleted } = require('firebase-functions/v2/identity'); // Requires Identity extension - enable in Firebase Console first
 const admin = require('firebase-admin');
@@ -7,6 +7,16 @@ const Filter = require('bad-words');
 admin.initializeApp();
 const db = admin.firestore();
 const filter = new Filter();
+const EXPO_PUSH_BATCH_SIZE = 100;
+const FIRESTORE_BATCH_LIMIT = 450;
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
 // ============================================================================
 // Rate Limiting Configuration
@@ -189,75 +199,80 @@ async function sendExpoPushNotification(expoPushTokens, title, body, data = {}, 
   
   console.log(`[sendExpoPushNotification] Sending to ${expoPushTokens.length} tokens: "${title}"`);
 
-  const messages = expoPushTokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title,
-    body,
-    data,
-    // Android-specific settings
-    channelId: options.channelId || 'default',
-    priority: options.priority || 'high',
-    // iOS-specific settings  
-    _contentAvailable: true,
-  }));
-
   try {
-    const response = await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(messages),
-    });
-    const result = await response.json();
-    console.log('Expo push result:', JSON.stringify(result));
-    
-    // Process tickets and handle errors
-    if (result.data) {
-      const ticketsToStore = [];
-      
-      for (let i = 0; i < result.data.length; i++) {
-        const item = result.data[i];
-        const token = expoPushTokens[i];
-        
-        if (item.status === 'error') {
-          console.error(`Push notification error for token ${token}:`, item.message, item.details);
-          
-          // Mark token as potentially dead if it's a device-not-registered error
-          if (item.details?.error === 'DeviceNotRegistered') {
-            await markTokenAsDead(token, 'DeviceNotRegistered');
+    const allResults = [];
+
+    for (const tokenChunk of chunkArray(expoPushTokens, EXPO_PUSH_BATCH_SIZE)) {
+      const messages = tokenChunk.map(token => ({
+        to: token,
+        sound: 'default',
+        title,
+        body,
+        data,
+        // Android-specific settings
+        channelId: options.channelId || 'default',
+        priority: options.priority || 'high',
+        // iOS-specific settings
+        _contentAvailable: true,
+      }));
+
+      const response = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Accept-encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messages),
+      });
+      const result = await response.json();
+      allResults.push(result);
+      console.log('Expo push result:', JSON.stringify(result));
+
+      // Process tickets and handle errors
+      if (result.data) {
+        const ticketsToStore = [];
+
+        for (let i = 0; i < result.data.length; i++) {
+          const item = result.data[i];
+          const token = tokenChunk[i];
+
+          if (item.status === 'error') {
+            console.error(`Push notification error for token ${token}:`, item.message, item.details);
+
+            // Mark token as potentially dead if it's a device-not-registered error
+            if (item.details?.error === 'DeviceNotRegistered') {
+              await markTokenAsDead(token, 'DeviceNotRegistered');
+            }
+          } else if (item.id) {
+            // Store ticket for later receipt checking and retry capability
+            ticketsToStore.push({
+              ticketId: item.id,
+              token,
+              title,
+              body,
+              data: data || {},
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              checked: false,
+              retryCount: 0,
+              lastRetryAt: null,
+            });
           }
-        } else if (item.id) {
-          // Store ticket for later receipt checking and retry capability
-          ticketsToStore.push({
-            ticketId: item.id,
-            token,
-            title,
-            body,
-            data: data || {},
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            checked: false,
-            retryCount: 0,
-            lastRetryAt: null,
-          });
         }
-      }
-      
-      // Store tickets in batches for later receipt checking
-      if (ticketsToStore.length > 0) {
-        const batch = db.batch();
-        for (const ticket of ticketsToStore) {
-          const ticketRef = db.collection('pushTickets').doc(ticket.ticketId);
-          batch.set(ticketRef, ticket);
+
+        // Store tickets in Firestore-sized batches for later receipt checking.
+        for (const ticketChunk of chunkArray(ticketsToStore, FIRESTORE_BATCH_LIMIT)) {
+          const batch = db.batch();
+          for (const ticket of ticketChunk) {
+            const ticketRef = db.collection('pushTickets').doc(ticket.ticketId);
+            batch.set(ticketRef, ticket);
+          }
+          await batch.commit();
         }
-        await batch.commit();
       }
     }
     
-    return result;
+    return allResults.length === 1 ? allResults[0] : allResults;
   } catch (error) {
     console.error('Error sending Expo push notification:', error);
     throw error;
@@ -281,6 +296,15 @@ async function markTokenAsDead(token, reason) {
         deadReason: reason,
         markedDeadAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+      const uid = doc.ref.parent.parent?.id;
+      if (uid) {
+        batch.set(activePushTokenRef(uid, doc.id), {
+          isDead: true,
+          deadReason: reason,
+          markedDeadAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
     });
     
     if (!usersSnapshot.empty) {
@@ -322,9 +346,95 @@ async function getUserPushTokens(userId) {
   }
 }
 
+function getNotificationFlags(userData = {}) {
+  const settings = userData.settings || {};
+  return {
+    notificationsEnabled: settings.notifications !== false,
+    prayersEnabled: settings.notificationsPrayers !== false,
+    commentsEnabled: settings.notificationsComments !== false,
+    testimoniesEnabled: settings.notificationsTestimonies !== false,
+    groupsEnabled: settings.notificationsGroups !== false,
+    achievementsEnabled: settings.notificationsAchievements !== false,
+    weeklyRecapEnabled: settings.weeklyRecapEnabled === true,
+  };
+}
+
+function activePushTokenRef(uid, tokenDocId) {
+  return db.collection('activePushTokens').doc(`${uid}_${tokenDocId}`);
+}
+
+async function syncActivePushToken(uid, tokenDocId, tokenData, userData) {
+  if (!uid || !tokenDocId || !tokenData?.token) return;
+
+  const flags = getNotificationFlags(userData);
+  await activePushTokenRef(uid, tokenDocId).set({
+    uid,
+    tokenDocId,
+    token: tokenData.token,
+    nativeToken: tokenData.nativeToken || null,
+    platform: tokenData.platform || null,
+    isDead: tokenData.isDead === true,
+    deadReason: tokenData.deadReason || null,
+    ...flags,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    tokenUpdatedAt: tokenData.updatedAt || null,
+  }, { merge: true });
+}
+
+async function getBroadcastPushTargets({ authorUid, settingFlag }) {
+  let query = db.collection('activePushTokens')
+    .where('isDead', '==', false)
+    .where('notificationsEnabled', '==', true);
+
+  if (settingFlag) {
+    query = query.where(settingFlag, '==', true);
+  }
+
+  const snapshot = await query.get();
+  const tokens = [];
+  const users = new Set();
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    if (!data.token || data.uid === authorUid) return;
+    tokens.push(data.token);
+    users.add(data.uid);
+  });
+
+  return { tokens, usersProcessed: users.size };
+}
+
+async function syncActivePushTokenSnapshot(tokenDoc) {
+  const uid = tokenDoc.ref.parent.parent?.id;
+  if (!uid) return;
+
+  const userDoc = await db.doc(`users/${uid}`).get();
+  await syncActivePushToken(uid, tokenDoc.id, tokenDoc.data(), userDoc.data() || {});
+}
+
 // ============================================================================
 // SCHEDULED JOBS
 // ============================================================================
+
+exports.syncActivePushTokens = onSchedule('every 24 hours', async () => {
+  const tokensSnapshot = await db.collectionGroup('pushTokens').limit(500).get();
+  if (tokensSnapshot.empty) {
+    console.log('[syncActivePushTokens] No push tokens found');
+    return;
+  }
+
+  let synced = 0;
+  for (const tokenDoc of tokensSnapshot.docs) {
+    try {
+      await syncActivePushTokenSnapshot(tokenDoc);
+      synced++;
+    } catch (err) {
+      console.error(`[syncActivePushTokens] Failed to sync ${tokenDoc.ref.path}`, err);
+    }
+  }
+
+  console.log(`[syncActivePushTokens] Synced ${synced} active push token docs`);
+});
 
 /**
  * Check Expo push receipts and clean up dead tokens
@@ -432,13 +542,17 @@ exports.cleanupDeadTokens = onSchedule('0 3 * * *', async (event) => {
     const deadTokensSnapshot = await db.collectionGroup('pushTokens')
       .where('isDead', '==', true)
       .where('markedDeadAt', '<', sevenDaysAgo)
-      .limit(500)
+      .limit(250)
       .get();
     
     if (!deadTokensSnapshot.empty) {
       const batch = db.batch();
       deadTokensSnapshot.forEach(doc => {
         batch.delete(doc.ref);
+        const uid = doc.ref.parent.parent?.id;
+        if (uid) {
+          batch.delete(activePushTokenRef(uid, doc.id));
+        }
         deletedTokens++;
       });
       await batch.commit();
@@ -1160,72 +1274,34 @@ exports.onAnnouncementCreated = onDocumentCreated('announcements/{announcementId
   console.log(`[onAnnouncementCreated] Broadcasting announcement: "${title}" (priority: ${priority})`);
   
   try {
-    // Get all users with push tokens
-    const usersSnapshot = await db.collection('users').get();
-    let notificationsSent = 0;
-    let usersProcessed = 0;
-    
     // Priority emoji for notification title
     const priorityEmoji = priority === 'urgent' ? '🚨' : priority === 'important' ? '📢' : '📣';
     const notificationTitle = `${priorityEmoji} ${title}`;
     const notificationBody = content.length > 150 ? content.substring(0, 150) + '...' : content;
-    
-    // Process users in batches to avoid overwhelming the push service
-    const batchSize = 50;
-    const userDocs = usersSnapshot.docs;
-    
-    for (let i = 0; i < userDocs.length; i += batchSize) {
-      const batch = userDocs.slice(i, i + batchSize);
-      
-      const batchPromises = batch.map(async (userDoc) => {
-        const userId = userDoc.id;
-        const userData = userDoc.data();
-        
-        // Skip the author (they created it, they know about it)
-        if (userId === authorUid) {
-          return;
+
+    const { tokens, usersProcessed } = await getBroadcastPushTargets({ authorUid });
+    if (tokens.length > 0) {
+      await sendExpoPushNotification(
+        tokens,
+        notificationTitle,
+        notificationBody,
+        {
+          type: 'ANNOUNCEMENT',
+          announcementId: event.params.announcementId,
+          priority
+        },
+        {
+          channelId: 'announcements',
+          priority: priority === 'urgent' ? 'high' : 'default'
         }
-        
-        // Check if user has notifications enabled
-        if (userData?.settings?.notifications === false) {
-          return;
-        }
-        
-        usersProcessed++;
-        
-        const tokens = await getUserPushTokens(userId);
-        if (tokens.length > 0) {
-          await sendExpoPushNotification(
-            tokens,
-            notificationTitle,
-            notificationBody,
-            { 
-              type: 'ANNOUNCEMENT', 
-              announcementId: event.params.announcementId,
-              priority 
-            },
-            { 
-              channelId: 'announcements', 
-              priority: priority === 'urgent' ? 'high' : 'default' 
-            }
-          );
-          notificationsSent++;
-        }
-      });
-      
-      await Promise.all(batchPromises);
-      
-      // Small delay between batches to avoid rate limiting
-      if (i + batchSize < userDocs.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      );
     }
     
-    console.log(`[onAnnouncementCreated] Broadcast complete: ${notificationsSent} notifications sent to ${usersProcessed} users`);
+    console.log(`[onAnnouncementCreated] Broadcast complete: ${tokens.length} notifications sent to ${usersProcessed} users`);
     
     // Update announcement with notification stats
     await snap.ref.update({
-      notificationsSent,
+      notificationsSent: tokens.length,
       notificationsSentAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
@@ -1251,62 +1327,28 @@ exports.onDevotionCreated = onDocumentCreated('devotions/{devotionId}', async (e
   console.log(`[onDevotionCreated] Broadcasting devotion: "${title}"`);
   
   try {
-    // Get all users with push tokens
-    const usersSnapshot = await db.collection('users').get();
-    let notificationsSent = 0;
-    
     const notificationTitle = `✝️ ${title}`;
     const notificationBody = `${bibleReference}: "${bibleVerse.substring(0, 100)}${bibleVerse.length > 100 ? '...' : ''}"`;
-    
-    // Process users in batches
-    const batchSize = 50;
-    const userDocs = usersSnapshot.docs;
-    
-    for (let i = 0; i < userDocs.length; i += batchSize) {
-      const batch = userDocs.slice(i, i + batchSize);
-      
-      const batchPromises = batch.map(async (userDoc) => {
-        const userId = userDoc.id;
-        const userData = userDoc.data();
-        
-        // Skip the author
-        if (userId === authorUid) {
-          return;
-        }
-        
-        // Check if user has notifications enabled
-        if (userData?.settings?.notifications === false) {
-          return;
-        }
-        
-        const tokens = await getUserPushTokens(userId);
-        if (tokens.length > 0) {
-          await sendExpoPushNotification(
-            tokens,
-            notificationTitle,
-            notificationBody,
-            { 
-              type: 'DEVOTION', 
-              devotionId: event.params.devotionId 
-            },
-            { channelId: 'devotions', priority: 'default' }
-          );
-          notificationsSent++;
-        }
-      });
-      
-      await Promise.all(batchPromises);
-      
-      if (i + batchSize < userDocs.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+
+    const { tokens } = await getBroadcastPushTargets({ authorUid });
+    if (tokens.length > 0) {
+      await sendExpoPushNotification(
+        tokens,
+        notificationTitle,
+        notificationBody,
+        {
+          type: 'DEVOTION',
+          devotionId: event.params.devotionId
+        },
+        { channelId: 'devotions', priority: 'default' }
+      );
     }
     
-    console.log(`[onDevotionCreated] Broadcast complete: ${notificationsSent} notifications sent`);
+    console.log(`[onDevotionCreated] Broadcast complete: ${tokens.length} notifications sent`);
     
     // Update devotion with notification stats
     await snap.ref.update({
-      notificationsSent,
+      notificationsSent: tokens.length,
       notificationsSentAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
@@ -1320,8 +1362,16 @@ exports.onPushTokenCreated = onDocumentCreated('users/{uid}/pushTokens/{token}',
   const snap = event.data;
   const data = snap.data();
   const token = data.nativeToken || data.token;
+  const { uid, token: tokenDocId } = event.params;
   
   if (!token) return;
+
+  try {
+    const userDoc = await db.doc(`users/${uid}`).get();
+    await syncActivePushToken(uid, tokenDocId, data, userDoc.data() || {});
+  } catch (err) {
+    console.error('Failed to sync active push token', err);
+  }
   
   // Only subscribe native tokens to FCM topics (Expo tokens use Expo's push service)
   if (data.nativeToken) {
@@ -1339,6 +1389,46 @@ exports.onPushTokenCreated = onDocumentCreated('users/{uid}/pushTokens/{token}',
         error: err.message,
       });
     }
+  }
+});
+
+exports.onPushTokenDeleted = onDocumentDeleted('users/{uid}/pushTokens/{token}', async (event) => {
+  const { uid, token: tokenDocId } = event.params;
+  await activePushTokenRef(uid, tokenDocId).delete();
+});
+
+exports.onUserNotificationSettingsUpdated = onDocumentUpdated('users/{uid}', async (event) => {
+  const beforeSettings = event.data.before.data()?.settings || {};
+  const afterData = event.data.after.data() || {};
+  const afterSettings = afterData.settings || {};
+  const notificationFields = [
+    'notifications',
+    'notificationsPrayers',
+    'notificationsComments',
+    'notificationsTestimonies',
+    'notificationsGroups',
+    'notificationsAchievements',
+    'weeklyRecapEnabled',
+  ];
+
+  const changed = notificationFields.some((field) => beforeSettings[field] !== afterSettings[field]);
+  if (!changed) return;
+
+  const tokensSnapshot = await db.collection('users').doc(event.params.uid).collection('pushTokens').get();
+  if (tokensSnapshot.empty) return;
+
+  let batch = db.batch();
+  let writes = 0;
+  tokensSnapshot.forEach((tokenDoc) => {
+    batch.set(activePushTokenRef(event.params.uid, tokenDoc.id), {
+      ...getNotificationFlags(afterData),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    writes++;
+  });
+
+  if (writes > 0) {
+    await batch.commit();
   }
 });
 

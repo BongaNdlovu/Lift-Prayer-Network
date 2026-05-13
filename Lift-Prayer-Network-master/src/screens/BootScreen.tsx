@@ -14,7 +14,7 @@ export const BootScreen: React.FC = () => {
 
   useEffect(() => {
     // Logo entrance animation
-    Animated.sequence([
+    const entrance = Animated.sequence([
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
@@ -46,10 +46,10 @@ export const BootScreen: React.FC = () => {
         duration: 300,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
 
     // Continuous pulse animation
-    Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1.1,
@@ -64,7 +64,15 @@ export const BootScreen: React.FC = () => {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
+
+    entrance.start();
+    pulse.start();
+
+    return () => {
+      entrance.stop();
+      pulse.stop();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

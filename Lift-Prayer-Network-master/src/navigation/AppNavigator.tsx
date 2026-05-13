@@ -57,9 +57,12 @@ const MainTabs = () => {
   
   return (
     <Tab.Navigator
+      detachInactiveScreens
       tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={({ route }) => ({
         headerShown: false,
+        lazy: true,
+        freezeOnBlur: true,
         tabBarActiveTintColor: colors.accentDark,
         tabBarInactiveTintColor: colors.muted,
         // Hide default tab bar styling since we use custom GlassTabBar

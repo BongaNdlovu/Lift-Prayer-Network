@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightPalette, darkPalette, setPalette, type ThemePalette, spacing, radius } from '../theme/colors';
@@ -138,33 +138,10 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
-  // Use ref to track if we've loaded saved preference (avoids re-render flash)
-  const hasLoadedRef = useRef(false);
-
   // Force light mode for consistent brand during overhaul
   const isDark = false;
 
   const colors = isDark ? darkPalette : lightPalette;
-
-  // Load saved theme preference (but don't block render)
-  useEffect(() => {
-    // Only load once
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-
-    const loadTheme = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(THEME_KEY);
-        if (saved !== 'light') {
-          await AsyncStorage.setItem(THEME_KEY, 'light');
-        }
-        setThemeModeState('light');
-      } catch (err) {
-        console.warn('Error loading theme preference:', err);
-      }
-    };
-    loadTheme();
-  }, []);
 
   // Update global palette when theme changes
   useEffect(() => {
