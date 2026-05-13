@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing } from '../theme/colors';
+import { fonts, radius, spacing } from '../theme/colors';
 import { LiftScreen } from '../components/LiftLayout';
 
 const SUPPORT_EMAIL = 'fanelesibonge50@gmail.com';
@@ -38,7 +38,7 @@ const helpSections: HelpSection[] = [
   {
     id: 'getting-started',
     icon: 'rocket-outline',
-    iconColor: '#f59e0b',
+    iconColor: '#385C3B',
     iconBg: '#fef3c7',
     title: 'Getting Started',
     content: [
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   iconButton: {
     width: 40,
@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
   comingSoonText: {
     flex: 1,
     fontSize: 14,
-    color: '#f59e0b',
+    color: '#385C3B',
     lineHeight: 20,
   },
 });

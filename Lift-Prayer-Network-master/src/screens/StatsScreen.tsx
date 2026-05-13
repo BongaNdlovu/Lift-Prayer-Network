@@ -7,15 +7,14 @@ import {
   ActivityIndicator,
   Animated,
   TouchableOpacity,
-  Platform,
-} from 'react-native';
+  } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { getUserStats, type UserStats } from '../services/stats';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, palette, radius, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
 import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
 import { LiftScreen, LiftHeader } from '../components/LiftLayout';
@@ -238,7 +237,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -246,7 +245,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   subheading: {
     fontSize: 14,
@@ -276,7 +275,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '600',
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     marginBottom: spacing.sm,
   },
   subtitle: {

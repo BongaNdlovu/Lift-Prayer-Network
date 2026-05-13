@@ -23,6 +23,7 @@ import { auth, firebaseEnabled, db } from '../services/firebase';
 import { ensureUserProfile, syncOnboardingData, type OnboardingAnswers } from '../services/userProfile';
 import { clearAllCache, getCacheStats } from '../services/offlineCache';
 import { cleanupUserData } from '../services/userCleanup';
+import { deleteProfilePhoto } from '../services/profilePhotos';
 import { checkUserBanned } from '../services/moderation';
 import { registerForPushNotifications, storePushToken, setupNotificationHandler } from '../services/notifications';
 
@@ -421,10 +422,12 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       }
 
       if (currentUser.uid) {
+        await deleteProfilePhoto(currentUser.uid);
         await cleanupUserData(currentUser.uid);
       }
 
       await deleteUser(currentUser);
+      await clearAllCache();
       console.log('[Auth] Account deleted successfully');
     } catch (error) {
       console.error('[Auth] Delete account error:', error);

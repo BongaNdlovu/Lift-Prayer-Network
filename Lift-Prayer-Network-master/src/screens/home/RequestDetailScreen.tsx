@@ -14,7 +14,7 @@ import { Timestamp } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import { radius, spacing } from '../../theme/colors';
+import { fonts, radius, spacing } from '../../theme/colors';
 import { LiftScreen } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
@@ -57,7 +57,6 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [loading, setLoading] = useState(!initialItem);
   const [editMode, setEditMode] = useState(false);
   const [contentDraft, setContentDraft] = useState(initialItem?.content || '');
-  const [flagText, setFlagText] = useState('');
   const [saving, setSaving] = useState(false);
   const [busyAction, setBusyAction] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -411,25 +410,54 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     navigation.navigate('EditRequest', { id: item.id, type, item });
   };
 
-  const handleFlag = async () => {
+  const submitContentReport = async (reason: string) => {
     if (!user) {
       Alert.alert('Sign In Required', 'Please sign in to report content.');
       return;
     }
-    if (!flagText.trim()) {
-      Alert.alert('Add context', 'Please add a brief reason.');
-      return;
-    }
+    const trimmed = reason.trim();
+    if (!trimmed) return;
+
     setBusyAction(true);
     try {
-      await flagContent(user.uid, id, type, flagText.trim());
-      setFlagText('');
-      Alert.alert('Flag submitted', 'Thank you for keeping the space healthy.');
+      await flagContent(user.uid, id, type, trimmed);
+      Alert.alert('Report submitted', 'Thank you for helping keep the space healthy.');
     } catch (err: any) {
-      Alert.alert('Flag failed', err.message ?? 'Try again.');
+      Alert.alert('Report failed', err.message ?? 'Try again.');
     } finally {
       setBusyAction(false);
     }
+  };
+
+  const handleReportContent = () => {
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Report Content',
+        'Why are you reporting this?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Submit', onPress: (reason?: string) => reason && submitContentReport(reason) },
+        ],
+        'plain-text',
+      );
+      return;
+    }
+
+    Alert.alert('Report Content', 'Choose a reason to report this content.', [
+      { text: 'Spam or scam', onPress: () => submitContentReport('Spam or scam') },
+      { text: 'Harassment or abuse', onPress: () => submitContentReport('Harassment or abuse') },
+      { text: 'Inappropriate content', onPress: () => submitContentReport('Inappropriate content') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const openOverflowMenu = () => {
+    const actions: any[] = [];
+    if (canEdit) actions.push({ text: 'Edit', onPress: handleAdvancedEdit });
+    if (canDelete) actions.push({ text: 'Delete', style: 'destructive', onPress: handleDelete });
+    actions.push({ text: 'Report', onPress: handleReportContent });
+    actions.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert('Request Options', undefined, actions);
   };
 
   const handlePray = async () => {
@@ -505,13 +533,15 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={[styles.kickerHeader, { color: colors.muted }]}>
-            {type === 'REQUEST' ? 'TRANSMISSION' : 'VERIFICATION'}
+            {type === 'REQUEST' ? 'PRAYER REQUEST' : 'PRAISE REPORT'}
           </Text>
           <Text style={[styles.heading, { color: colors.text }]}>
             Details<Text style={styles.headingDot}>.</Text>
           </Text>
         </View>
-        <View style={{ width: 44 }} />
+        <TouchableOpacity onPress={openOverflowMenu} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
       {/* === MAIN CONTENT === */}
@@ -520,7 +550,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         {commentError && (
           <InlineError message={commentError} onDismiss={() => setCommentError(null)} />
         )}
-        <Text style={[styles.kicker, { color: colors.muted }]}>{type === 'REQUEST' ? 'Transmission' : 'Verification'}</Text>
+        <Text style={[styles.kicker, { color: colors.muted }]}>{type === 'REQUEST' ? 'Prayer Request' : 'Praise Report'}</Text>
         <Text style={[styles.title, { color: colors.text }]}>{(displayItem as any).title || displayItem.content.slice(0, 100)}</Text>
         
         {/* Author Info with Badge */}
@@ -875,20 +905,6 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
 
-        <View style={[styles.flagBox, { borderColor: colors.border }]}>
-          <Text style={[styles.flagTitle, { color: colors.text }]}>Flag / Report</Text>
-          <TextInput
-            style={[styles.flagInput, { color: colors.text }]}
-            placeholder="Why is this inappropriate or unsafe?"
-            placeholderTextColor={colors.muted}
-            value={flagText}
-            onChangeText={setFlagText}
-            multiline
-          />
-          <TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleFlag} disabled={busyAction}>
-            <Text style={[styles.secondaryText, { color: colors.text }]}>Submit Flag</Text>
-          </TouchableOpacity>
-          </View>
           </ScrollView>
       </View>
     </LiftScreen>
@@ -931,15 +947,15 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 36,
     fontWeight: '500',
-    letterSpacing: -1,
+    letterSpacing: 0,
     lineHeight: 38,
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   mainContent: {
     flex: 1,

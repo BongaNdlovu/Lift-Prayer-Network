@@ -20,15 +20,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, radius, spacing } from '../theme/colors';
 import { LiftScreen } from '../components/LiftLayout';
-import { db, firebaseEnabled, storage } from '../services/firebase';
+import { db, firebaseEnabled } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
 import { updateUserSettings, updateUserProfile } from '../services/userProfile';
+import { deleteProfilePhoto, uploadProfilePhoto } from '../services/profilePhotos';
 import { RootStackParamList } from '../navigation/types';
 import { getVerifiedBadge, BADGE_STYLES, hasAdminPermission } from '../config/admins';
 import { validateDisplayName, validateEmail } from '../utils/security';
@@ -105,42 +104,7 @@ export const ProfileScreen: React.FC = () => {
           throw new Error('User not logged in');
         }
 
-        // Resize and compress the image to max 400x400 and 80% quality
-        // This keeps file size reasonable (typically under 100KB)
-        const manipulated = await ImageManipulator.manipulateAsync(
-          asset.uri,
-          [{ resize: { width: 400, height: 400 } }],
-          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-        );
-
-        let photoURL: string;
-
-        // Upload to Firebase Storage if available
-        if (storage && firebaseEnabled) {
-          // Fetch the resized image as a blob
-          const response = await fetch(manipulated.uri);
-          const blob = await response.blob();
-          
-          // Create a reference to the profile image using folder structure
-          // This matches the storage rules: profile-pictures/{userId}/{fileName}
-          const imageRef = ref(storage, `profile-pictures/${user.uid}/profile.jpg`);
-          
-          // Upload the blob
-          await uploadBytes(imageRef, blob);
-          
-          // Get the download URL
-          photoURL = await getDownloadURL(imageRef);
-        } else {
-          // Fallback for development/testing - use a placeholder
-          // In production, Firebase Storage should always be available
-          Alert.alert(
-            'Storage Not Available',
-            'Firebase Storage is not configured. Profile picture cannot be uploaded.',
-            [{ text: 'OK' }]
-          );
-          setUploadingImage(false);
-          return;
-        }
+        const photoURL = await uploadProfilePhoto(user.uid, asset.uri);
         
         // Update Firebase Auth profile
         await updateProfile(user, { photoURL });
@@ -178,6 +142,7 @@ export const ProfileScreen: React.FC = () => {
           onPress: async () => {
             setUploadingImage(true);
             try {
+              await deleteProfilePhoto(user.uid);
               await updateProfile(user, { photoURL: null });
               await updateUserProfile(user.uid, { photoURL: null });
               setProfileImage(null);
@@ -236,6 +201,25 @@ export const ProfileScreen: React.FC = () => {
   const handleEditProfile = () => {
     setEditName(user?.displayName || '');
     setShowEditModal(true);
+  };
+
+  const openPhotoActions = () => {
+    if (!user || uploadingImage) return;
+
+    Alert.alert(
+      'Profile Photo',
+      undefined,
+      profileImage
+        ? [
+            { text: 'Change Photo', onPress: pickProfileImage },
+            { text: 'Remove Photo', style: 'destructive', onPress: removeProfileImage },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        : [
+            { text: 'Change Photo', onPress: pickProfileImage },
+            { text: 'Cancel', style: 'cancel' },
+          ],
+    );
   };
 
   const handleSaveProfile = async () => {
@@ -314,8 +298,7 @@ export const ProfileScreen: React.FC = () => {
           <View style={styles.avatarSection}>
             <TouchableOpacity 
               style={styles.avatarContainer}
-              onPress={pickProfileImage}
-              onLongPress={profileImage ? removeProfileImage : undefined}
+              onPress={openPhotoActions}
               disabled={uploadingImage}
             >
               {profileImage ? (
@@ -365,10 +348,6 @@ export const ProfileScreen: React.FC = () => {
             </View>
             <Text style={[styles.email, { color: colors.muted }]}>{user.email || (user.isAnonymous ? 'Guest account' : 'No email')}</Text>
             
-            {/* Hint text */}
-            <Text style={styles.photoHint}>
-              Tap photo to change • Long press to remove
-            </Text>
           </View>
         )}
 
@@ -541,7 +520,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('MyPrayers')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="bookmark" size={20} color="#f59e0b" />
+              <Ionicons name="bookmark" size={20} color="#385C3B" />
             </View>
             <View style={styles.menuContent}>
               <Text style={[styles.menuTitle, { color: colors.text }]}>My Prayers</Text>
@@ -605,7 +584,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('Achievements')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="trophy" size={20} color="#f59e0b" />
+              <Ionicons name="trophy" size={20} color="#385C3B" />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>Achievements</Text>
@@ -637,7 +616,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('NotificationsSettings')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="notifications" size={20} color="#f59e0b" />
+              <Ionicons name="notifications" size={20} color="#385C3B" />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>Notification Settings</Text>
@@ -688,7 +667,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('Help')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="help-circle" size={20} color="#f59e0b" />
+              <Ionicons name="help-circle" size={20} color="#385C3B" />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>Help & Tutorial</Text>
@@ -797,7 +776,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -805,7 +784,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles
@@ -830,7 +809,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -853,7 +832,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -939,7 +918,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   button: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -1061,7 +1040,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   saveButton: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',

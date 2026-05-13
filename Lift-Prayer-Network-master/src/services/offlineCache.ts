@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { LiftRequest, Testimony } from '../types';
 import { getSafeErrorMessage } from '../types/errors';
 
-const CACHE_KEYS = {
+export const CACHE_KEYS = {
   REQUESTS: '@lift_cache_requests',
   TESTIMONIES: '@lift_cache_testimonies',
   PENDING_PRAYERS: '@lift_pending_prayers',
@@ -12,6 +12,9 @@ const CACHE_KEYS = {
   PENDING_PROMISES: '@lift_pending_promises',
   LAST_SYNC: '@lift_last_sync',
   CURRENT_USER: '@lift_current_user',
+  ANALYTICS_QUEUE: '@lift_analytics_queue',
+  ONBOARDING_ANSWERS: '@lift_onboarding_answers',
+  HAS_EVER_SIGNED_IN: '@lift_has_ever_signed_in',
 };
 
 // Cache duration in milliseconds (1 hour)
@@ -247,16 +250,20 @@ export const setPendingRequests = async (requests: PendingRequest[]): Promise<vo
 // Clear all cache
 export const clearAllCache = async (): Promise<void> => {
   try {
-    await AsyncStorage.multiRemove([
-      CACHE_KEYS.REQUESTS,
-      CACHE_KEYS.TESTIMONIES,
-      CACHE_KEYS.LAST_SYNC,
-      CACHE_KEYS.PENDING_PRAYERS,
-      CACHE_KEYS.PENDING_REQUESTS,
-      CACHE_KEYS.PENDING_PROMISES,
-    ]);
+    await AsyncStorage.multiRemove(Object.values(CACHE_KEYS));
   } catch (error) {
     console.error('[OfflineCache] Error clearing cache:', getSafeErrorMessage(error));
+  }
+};
+
+export const clearLaunchState = async (): Promise<void> => {
+  try {
+    await AsyncStorage.multiRemove([
+      CACHE_KEYS.ONBOARDING_ANSWERS,
+      CACHE_KEYS.HAS_EVER_SIGNED_IN,
+    ]);
+  } catch (error) {
+    console.error('[OfflineCache] Error clearing launch state:', getSafeErrorMessage(error));
   }
 };
 

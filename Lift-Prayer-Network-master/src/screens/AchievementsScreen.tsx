@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   FlatList,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -211,14 +210,14 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   mainContent: {
     flex: 1,

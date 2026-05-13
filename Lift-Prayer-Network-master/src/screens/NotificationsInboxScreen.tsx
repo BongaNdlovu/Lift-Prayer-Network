@@ -32,7 +32,7 @@ import {
 import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing } from '../theme/colors';
+import { fonts, radius, spacing } from '../theme/colors';
 import { LiftScreen, LiftHeader, LiftIconButton } from '../components/LiftLayout';
 import { SkeletonNotifications } from '../components/SkeletonCard';
 import { RootStackParamList } from '../navigation/types';
@@ -63,7 +63,7 @@ const NOTIFICATION_ITEM_HEIGHT = 96;
 const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
   switch (type) {
     case NOTIFICATION_TYPES.PRAYER:
-      return { name: 'hand-left', color: '#f59e0b' };
+      return { name: 'hand-left', color: '#385C3B' };
     case NOTIFICATION_TYPES.AMEN:
       return { name: 'sparkles', color: '#10b981' };
     case NOTIFICATION_TYPES.COMMENT:
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     marginLeft: spacing.sm,
   },
 });

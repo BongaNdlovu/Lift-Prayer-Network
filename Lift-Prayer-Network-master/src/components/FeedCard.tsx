@@ -49,7 +49,7 @@ const getInitials = (name: string): string => {
 };
 
 const getAvatarColor = (name: string): string => {
-  const colors = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
+  const colors = ['#385C3B', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -916,7 +916,7 @@ const FeedCardComponent: React.FC<Props> = ({
                     selectedReason === reason.id && styles.reasonLabelSelected,
                   ]}>{reason.label}</Text>
                   {selectedReason === reason.id && (
-                    <Ionicons name="checkmark-circle" size={20} color="#f59e0b" />
+                    <Ionicons name="checkmark-circle" size={20} color="#385C3B" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -1027,7 +1027,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   pinnedBadge: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -1255,7 +1255,7 @@ const styles = StyleSheet.create({
   prayingActive: {
     backgroundColor: '#fde68a',
     borderWidth: 2,
-    borderColor: '#f59e0b',
+    borderColor: '#385C3B',
   },
   prayingGlow: {
     position: 'absolute',

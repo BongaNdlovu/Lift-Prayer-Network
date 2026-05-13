@@ -1,11 +1,15 @@
 import {
   doc,
   getDoc,
+  getDocs,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
   collection,
   addDoc,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { Platform } from 'react-native';
@@ -81,6 +85,53 @@ export const updateUserProfile = async (userId: string, updates: Partial<Pick<Us
   if (!firebaseEnabled || !db) return;
   const ref = doc(db, 'users', userId);
   await updateDoc(ref, { ...updates, lastActiveAt: serverTimestamp() });
+
+  if ('photoURL' in updates && updates.photoURL === null) {
+    await clearUserPhotoReferences(userId);
+  }
+};
+
+const clearPhotoFieldForQuery = async (
+  collectionPath: string,
+  ownerField: string,
+  userId: string,
+  photoFields: string[],
+): Promise<void> => {
+  if (!firebaseEnabled || !db) return;
+
+  const snapshot = await getDocs(query(collection(db, collectionPath), where(ownerField, '==', userId)));
+  if (snapshot.empty) return;
+
+  let batch = writeBatch(db);
+  let count = 0;
+
+  for (const docSnap of snapshot.docs) {
+    const updates = photoFields.reduce<Record<string, null>>((next, field) => {
+      next[field] = null;
+      return next;
+    }, {});
+    batch.update(docSnap.ref, updates);
+    count += 1;
+
+    if (count >= 400) {
+      await batch.commit();
+      batch = writeBatch(db);
+      count = 0;
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit();
+  }
+};
+
+export const clearUserPhotoReferences = async (userId: string): Promise<void> => {
+  await Promise.all([
+    clearPhotoFieldForQuery('requests', 'ownerUid', userId, ['userPhotoURL']),
+    clearPhotoFieldForQuery('testimonies', 'ownerUid', userId, ['userPhotoURL']),
+    clearPhotoFieldForQuery('comments', 'authorUid', userId, ['authorPhotoURL', 'userPhotoURL']),
+    clearPhotoFieldForQuery('notifications', 'actorUid', userId, ['actorPhotoURL', 'userPhotoURL']),
+  ]);
 };
 
 /**

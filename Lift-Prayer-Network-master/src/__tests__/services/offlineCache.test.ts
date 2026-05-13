@@ -43,10 +43,16 @@ describe('offlineCache', () => {
       expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
         '@lift_cache_requests',
         '@lift_cache_testimonies',
-        '@lift_last_sync',
         '@lift_pending_prayers',
         '@lift_pending_requests',
+        '@lift_pending_comments',
+        '@lift_pending_reactions',
         '@lift_pending_promises',
+        '@lift_last_sync',
+        '@lift_current_user',
+        '@lift_analytics_queue',
+        '@lift_onboarding_answers',
+        '@lift_has_ever_signed_in',
       ]);
     });
   });

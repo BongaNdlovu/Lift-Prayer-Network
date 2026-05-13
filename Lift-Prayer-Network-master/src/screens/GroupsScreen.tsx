@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   headerButtons: {
     flexDirection: 'row',

@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  Image,
+import {  Image,
   Pressable,
   SafeAreaView,
   ScrollView,

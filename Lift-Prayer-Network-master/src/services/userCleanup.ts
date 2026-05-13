@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
 import { deletePrayerHistory } from './prayers';
+import { deleteProfilePhoto } from './profilePhotos';
 
 const BATCH_SIZE = 300;
 
@@ -112,6 +113,8 @@ const deleteUserProfile = async (userId: string): Promise<void> => {
 export const cleanupUserData = async (userId: string): Promise<void> => {
   if (!firebaseEnabled || !db) return;
 
+  await deleteProfilePhoto(userId);
+
   // Delete prayer history and related aggregates
   await deletePrayerHistory(userId);
 
@@ -128,4 +131,3 @@ export const cleanupUserData = async (userId: string): Promise<void> => {
   await deleteUserPushTokens(userId);
   await deleteUserProfile(userId);
 };
-

@@ -3,9 +3,12 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-const KEEP_EMAIL = 'fanelesibonge50@gmail.com';
+const DEFAULT_KEEP_EMAIL = 'fanelesibonge50@gmail.com';
 const CONFIRM_FLAG = '--confirm';
+const keepEmailArg = process.argv.find((arg) => arg.startsWith('--keep-email='));
+const KEEP_EMAIL = keepEmailArg ? keepEmailArg.split('=').slice(1).join('=').trim().toLowerCase() : DEFAULT_KEEP_EMAIL;
 const DRY_RUN = !process.argv.includes(CONFIRM_FLAG);
+const STORAGE_PREFIXES = ['profile-pictures/', 'group-images/', 'attachments/'];
 
 function readProjectId() {
   if (process.env.GOOGLE_CLOUD_PROJECT) return process.env.GOOGLE_CLOUD_PROJECT;
@@ -127,39 +130,63 @@ async function clearFirestore(db, keepUid) {
   console.log(`[Firestore] Docs queued for deletion: ${docsToDelete}`);
 }
 
+async function resetAdminDoc(db, keepUser) {
+  const adminRef = db.collection('users').doc(keepUser.uid);
+  const snap = await adminRef.get();
+  const existingRoles = snap.exists && Array.isArray(snap.data().roles) ? snap.data().roles : ['admin'];
+  const roles = Array.from(new Set([...existingRoles, 'admin']));
+  const payload = {
+    displayName: keepUser.displayName || 'Fanele Sibonge',
+    email: keepUser.email || KEEP_EMAIL,
+    photoURL: null,
+    roles,
+    stats: {
+      prayerCount: 0,
+      testimonyCount: 0,
+      streakDays: 0,
+      answeredCount: 0,
+      peopleSupported: 0,
+      requestsSent: 0,
+    },
+    settings: {
+      notifications: true,
+      notificationsCritical: false,
+      notificationsPrayers: true,
+      notificationsComments: true,
+      notificationsTestimonies: true,
+      notificationsGroups: true,
+      weeklyRecapEnabled: false,
+      shareProfile: false,
+    },
+    lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  console.log(`[Firestore] ${DRY_RUN ? 'Would reset' : 'Resetting'} users/${keepUser.uid}`);
+  if (!DRY_RUN) {
+    await adminRef.set(payload, { merge: true });
+  }
+}
+
 async function clearStorage(storage, keepUid) {
   try {
     const bucket = storage.bucket();
-    const [files] = await bucket.getFiles();
-    
-    let totalFiles = files.length;
     let filesToDelete = 0;
-    let keptFiles = 0;
 
-    console.log(`[Storage] Total files found: ${totalFiles}`);
+    for (const prefix of STORAGE_PREFIXES) {
+      const [files] = await bucket.getFiles({ prefix });
+      filesToDelete += files.length;
+      console.log(`[Storage] ${prefix}: ${files.length} files ${DRY_RUN ? 'would be deleted' : 'queued for deletion'}`);
 
-    for (const file of files) {
-      const fileName = file.name;
-      // Keep profile photos of the keep user
-      const shouldKeep = fileName.includes(`profile-${keepUid}`) || fileName.includes(`avatars/${keepUid}`);
-      
-      if (shouldKeep) {
-        keptFiles++;
-        console.log(`[Storage] Keeping ${fileName}`);
-        continue;
-      }
-
-      filesToDelete++;
-      console.log(`[Storage] ${DRY_RUN ? 'Would delete' : 'Deleting'} ${fileName}`);
-      
-      if (!DRY_RUN) {
-        await file.delete().catch((err) => {
-          console.warn(`[Storage] Failed to delete ${fileName}: ${err.message}`);
-        });
+      for (const file of files) {
+        console.log(`[Storage] ${DRY_RUN ? 'Would delete' : 'Deleting'} ${file.name}`);
+        if (!DRY_RUN) {
+          await file.delete().catch((err) => {
+            console.warn(`[Storage] Failed to delete ${file.name}: ${err.message}`);
+          });
+        }
       }
     }
 
-    console.log(`[Storage] Files kept: ${keptFiles}`);
     console.log(`[Storage] Files queued for deletion: ${filesToDelete}`);
   } catch (error) {
     console.error('[Storage] Error clearing storage:', error.message);
@@ -170,10 +197,12 @@ async function clearStorage(storage, keepUid) {
 async function main() {
   console.log(DRY_RUN ? '[Reset] Dry run only. Re-run with --confirm to delete.' : '[Reset] CONFIRMED destructive reset.');
   const { auth, db, storage } = await initAdmin();
+  console.log(`[Reset] Project id: ${readProjectId() || '(unknown)'}`);
   const keepUser = await findKeepUser(auth);
   console.log(`[Reset] Keeping ${KEEP_EMAIL} (${keepUser.uid})`);
 
   await clearFirestore(db, keepUser.uid);
+  await resetAdminDoc(db, keepUser);
   await clearStorage(storage, keepUser.uid);
   await deleteOtherAuthUsers(auth, keepUser.uid);
 

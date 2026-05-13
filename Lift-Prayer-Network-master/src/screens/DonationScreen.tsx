@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing } from '../theme/colors';
+import { fonts, radius, spacing } from '../theme/colors';
 import { LiftScreen } from '../components/LiftLayout';
 
 // Bank Details
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles

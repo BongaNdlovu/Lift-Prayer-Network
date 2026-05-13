@@ -17,7 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing } from '../theme/colors';
+import { fonts, radius, spacing } from '../theme/colors';
 import { LiftScreen } from '../components/LiftLayout';
 import { HapticPatterns } from '../utils/haptics';
 import {
@@ -451,13 +451,13 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1,
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
 
   // Stats
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   statValue: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 22,
     fontWeight: '600',
   },
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   tabTextActive: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontWeight: '500',
   },
   tabIndicator: {
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   dateRange: {
-    fontFamily: Platform.select({ ios: 'Georgia-Italic', android: 'serif' }),
+    fontFamily: fonts.headingItalic,
     fontSize: 12,
     fontStyle: 'italic',
   },
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   guideTitle: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 22,
     fontWeight: '700',
     lineHeight: 28,

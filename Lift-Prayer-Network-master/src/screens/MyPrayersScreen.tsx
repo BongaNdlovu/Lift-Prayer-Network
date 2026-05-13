@@ -29,7 +29,7 @@ import { logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
 import { SkeletonCard } from '../components/SkeletonCard';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, palette, radius, spacing } from '../theme/colors';
 import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 import type { FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
@@ -355,8 +355,8 @@ export const MyPrayersScreen: React.FC = () => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={['#f59e0b']}
-                tintColor="#f59e0b"
+                colors={['#385C3B']}
+                tintColor="#385C3B"
               />
             }
           />
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles

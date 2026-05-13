@@ -367,7 +367,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isUrgent ? '#f59e0b' : '#f4f4f5'}
+                  thumbColor={isUrgent ? '#385C3B' : '#f4f4f5'}
                 />
               </View>
 
@@ -390,7 +390,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isPrivate ? '#f59e0b' : '#f4f4f5'}
+                  thumbColor={isPrivate ? '#385C3B' : '#f4f4f5'}
                 />
               </View>
 
@@ -441,7 +441,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isAnonymous ? '#f59e0b' : '#f4f4f5'}
+                  thumbColor={isAnonymous ? '#385C3B' : '#f4f4f5'}
                 />
               </View>
 
@@ -463,7 +463,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     }
                   }}
                   trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isShareable ? '#f59e0b' : '#f4f4f5'}
+                  thumbColor={isShareable ? '#385C3B' : '#f4f4f5'}
                 />
               </View>
             </View>
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1,
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles

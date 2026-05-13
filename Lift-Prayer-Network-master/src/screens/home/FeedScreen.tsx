@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // === QUICK ACCESS ROW ===
@@ -1168,7 +1168,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -8,
     left: 12,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -1200,7 +1200,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs - 1,
     fontWeight: '700',
     fontFamily: fonts.bodyBold,
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   mostPrayedAuthor: {
     fontSize: fontSizes.xs - 2,

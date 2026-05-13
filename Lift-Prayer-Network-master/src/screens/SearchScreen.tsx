@@ -29,7 +29,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { logPrayer, logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { FeedCard } from '../components/FeedCard';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, palette, radius, spacing } from '../theme/colors';
 import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 import { RootStackParamList } from '../navigation/types';
 import { PRAYER_CATEGORIES, type PrayerCategory, type FeedItem } from '../types';
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   filterChipActive: {
     backgroundColor: '#fef3c7',
     borderWidth: 1,
-    borderColor: '#f59e0b',
+    borderColor: '#385C3B',
   },
   filterChipEmoji: {
     fontSize: 14,

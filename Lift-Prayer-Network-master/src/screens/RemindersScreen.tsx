@@ -25,7 +25,7 @@ import {
   updateReminder,
   type PrayerReminder,
 } from '../services/reminders';
-import { palette, radius, spacing } from '../theme/colors';
+import { fonts, palette, radius, spacing } from '../theme/colors';
 import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 
 const DAYS = [
@@ -214,7 +214,7 @@ export const RemindersScreen: React.FC = () => {
           value={item.enabled}
           onValueChange={() => handleToggleReminder(item)}
           trackColor={{ false: '#e5e7eb', true: '#fde68a' }}
-          thumbColor={item.enabled ? '#f59e0b' : '#9ca3af'}
+          thumbColor={item.enabled ? '#385C3B' : '#9ca3af'}
         />
         <TouchableOpacity
           style={styles.deleteBtn}
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles

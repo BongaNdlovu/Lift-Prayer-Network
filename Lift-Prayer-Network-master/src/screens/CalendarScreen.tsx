@@ -39,7 +39,7 @@ type PrayerEvent = {
 const CATEGORIES = [
   { id: 'personal', label: 'Personal', color: '#3b82f6', emoji: '🙏' },
   { id: 'family', label: 'Family', color: '#22c55e', emoji: '👨‍👩‍👧‍👦' },
-  { id: 'work', label: 'Work', color: '#f59e0b', emoji: '💼' },
+  { id: 'work', label: 'Work', color: '#385C3B', emoji: '💼' },
   { id: 'health', label: 'Health', color: '#ef4444', emoji: '🏥' },
   { id: 'other', label: 'Other', color: '#8b5cf6', emoji: '✨' },
 ];
@@ -899,7 +899,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles
@@ -1030,11 +1030,11 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   todayCell: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     borderRadius: radius.full,
   },
   selectedCell: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     borderRadius: radius.full,
   },
   dayText: {
@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.glow,
@@ -1103,7 +1103,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -1177,7 +1177,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     borderRadius: radius.sm,
   },
   reminderBadgeText: {
@@ -1281,7 +1281,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   saveButton: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
@@ -1316,7 +1316,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: '#f59e0b',
+    borderColor: '#385C3B',
     fontSize: 24,
     fontWeight: '700',
     color: '#1c1917',
@@ -1341,7 +1341,7 @@ const styles = StyleSheet.create({
   amPmText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   time12Hour: {
     fontSize: 12,
@@ -1363,8 +1363,8 @@ const styles = StyleSheet.create({
     borderColor: '#1c1917',
   },
   timePresetButtonActive: {
-    backgroundColor: '#f59e0b',
-    borderColor: '#f59e0b',
+    backgroundColor: '#385C3B',
+    borderColor: '#385C3B',
   },
   timePresetText: {
     fontSize: 12,
@@ -1398,7 +1398,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: '#f59e0b',
+    borderColor: '#385C3B',
     marginBottom: spacing.sm,
     gap: spacing.sm,
   },
@@ -1422,7 +1422,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   reminderOptionSelected: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#385C3B',
   },
   reminderOptionText: {
     fontFamily: fonts.body,

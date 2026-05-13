@@ -18,7 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { radius, spacing } from '../theme/colors';
+import { fonts, radius, spacing } from '../theme/colors';
 import { LiftScreen, LiftHeader } from '../components/LiftLayout';
 import { updateUserSettings } from '../services/userProfile';
 import { getBlockedUsers, unblockUser, syncBlockedUsers } from '../services/moderation';
@@ -322,14 +322,14 @@ export const SettingsScreen: React.FC = () => {
               style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'light' && styles.themeOptionActive]}
               onPress={() => setThemeMode('light')}
             >
-              <Ionicons name="sunny" size={20} color={themeMode === 'light' ? '#f59e0b' : colors.muted} />
+              <Ionicons name="sunny" size={20} color={themeMode === 'light' ? '#385C3B' : colors.muted} />
               <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'light' && styles.themeOptionTextActive]}>Light</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.themeOption, { backgroundColor: isDark ? colors.surface : '#f1f5f9' }, themeMode === 'system' && styles.themeOptionActive]}
               onPress={() => setThemeMode('system')}
             >
-              <Ionicons name="phone-portrait" size={20} color={themeMode === 'system' ? '#f59e0b' : colors.muted} />
+              <Ionicons name="phone-portrait" size={20} color={themeMode === 'system' ? '#385C3B' : colors.muted} />
               <Text style={[styles.themeOptionText, { color: colors.muted }, themeMode === 'system' && styles.themeOptionTextActive]}>System</Text>
             </TouchableOpacity>
           </View>
@@ -351,7 +351,7 @@ export const SettingsScreen: React.FC = () => {
               value={shareProfile}
               onValueChange={(val) => handlePrivacyToggle('shareProfile', val)}
               trackColor={{ false: '#e5e7eb', true: '#fde68a' }}
-              thumbColor={shareProfile ? '#f59e0b' : '#9ca3af'}
+              thumbColor={shareProfile ? '#385C3B' : '#9ca3af'}
             />
           </View>
         </View>
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   heading: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    fontFamily: fonts.heading,
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1.5,
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   headingDot: {
-    color: '#f59e0b',
+    color: '#385C3B',
   },
   
   // Content styles
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   },
   themeOptionActive: {
     backgroundColor: '#fef3c7',
-    borderColor: '#f59e0b',
+    borderColor: '#385C3B',
   },
   themeOptionText: {
     fontSize: 13,
