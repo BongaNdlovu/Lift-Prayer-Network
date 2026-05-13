@@ -108,9 +108,9 @@ export const useFeed = (
   const [isOffline, setIsOffline] = useState(false);
   const [refreshKey] = useState(0);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
-  const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const isMounted = useRef(true);
+  const cursorRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
   const lastFetchTime = useRef<number>(0);
   
   // Track viewerUid changes to re-filter when user signs in
@@ -267,7 +267,7 @@ export const useFeed = (
     if (!firebaseEnabled || !db) return false;
 
     try {
-      const q = buildFeedQuery(append ? cursor ?? undefined : undefined);
+      const q = buildFeedQuery(append ? cursorRef.current ?? undefined : undefined);
       if (!q) return false;
 
       const snapshot = await getDocs(q);
@@ -295,8 +295,10 @@ export const useFeed = (
         setError(null);
         setErrorType(null);
         lastFetchTime.current = Date.now();
-        setCursor(snapshot.docs[snapshot.docs.length - 1] || null);
+        const nextCursor = snapshot.docs[snapshot.docs.length - 1] || null;
+        cursorRef.current = nextCursor;
         setHasMore(snapshot.size === FEED_PAGE_SIZE);
+        setLoading(false);
       }
 
       if (!append) {
@@ -315,10 +317,11 @@ export const useFeed = (
         setIsOffline(errType === 'network');
         setError(err.message);
         setErrorType(errType);
+        setLoading(false);
       }
       return false;
     }
-  }, [mode, buildFeedQuery, applyPrivacyFilter, cursor]);
+  }, [mode, buildFeedQuery, applyPrivacyFilter]);
 
   // Refresh function to force re-fetch
   const refresh = useCallback(async () => {
@@ -327,7 +330,7 @@ export const useFeed = (
       return;
     }
 
-    setCursor(null);
+    cursorRef.current = null;
     setHasMore(true);
     setLoading(true);
     await manualFetch(false);

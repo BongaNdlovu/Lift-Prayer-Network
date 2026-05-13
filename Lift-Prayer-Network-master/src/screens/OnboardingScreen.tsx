@@ -5,7 +5,6 @@ import {
   FlatList,
   Alert,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { LiftScreen } from '../components/LiftLayout';
 import { radius, spacing, fonts, fontSizes } from '../theme/colors';
 import { recordOnboardingAnalytics, type OnboardingAnswers } from '../services/userProfile';
 import { validateDisplayName } from '../utils/security';
@@ -381,7 +381,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       : (currentAnswer && (Array.isArray(currentAnswer) ? currentAnswer.length > 0 : true));
 
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LiftScreen contentStyle={styles.screenContent}>
         <View style={styles.questionHeader}>
           <TouchableOpacity onPress={handleQuestionBack} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -472,7 +472,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
             </TouchableOpacity>
           )}
         </View>
-      </SafeAreaView>
+      </LiftScreen>
     );
   };
 
@@ -481,7 +481,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LiftScreen contentStyle={styles.screenContent}>
       <View style={styles.skipContainer}>
         {currentIndex < slides.length - 1 && (
           <TouchableOpacity onPress={() => setShowQuestionnaire(true)}>
@@ -516,7 +516,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </LiftScreen>
   );
 };
 
@@ -533,6 +533,9 @@ export const getOnboardingAnswers = async (): Promise<Record<string, any> | null
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  screenContent: {
+    paddingHorizontal: 0,
   },
   skipContainer: {
     alignItems: 'flex-end',

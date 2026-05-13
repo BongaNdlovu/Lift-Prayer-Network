@@ -1,7 +1,8 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { LiftScreen } from '../components/LiftLayout';
 import { useTheme } from '../contexts/ThemeContext';
 import { spacing } from '../theme/colors';
 
@@ -31,7 +32,7 @@ export const TermsOfServiceScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <LiftScreen scroll contentStyle={styles.screenContent}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -40,7 +41,7 @@ export const TermsOfServiceScreen: React.FC = () => {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
         <Text style={[styles.lastUpdated, { color: colors.muted }]}>Last Updated: {LAST_UPDATED}</Text>
 
         <Paragraph>
@@ -140,15 +141,13 @@ export const TermsOfServiceScreen: React.FC = () => {
         </Section>
 
         <View style={styles.bottomPadding} />
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  screenContent: { paddingHorizontal: 0 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

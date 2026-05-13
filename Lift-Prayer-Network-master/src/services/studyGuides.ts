@@ -19,6 +19,15 @@ import {
 } from 'firebase/firestore';
 import { db, firebaseEnabled } from './firebase';
 
+const useMockStudyData = __DEV__ && (!firebaseEnabled || !db);
+const EMPTY_USER_STATS: UserStats = {
+  currentStreak: 0,
+  longestStreak: 0,
+  lessonsCompleted: 0,
+  guidesCompleted: 0,
+  savedLessons: [],
+};
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -335,10 +344,11 @@ export const subscribeToStudyGuides = (
   activeOnly: boolean = false
 ): (() => void) => {
   if (!firebaseEnabled || !db) {
-    // Return mock data for development
-    const filtered = activeOnly 
-      ? MOCK_STUDY_GUIDES.filter(g => g.isActive)
-      : MOCK_STUDY_GUIDES;
+    const filtered = useMockStudyData
+      ? activeOnly
+        ? MOCK_STUDY_GUIDES.filter(g => g.isActive)
+        : MOCK_STUDY_GUIDES
+      : [];
     callback(filtered);
     return () => {};
   }
@@ -364,11 +374,11 @@ export const subscribeToStudyGuides = (
         id: doc.id,
         ...doc.data(),
       })) as StudyGuide[];
-      callback(guides.length > 0 ? guides : MOCK_STUDY_GUIDES);
+      callback(guides);
     },
     (error) => {
       console.error('Error subscribing to study guides:', error);
-      callback(MOCK_STUDY_GUIDES);
+      callback([]);
     }
   );
 };
@@ -377,11 +387,8 @@ export const subscribeToStudyGuides = (
  * Get a single study guide by ID
  */
 export const getStudyGuide = async (guideId: string): Promise<StudyGuide | null> => {
-  // Check mock data first
-  const mockGuide = MOCK_STUDY_GUIDES.find(g => g.id === guideId);
-  
   if (!firebaseEnabled || !db) {
-    return mockGuide || null;
+    return useMockStudyData ? MOCK_STUDY_GUIDES.find(g => g.id === guideId) || null : null;
   }
 
   try {
@@ -390,10 +397,10 @@ export const getStudyGuide = async (guideId: string): Promise<StudyGuide | null>
     if (snap.exists()) {
       return { id: snap.id, ...snap.data() } as StudyGuide;
     }
-    return mockGuide || null;
+    return null;
   } catch (err) {
     console.error('Error getting study guide:', err);
-    return mockGuide || null;
+    return null;
   }
 };
 
@@ -404,11 +411,8 @@ export const subscribeToLessons = (
   guideId: string,
   callback: (lessons: Lesson[]) => void
 ): (() => void) => {
-  // Check mock data
-  const mockLessons = MOCK_LESSONS[guideId] || [];
-
   if (!firebaseEnabled || !db) {
-    callback(mockLessons);
+    callback(useMockStudyData ? MOCK_LESSONS[guideId] || [] : []);
     return () => {};
   }
 
@@ -424,11 +428,11 @@ export const subscribeToLessons = (
         id: doc.id,
         ...doc.data(),
       })) as Lesson[];
-      callback(lessons.length > 0 ? lessons : mockLessons);
+      callback(lessons);
     },
     (error) => {
       console.error('Error subscribing to lessons:', error);
-      callback(mockLessons);
+      callback([]);
     }
   );
 };
@@ -437,12 +441,8 @@ export const subscribeToLessons = (
  * Get a single lesson by ID
  */
 export const getLesson = async (guideId: string, lessonId: string): Promise<Lesson | null> => {
-  // Check mock data first
-  const mockLessons = MOCK_LESSONS[guideId] || [];
-  const mockLesson = mockLessons.find(l => l.id === lessonId);
-
   if (!firebaseEnabled || !db) {
-    return mockLesson || null;
+    return useMockStudyData ? (MOCK_LESSONS[guideId] || []).find(l => l.id === lessonId) || null : null;
   }
 
   try {
@@ -451,10 +451,10 @@ export const getLesson = async (guideId: string, lessonId: string): Promise<Less
     if (snap.exists()) {
       return { id: snap.id, ...snap.data() } as Lesson;
     }
-    return mockLesson || null;
+    return null;
   } catch (err) {
     console.error('Error getting lesson:', err);
-    return mockLesson || null;
+    return null;
   }
 };
 
@@ -463,7 +463,7 @@ export const getLesson = async (guideId: string, lessonId: string): Promise<Less
  */
 export const getUserStats = async (userId: string): Promise<UserStats> => {
   if (!firebaseEnabled || !db) {
-    return MOCK_USER_STATS;
+    return useMockStudyData ? MOCK_USER_STATS : EMPTY_USER_STATS;
   }
 
   try {
@@ -472,10 +472,10 @@ export const getUserStats = async (userId: string): Promise<UserStats> => {
     if (snap.exists()) {
       return snap.data() as UserStats;
     }
-    return MOCK_USER_STATS;
+    return EMPTY_USER_STATS;
   } catch (err) {
     console.error('Error getting user stats:', err);
-    return MOCK_USER_STATS;
+    return EMPTY_USER_STATS;
   }
 };
 

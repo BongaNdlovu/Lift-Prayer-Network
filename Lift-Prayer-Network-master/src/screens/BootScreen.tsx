@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
+import { LiftScreen } from '../components/LiftLayout';
 import { useTheme } from '../contexts/ThemeContext';
 
 export const BootScreen: React.FC = () => {
@@ -73,7 +74,7 @@ export const BootScreen: React.FC = () => {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <LiftScreen contentStyle={styles.container}>
       <Animated.View
         style={[
           styles.logoBox,
@@ -94,13 +95,12 @@ export const BootScreen: React.FC = () => {
       <Animated.Text style={[styles.subtitle, { color: colors.muted, opacity: subtitleOpacity }]}>
         Live Network of Prayer
       </Animated.Text>
-    </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,

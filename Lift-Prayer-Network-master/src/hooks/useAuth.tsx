@@ -55,6 +55,21 @@ const cleanupPushTokens = async (uid: string): Promise<void> => {
   }
 };
 
+const registerPushTokenInBackground = (uid: string): void => {
+  void (async () => {
+    try {
+      setupNotificationHandler();
+      const registration = await registerForPushNotifications();
+      if (registration.status === 'granted' && registration.expoPushToken) {
+        await storePushToken(uid, registration.expoPushToken, registration.devicePushToken);
+        console.log('[Auth] Push token registered automatically');
+      }
+    } catch (pushErr) {
+      console.warn('[Auth] Could not register push token:', pushErr);
+    }
+  })();
+};
+
 // Firebase error code to user-friendly message mapping
 const getAuthErrorMessage = (error: AuthError): string => {
   const errorMessages: Record<string, string> = {
@@ -158,17 +173,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           // Sync onboarding data to user profile (if they completed onboarding before signing in)
           await syncOnboardingToProfile(nextUser);
           
-          // Auto-register push notifications for all signed-in users
-          try {
-            setupNotificationHandler();
-            const registration = await registerForPushNotifications();
-            if (registration.status === 'granted' && registration.expoPushToken) {
-              await storePushToken(nextUser.uid, registration.expoPushToken, registration.devicePushToken);
-              console.log('[Auth] Push token registered automatically');
-            }
-          } catch (pushErr) {
-            console.warn('[Auth] Could not register push token:', pushErr);
-          }
+          // Auto-register push notifications without blocking initial app render.
+          registerPushTokenInBackground(nextUser.uid);
         } catch (err) {
           console.error('[Auth] Error ensuring user profile:', err);
         }

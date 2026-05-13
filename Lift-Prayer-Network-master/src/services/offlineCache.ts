@@ -94,6 +94,7 @@ export const cacheRequests = async (requests: LiftRequest[]): Promise<void> => {
 export const cacheTestimonies = async (testimonies: Testimony[]): Promise<void> => {
   try {
     await AsyncStorage.setItem(CACHE_KEYS.TESTIMONIES, JSON.stringify(testimonies));
+    await AsyncStorage.setItem(CACHE_KEYS.LAST_SYNC, Date.now().toString());
   } catch (error) {
     console.error('[OfflineCache] Error caching testimonies:', getSafeErrorMessage(error));
   }
@@ -102,6 +103,7 @@ export const cacheTestimonies = async (testimonies: Testimony[]): Promise<void> 
 // Get cached requests
 export const getCachedRequests = async (): Promise<LiftRequest[]> => {
   try {
+    if (!(await isCacheFresh())) return [];
     const cached = await AsyncStorage.getItem(CACHE_KEYS.REQUESTS);
     if (cached) {
       return JSON.parse(cached);
@@ -115,6 +117,7 @@ export const getCachedRequests = async (): Promise<LiftRequest[]> => {
 // Get cached testimonies
 export const getCachedTestimonies = async (): Promise<Testimony[]> => {
   try {
+    if (!(await isCacheFresh())) return [];
     const cached = await AsyncStorage.getItem(CACHE_KEYS.TESTIMONIES);
     if (cached) {
       return JSON.parse(cached);
@@ -645,4 +648,3 @@ export const getPendingActionCounts = async (): Promise<PendingActionCounts> => 
     return { prayers: 0, requests: 0, comments: 0, reactions: 0, promises: 0, total: 0 };
   }
 };
-

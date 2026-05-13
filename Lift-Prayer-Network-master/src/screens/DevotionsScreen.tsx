@@ -25,7 +25,6 @@ import {
   UserStats,
   subscribeToStudyGuides,
   getUserStats,
-  MOCK_USER_STATS,
 } from '../services/studyGuides';
 import { RootStackParamList } from '../navigation/types';
 
@@ -34,13 +33,21 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 // Tab options
 type TabOption = 'Current' | 'Archive' | 'Saved';
 
+const EMPTY_USER_STATS: UserStats = {
+  currentStreak: 0,
+  longestStreak: 0,
+  lessonsCompleted: 0,
+  guidesCompleted: 0,
+  savedLessons: [],
+};
+
 export const DevotionsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
   const { colors } = useTheme();
   
   const [guides, setGuides] = useState<StudyGuide[]>([]);
-  const [stats, setStats] = useState<UserStats>(MOCK_USER_STATS);
+  const [stats, setStats] = useState<UserStats>(EMPTY_USER_STATS);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabOption>('Current');
   

@@ -417,7 +417,7 @@ export const FeedScreen: React.FC = () => {
   }, [fabPulseAnim]);
 
   return (
-    <LiftScreen scroll>
+    <LiftScreen>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
         {/* === HEADER SECTION === */}
         <View style={styles.headerSection}>
@@ -738,7 +738,7 @@ export const FeedScreen: React.FC = () => {
                     loadMore();
                   }
                 }}
-                onEndReachedThreshold={3}
+                onEndReachedThreshold={0.5}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}

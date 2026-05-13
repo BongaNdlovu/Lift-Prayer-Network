@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,12 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../contexts/ThemeContext';
+import { LiftScreen } from '../components/LiftLayout';
 import { radius, spacing, fonts } from '../theme/colors';
-import {
-  Lesson,
-  getLesson,
-  MOCK_LESSONS,
-} from '../services/studyGuides';
+import { Lesson, getLesson } from '../services/studyGuides';
 import { RootStackParamList } from '../navigation/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -44,11 +40,6 @@ export const LessonReaderScreen: React.FC = () => {
       const lessonData = await getLesson(guideId, lessonId);
       if (lessonData) {
         setLesson(lessonData);
-      } else {
-        // Fallback to mock data
-        const mockLessons = MOCK_LESSONS[guideId] || [];
-        const mockLesson = mockLessons.find(l => l.id === lessonId);
-        if (mockLesson) setLesson(mockLesson);
       }
       setLoading(false);
     };
@@ -64,24 +55,24 @@ export const LessonReaderScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LiftScreen>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
-      </SafeAreaView>
+      </LiftScreen>
     );
   }
 
   if (!lesson) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LiftScreen>
         <View style={styles.loadingContainer}>
           <Text style={[styles.errorText, { color: colors.muted }]}>Lesson not found</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
             <Text style={[styles.backLinkText, { color: colors.accent }]}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </LiftScreen>
     );
   }
 
@@ -89,7 +80,7 @@ export const LessonReaderScreen: React.FC = () => {
   const paragraphs = lesson.content.split('\n\n').filter(p => p.trim());
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <LiftScreen contentStyle={styles.screenContent}>
       {/* Sticky Header (appears on scroll) */}
       <Animated.View 
         style={[
@@ -101,7 +92,7 @@ export const LessonReaderScreen: React.FC = () => {
           }
         ]}
       >
-        <SafeAreaView style={styles.stickyHeaderInner}>
+        <View style={styles.stickyHeaderInner}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
@@ -111,11 +102,11 @@ export const LessonReaderScreen: React.FC = () => {
           <TouchableOpacity style={styles.headerButton}>
             <Ionicons name="bookmark-outline" size={22} color={colors.text} />
           </TouchableOpacity>
-        </SafeAreaView>
+        </View>
       </Animated.View>
 
       {/* Floating Back Button (visible at top) */}
-      <SafeAreaView style={styles.floatingHeader}>
+      <View style={styles.floatingHeader}>
         <TouchableOpacity
           style={styles.floatingBackButton}
           onPress={() => navigation.goBack()}
@@ -129,7 +120,7 @@ export const LessonReaderScreen: React.FC = () => {
             <Ionicons name="bookmark-outline" size={22} color={colors.text} />
           </View>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
 
       <Animated.ScrollView
         style={styles.scrollView}
@@ -268,14 +259,12 @@ export const LessonReaderScreen: React.FC = () => {
           </View>
         </View>
       </Animated.ScrollView>
-    </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  screenContent: { paddingHorizontal: 0 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

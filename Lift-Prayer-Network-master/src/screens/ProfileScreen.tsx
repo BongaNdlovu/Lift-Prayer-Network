@@ -410,6 +410,33 @@ export const ProfileScreen: React.FC = () => {
         </View>
       {user?.isAnonymous && (
         <View style={styles.card}>
+          <TextInput
+            style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
+            placeholder="Display name"
+            placeholderTextColor={colors.muted}
+            value={upgradeName}
+            onChangeText={setUpgradeName}
+            editable={!busyUpgrade}
+          />
+          <TextInput
+            style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
+            placeholder="Email"
+            placeholderTextColor={colors.muted}
+            value={upgradeEmail}
+            onChangeText={setUpgradeEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            editable={!busyUpgrade}
+          />
+          <TextInput
+            style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
+            placeholder="Password"
+            placeholderTextColor={colors.muted}
+            value={upgradePassword}
+            onChangeText={setUpgradePassword}
+            secureTextEntry
+            editable={!busyUpgrade}
+          />
           <TouchableOpacity
             style={styles.button}
             onPress={async () => {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,14 +13,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../contexts/ThemeContext';
+import { LiftScreen } from '../components/LiftLayout';
 import { radius, spacing, fonts } from '../theme/colors';
 import {
   StudyGuide,
   Lesson,
   getStudyGuide,
   subscribeToLessons,
-  MOCK_STUDY_GUIDES,
-  MOCK_LESSONS,
 } from '../services/studyGuides';
 import { RootStackParamList } from '../navigation/types';
 
@@ -48,10 +46,6 @@ export const GuideDetailsScreen: React.FC = () => {
       const guideData = await getStudyGuide(guideId);
       if (guideData) {
         setGuide(guideData);
-      } else {
-        // Fallback to mock data
-        const mockGuide = MOCK_STUDY_GUIDES.find(g => g.id === guideId);
-        if (mockGuide) setGuide(mockGuide);
       }
     };
     fetchGuide();
@@ -60,9 +54,6 @@ export const GuideDetailsScreen: React.FC = () => {
     const unsubscribe = subscribeToLessons(guideId, (data) => {
       if (data.length > 0) {
         setLessons(data);
-      } else {
-        // Fallback to mock data
-        setLessons(MOCK_LESSONS[guideId] || []);
       }
       setLoading(false);
     });
@@ -80,16 +71,16 @@ export const GuideDetailsScreen: React.FC = () => {
 
   if (!guide) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LiftScreen>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
-      </SafeAreaView>
+      </LiftScreen>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <LiftScreen contentStyle={styles.screenContent}>
       {/* Hero Image Section */}
       <View style={styles.heroContainer}>
         <Image
@@ -100,7 +91,7 @@ export const GuideDetailsScreen: React.FC = () => {
         <View style={[styles.heroGradient, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
         
         {/* Back Button */}
-        <SafeAreaView style={styles.headerOverlay}>
+        <View style={styles.headerOverlay}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -109,7 +100,7 @@ export const GuideDetailsScreen: React.FC = () => {
               <Ionicons name="arrow-back" size={22} color="#fff" />
             </View>
           </TouchableOpacity>
-        </SafeAreaView>
+        </View>
 
         {/* Hero Content */}
         <View style={styles.heroContent}>
@@ -189,14 +180,12 @@ export const GuideDetailsScreen: React.FC = () => {
           </View>
         </ScrollView>
       </View>
-    </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  screenContent: { paddingHorizontal: 0 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
