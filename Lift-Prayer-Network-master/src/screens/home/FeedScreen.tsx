@@ -35,6 +35,13 @@ export const FeedScreen: React.FC = () => {
   const { colors } = useTheme();
   const { unreadCount } = useUnreadNotifications();
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
+  const currentUserProfile = useMemo(
+    () => ({
+      displayName: user?.displayName,
+      photoURL: user?.photoURL,
+    }),
+    [user?.displayName, user?.photoURL],
+  );
   
   // Subscribe to user's groups for proper feed filtering
   useEffect(() => {
@@ -62,10 +69,7 @@ export const FeedScreen: React.FC = () => {
     user?.uid,
     userGroupIds,
     followingUids,
-    {
-      displayName: user?.displayName,
-      photoURL: user?.photoURL,
-    }
+    currentUserProfile
   );
   
   // Follow/unfollow handlers for FeedCard
