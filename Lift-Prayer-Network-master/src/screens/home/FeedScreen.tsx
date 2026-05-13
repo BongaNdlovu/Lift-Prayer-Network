@@ -475,7 +475,7 @@ export const FeedScreen: React.FC = () => {
           <View style={styles.topRow}>
             <View style={styles.topRowLeft}>
               <Text style={[styles.heading, { color: colors.text }]}>
-                Lift<Text style={styles.headingDot}>.</Text>
+                Lift
               </Text>
             </View>
             <View style={styles.topRowRight}>
@@ -492,7 +492,7 @@ export const FeedScreen: React.FC = () => {
           {/* Quick Access: Announcements & Devotions */}
           <View style={styles.quickAccessRow}>
             <TouchableOpacity
-              style={[styles.quickAccessButton, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}
+              style={[styles.quickAccessButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => navigation.navigate('Announcements')}
               activeOpacity={0.7}
             >
@@ -500,7 +500,7 @@ export const FeedScreen: React.FC = () => {
               <Text style={[styles.quickAccessText, { color: colors.stone700 }]}>Announcements</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.quickAccessButton, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}
+              style={[styles.quickAccessButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => navigation.navigate('Devotions')}
               activeOpacity={0.7}
             >
@@ -669,7 +669,7 @@ export const FeedScreen: React.FC = () => {
           {(error || isOffline) && !loading && (
             <View style={[
               styles.errorBanner,
-              { backgroundColor: colors.glassWhiteLight, borderColor: colors.glassBorder },
+              { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
               errorType === 'permission' && styles.errorBannerPermission
             ]}>
               <Ionicons 
@@ -824,9 +824,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xxl,
     fontWeight: '600',
     letterSpacing: -0.5,
-  },
-  headingDot: {
-    color: '#4A5D4E',
   },
   
   // === QUICK ACCESS ROW ===
@@ -987,7 +984,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
   followingBadgeTextActive: {
-    color: '#1c1917',
+    color: '#2C332E',
   },
   
   // === FILTER CHIPS ===

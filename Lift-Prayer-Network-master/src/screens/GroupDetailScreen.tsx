@@ -755,7 +755,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>COMMUNITY</Text>
           <Text style={[styles.headingTitle, { color: colors.text }]} numberOfLines={1}>
-            {group?.name || groupName}<Text style={styles.headingDot}>.</Text>
+            {group?.name || groupName}
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -1096,11 +1096,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -0.5,
     lineHeight: 32,
-    color: '#1c1917',
+    color: '#2C332E',
     textAlign: 'center',
-  },
-  headingDot: {
-    color: '#4A5D4E',
   },
   mainContent: {
     flex: 1,
@@ -1152,7 +1149,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
@@ -1180,7 +1177,7 @@ const styles = StyleSheet.create({
   },
   editIconButton: {
     padding: spacing.sm,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.md,
   },
   groupDescription: {
@@ -1202,7 +1199,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
   },
   actionButtonText: {
     fontFamily: fonts.bodyBold,
@@ -1236,7 +1233,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.md,
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   sectionHeader: {
     flexDirection: 'row',

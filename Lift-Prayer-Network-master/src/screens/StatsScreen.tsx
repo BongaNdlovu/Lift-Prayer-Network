@@ -142,7 +142,7 @@ export const StatsScreen: React.FC = () => {
               emoji="🙏"
               value={stats?.prayerCount || 0}
               label="Total Prayers"
-              color="#fef3c7"
+              color="#F7F1E8"
               delay={0}
             />
             <StatCard
@@ -242,10 +242,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   subheading: {
     fontSize: 14,
@@ -289,7 +286,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: '#fef3c7',
+    borderColor: '#F7F1E8',
   },
   streakEmoji: {
     fontSize: 48,
@@ -309,7 +306,7 @@ const styles = StyleSheet.create({
   },
   longestStreak: {
     alignItems: 'center',
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,

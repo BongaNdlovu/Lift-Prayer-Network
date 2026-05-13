@@ -103,7 +103,7 @@ export const AchievementsScreen: React.FC = () => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>YOUR JOURNEY</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Badges<Text style={styles.headingDot}>.</Text>
+            Badges
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -216,9 +216,6 @@ const styles = StyleSheet.create({
     letterSpacing: -1.5,
     lineHeight: 34,
   },
-  headingDot: {
-    color: '#4A5D4E',
-  },
   mainContent: {
     flex: 1,
     zIndex: 10,
@@ -323,7 +320,7 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   achievementLocked: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     opacity: 0.7,
   },
   achievementIcon: {

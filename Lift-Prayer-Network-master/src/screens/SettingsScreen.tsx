@@ -299,11 +299,11 @@ export const SettingsScreen: React.FC = () => {
     modalContent: { backgroundColor: colors.surface },
     modalTitle: { color: colors.text },
     inputLabel: { color: colors.muted },
-    input: { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.text, borderColor: colors.border },
+    input: { backgroundColor: isDark ? colors.background : '#FAF8F5', color: colors.text, borderColor: colors.border },
     cancelBtnText: { color: colors.muted },
     exitButton: { backgroundColor: isDark ? colors.surface : '#f1f5f9' },
     exitButtonText: { color: colors.muted },
-    infoSection: { backgroundColor: isDark ? colors.accentLight : '#fef3c7' },
+    infoSection: { backgroundColor: isDark ? colors.accentLight : '#F7F1E8' },
     infoText: { color: isDark ? colors.accent : '#92400e' },
   };
 
@@ -657,10 +657,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -722,7 +719,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   themeOptionActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderColor: '#4A5D4E',
   },
   themeOptionText: {
@@ -827,7 +824,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.xl,
     padding: spacing.lg,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.lg,
   },
   infoText: {

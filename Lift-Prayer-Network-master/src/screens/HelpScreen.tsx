@@ -39,7 +39,7 @@ const helpSections: HelpSection[] = [
     id: 'getting-started',
     icon: 'rocket-outline',
     iconColor: '#4A5D4E',
-    iconBg: '#fef3c7',
+    iconBg: '#F7F1E8',
     title: 'Getting Started',
     content: [
       {
@@ -271,7 +271,7 @@ const helpSections: HelpSection[] = [
   {
     id: 'privacy',
     icon: 'shield-checkmark-outline',
-    iconColor: '#64748b',
+    iconColor: '#6B756E',
     iconBg: '#f1f5f9',
     title: 'Privacy & Settings',
     content: [
@@ -289,9 +289,9 @@ const helpSections: HelpSection[] = [
         description: 'If someone is bothering you, you can block them from Settings. Blocked users can\'t see your requests or interact with you.',
       },
       {
-        title: 'Email Verification',
-        description: 'Verify your email to get a verified badge on your profile. This helps build trust in the community and unlocks all posting features.',
-        tip: 'Check your inbox for a verification email after signing up.',
+        title: 'Email Confirmation',
+        description: 'Confirm your email to get a trusted badge on your profile. This helps build trust in the community and unlocks all posting features.',
+        tip: 'Check your inbox for a confirmation email after signing up.',
       },
       {
         title: 'Data & Account',
@@ -451,7 +451,7 @@ export const HelpScreen: React.FC = () => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>LEARN MORE</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Help<Text style={styles.headingDot}>.</Text>
+            Help
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -609,10 +609,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   iconButton: {
     width: 40,
@@ -649,7 +646,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1c1917',
+    color: '#2C332E',
   },
   scrollView: {
     flex: 1,
@@ -658,7 +655,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   welcomeBanner: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: 'center',
@@ -701,7 +698,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.md,
   },
   expandButtonText: {
@@ -734,7 +731,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
-    color: '#1c1917',
+    color: '#2C332E',
   },
   sectionContent: {
     paddingHorizontal: spacing.md,
@@ -749,7 +746,7 @@ const styles = StyleSheet.create({
   helpItemTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1c1917',
+    color: '#2C332E',
     marginBottom: spacing.xs,
   },
   helpItemDescription: {
@@ -760,7 +757,7 @@ const styles = StyleSheet.create({
   tipContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     padding: spacing.sm,
     borderRadius: radius.sm,
     marginTop: spacing.sm,
@@ -773,7 +770,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   quickTipsCard: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
@@ -821,7 +818,7 @@ const styles = StyleSheet.create({
   contactTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1c1917',
+    color: '#2C332E',
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
@@ -852,7 +849,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   comingSoonCard: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,

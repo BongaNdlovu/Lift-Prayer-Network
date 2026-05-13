@@ -526,10 +526,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -661,7 +658,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   filterChipActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderWidth: 1,
     borderColor: '#4A5D4E',
   },

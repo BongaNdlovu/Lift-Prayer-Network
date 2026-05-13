@@ -264,7 +264,7 @@ export const GroupsScreen: React.FC = () => {
       style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
       <View style={styles.groupHeader}>
-        <View style={[styles.groupEmoji, { backgroundColor: isDark ? colors.glassWhite : colors.accentLight }]}>
+        <View style={[styles.groupEmoji, { backgroundColor: isDark ? colors.surface : colors.accentLight }]}>
           <Text style={styles.groupEmojiText}>{item.emoji || '🙏'}</Text>
         </View>
         <View style={styles.groupInfo}>
@@ -289,7 +289,7 @@ export const GroupsScreen: React.FC = () => {
 
       <View style={[styles.groupActions, { borderTopColor: colors.border }]}>
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: isDark ? colors.glassWhite : colors.surfaceSecondary }]}
+          style={[styles.actionBtn, { backgroundColor: isDark ? colors.surface : colors.surfaceSecondary }]}
           onPress={(e) => {
             e.stopPropagation();
             handleShareInvite(item);
@@ -321,7 +321,7 @@ export const GroupsScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={[styles.kicker, { color: colors.muted }]}>YOUR CIRCLES</Text>
           <Text style={styles.heading}>
-            Groups<Text style={styles.headingDot}>.</Text>
+            Groups
           </Text>
         </View>
         <View style={styles.headerButtons}>
@@ -561,10 +561,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   headerButtons: {
     flexDirection: 'row',

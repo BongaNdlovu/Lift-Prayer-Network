@@ -242,7 +242,7 @@ export const DevotionsScreen: React.FC = () => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>SABBATH SCHOOL</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Study<Text style={styles.headingDot}>.</Text>
+            Study
           </Text>
         </View>
         
@@ -455,9 +455,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '500',
     letterSpacing: -1,
-  },
-  headingDot: {
-    color: '#4A5D4E',
   },
 
   // Stats

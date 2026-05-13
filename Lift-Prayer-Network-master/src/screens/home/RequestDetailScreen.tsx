@@ -536,7 +536,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             {type === 'REQUEST' ? 'PRAYER REQUEST' : 'PRAISE REPORT'}
           </Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Details<Text style={styles.headingDot}>.</Text>
+            Details
           </Text>
         </View>
         <TouchableOpacity onPress={openOverflowMenu} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -640,7 +640,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.actions}>
           {type === 'REQUEST' ? (
             <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={handlePray} disabled={busyAction}>
-              <Ionicons name="heart" size={16} color="#1f2937" />
+              <Ionicons name="heart" size={16} color="#2C332E" />
               <Text style={styles.primaryText}>Pray</Text>
             </TouchableOpacity>
           ) : null}
@@ -814,7 +814,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 <Ionicons
                   name="send"
                   size={20}
-                  color={newComment.trim() ? '#1f2937' : colors.muted}
+                  color={newComment.trim() ? '#2C332E' : colors.muted}
                 />
               </TouchableOpacity>
             </View>
@@ -952,10 +952,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: 0,
     lineHeight: 38,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   mainContent: {
     flex: 1,
@@ -1055,7 +1052,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   actions: {
     flexDirection: 'row',
@@ -1072,7 +1069,7 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   secondaryButton: {
     flexDirection: 'row',
@@ -1091,7 +1088,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -1131,7 +1128,7 @@ const styles = StyleSheet.create({
   },
   saveText: {
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   link: {
     fontWeight: '700',
@@ -1167,7 +1164,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
@@ -1182,7 +1179,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: '#fffbeb',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.sm,
     padding: spacing.sm,
     marginBottom: spacing.md,
@@ -1220,10 +1217,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 5,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
   },
   updateChipActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
   },
   updateChipText: {
     fontSize: 12,
@@ -1340,7 +1337,7 @@ const styles = StyleSheet.create({
   },
   commentTextInput: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -1401,7 +1398,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   commentEditInput: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -1422,7 +1419,7 @@ const styles = StyleSheet.create({
   commentEditSaveText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   commentEditCancel: {
     paddingHorizontal: spacing.md,

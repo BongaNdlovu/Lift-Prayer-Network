@@ -1,13 +1,20 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { hasAdminPermission, hasModeratorPermission } from '../../config/admins';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
-import { fonts, palette, radius, spacing } from '../../theme/colors';
-import { LiftScreen, LiftHeader } from '../../components/LiftLayout';
+import { spacing } from '../../theme/colors';
+import {
+  LiftEmptyState,
+  LiftFlatCard,
+  LiftHeader,
+  LiftListGroup,
+  LiftListItem,
+  LiftScreen,
+} from '../../components/LiftLayout';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
 
@@ -18,222 +25,101 @@ export const AdminDashboardScreen: React.FC<Props> = ({ navigation }) => {
   const isAdmin = hasAdminPermission(user?.email);
   const isModerator = hasModeratorPermission(user?.email);
 
-  // Must be at least a moderator to access
   if (!isModerator) {
     return (
       <LiftScreen>
-        <View style={styles.center}>
-          <Ionicons name="shield" size={40} color={colors.muted} />
-          <Text style={[styles.denied, { color: colors.text }]}>Moderator access required</Text>
-        </View>
+        <LiftHeader title="Admin" subtitle="Management dashboard" onBack={() => navigation.goBack()} />
+        <LiftEmptyState
+          icon="shield-outline"
+          title="Moderator access required"
+          message="This area is reserved for trusted moderation and admin accounts."
+        />
       </LiftScreen>
     );
   }
 
   return (
-    <LiftScreen>
-      <LiftHeader title="Admin" subtitle="Management dashboard" onBack={() => navigation.goBack()} />
+    <LiftScreen scroll>
+      <LiftHeader title="Admin" subtitle={isAdmin ? 'Full management dashboard' : 'Moderation dashboard'} onBack={() => navigation.goBack()} />
+
       <View style={styles.content}>
-        {/* Reports - Available to Moderators and Admins */}
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('AdminReports')}
-        >
-          <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
-            <Ionicons name="flag-outline" size={22} color={colors.accent} />
+        <LiftFlatCard style={styles.roleCard}>
+          <View style={[styles.roleIcon, { backgroundColor: colors.surfaceSecondary }]}>
+            <Ionicons name={isAdmin ? 'shield-checkmark' : 'shield'} size={22} color={colors.accent} />
           </View>
-          <View style={styles.cardText}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Reports</Text>
-            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>Review and moderate reported content</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-        </TouchableOpacity>
-
-        {/* Admin-only sections below */}
-        {isAdmin && (
-          <>
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('AdminPinnedRequests')}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
-                <Ionicons name="star-outline" size={22} color={colors.accent} />
-              </View>
-              <View style={styles.cardText}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Pinned Requests</Text>
-                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>Manage highlighted requests in the feed</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('AdminGlobalStats')}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: colors.accentLight }]}>
-                <Ionicons name="stats-chart-outline" size={22} color={colors.accent} />
-              </View>
-              <View style={styles.cardText}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Global Stats</Text>
-                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View overall prayer activity</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('AdminBannedUsers')}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: colors.dangerLight }]}>
-                <Ionicons name="ban-outline" size={22} color={colors.danger} />
-              </View>
-              <View style={styles.cardText}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Banned Users</Text>
-                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>View and unban restricted users</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* Show info for moderators about their access */}
-        {!isAdmin && (
-          <View style={[styles.infoCard, { backgroundColor: colors.surfaceSecondary }]}>
-            <Ionicons name="information-circle-outline" size={20} color={colors.muted} />
-            <Text style={[styles.infoText, { color: colors.muted }]}>
-              As a moderator, you can review reports, delete content, and block users from posting. Banning users from the app and pinning requests are admin-only.
+          <View style={styles.roleText}>
+            <Text style={[styles.roleTitle, { color: colors.text }]}>{isAdmin ? 'Administrator' : 'Moderator'}</Text>
+            <Text style={[styles.roleSubtitle, { color: colors.textSecondary }]}>
+              {isAdmin
+                ? 'Manage reports, pinned requests, global stats, and restricted users.'
+                : 'Review reports, remove harmful content, and block posting when needed.'}
             </Text>
           </View>
-        )}
-          </View>
+        </LiftFlatCard>
+
+        <LiftListGroup>
+          <LiftListItem
+            icon={<Ionicons name="flag-outline" size={20} color={colors.accent} />}
+            title="Reports"
+            subtitle="Review and moderate reported content"
+            onPress={() => navigation.navigate('AdminReports')}
+          />
+          {isAdmin ? (
+            <>
+              <LiftListItem
+                icon={<Ionicons name="star-outline" size={20} color={colors.accent} />}
+                title="Pinned Requests"
+                subtitle="Manage highlighted requests in the feed"
+                onPress={() => navigation.navigate('AdminPinnedRequests')}
+              />
+              <LiftListItem
+                icon={<Ionicons name="stats-chart-outline" size={20} color={colors.accent} />}
+                title="Global Stats"
+                subtitle="View overall prayer activity"
+                onPress={() => navigation.navigate('AdminGlobalStats')}
+              />
+              <LiftListItem
+                icon={<Ionicons name="ban-outline" size={20} color={colors.danger} />}
+                title="Banned Users"
+                subtitle="View and unban restricted users"
+                onPress={() => navigation.navigate('AdminBannedUsers')}
+              />
+            </>
+          ) : null}
+        </LiftListGroup>
+      </View>
     </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  
-  // Header styles
-  headerSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    zIndex: 20,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  kicker: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.xs,
-    opacity: 0.8,
-  },
-  heading: {
-    fontFamily: fonts.heading,
-    fontSize: 32,
-    fontWeight: '500',
-    letterSpacing: -1.5,
-    lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
-  },
-  
-  // Content styles
-  mainContent: {
-    flex: 1,
-    zIndex: 10,
-  },
-  
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: palette.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: palette.text,
-  },
   content: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
     gap: spacing.md,
   },
-  card: {
+  roleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.border,
+    gap: spacing.md,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: palette.accentLight,
+  roleIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
   },
-  cardText: {
+  roleText: {
     flex: 1,
   },
-  cardTitle: {
+  roleTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: palette.text,
+    fontWeight: '800',
   },
-  cardSubtitle: {
-    fontSize: 12,
-    color: palette.muted,
-    marginTop: 2,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.background,
-  },
-  denied: {
-    marginTop: spacing.sm,
-    color: palette.muted,
-    fontWeight: '600',
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: spacing.md,
-    borderRadius: radius.md,
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  infoText: {
-    flex: 1,
+  roleSubtitle: {
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
+    marginTop: 3,
   },
 });

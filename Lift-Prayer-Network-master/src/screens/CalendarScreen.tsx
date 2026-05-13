@@ -480,7 +480,7 @@ export const CalendarScreen: React.FC = () => {
         <View>
           <Text style={[styles.kicker, { color: colors.muted }]}>PLAN YOUR PRAYERS</Text>
           <Text style={styles.heading}>
-            Calendar<Text style={styles.headingDot}>.</Text>
+            Calendar
           </Text>
         </View>
         <TouchableOpacity
@@ -904,10 +904,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -994,7 +991,7 @@ const styles = StyleSheet.create({
   monthTitle: {
     fontFamily: fonts.heading,
     fontSize: 20,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   calendarCard: {
     marginHorizontal: spacing.lg,
@@ -1015,7 +1012,7 @@ const styles = StyleSheet.create({
   dayHeaderText: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   daysGrid: {
     flexDirection: 'row',
@@ -1040,15 +1037,15 @@ const styles = StyleSheet.create({
   dayText: {
     fontFamily: fonts.body,
     fontSize: 14,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   todayText: {
     fontFamily: fonts.bodyBold,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   selectedText: {
     fontFamily: fonts.bodyBold,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   eventDots: {
     flexDirection: 'row',
@@ -1073,7 +1070,7 @@ const styles = StyleSheet.create({
   eventsSectionTitle: {
     fontFamily: fonts.heading,
     fontSize: 18,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   addEventButton: {
     width: 36,
@@ -1096,7 +1093,7 @@ const styles = StyleSheet.create({
   },
   noEventsText: {
     fontFamily: fonts.body,
-    color: '#1c1917',
+    color: '#2C332E',
     marginBottom: spacing.md,
   },
   addFirstButton: {
@@ -1110,7 +1107,7 @@ const styles = StyleSheet.create({
   },
   addFirstText: {
     fontFamily: fonts.bodyBold,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   eventCard: {
     flexDirection: 'row',
@@ -1133,7 +1130,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: 16,
-    color: '#1c1917',
+    color: '#2C332E',
     flex: 1,
   },
   eventTimeBadge: {
@@ -1148,12 +1145,12 @@ const styles = StyleSheet.create({
   eventTimeText: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   eventDescription: {
     fontFamily: fonts.body,
     fontSize: 14,
-    color: '#1c1917',
+    color: '#2C332E',
     marginTop: 4,
   },
   eventMeta: {
@@ -1218,26 +1215,26 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: fonts.heading,
     fontSize: 20,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   inputLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: '#1c1917',
+    color: '#2C332E',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   input: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontFamily: fonts.body,
     fontSize: 16,
-    color: '#1c1917',
+    color: '#2C332E',
     borderWidth: 1,
-    borderColor: '#1c1917',
+    borderColor: '#2C332E',
     marginBottom: spacing.md,
   },
   textArea: {
@@ -1258,8 +1255,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: '#1c1917',
-    backgroundColor: '#f8fafc',
+    borderColor: '#2C332E',
+    backgroundColor: '#FAF8F5',
   },
   categoryEmoji: {
     fontSize: 16,
@@ -1267,7 +1264,7 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   reminderToggle: {
     flexDirection: 'row',
@@ -1278,7 +1275,7 @@ const styles = StyleSheet.create({
   reminderText: {
     fontFamily: fonts.body,
     fontSize: 16,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   saveButton: {
     backgroundColor: '#4A5D4E',
@@ -1293,18 +1290,18 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontFamily: fonts.bodyBold,
     fontSize: 16,
-    color: '#1f2937',
+    color: '#2C332E',
   },
   // Time picker styles
   // Time input styles
   timeInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#1c1917',
+    borderColor: '#2C332E',
     marginBottom: spacing.sm,
   },
   timeInputWrapper: {
@@ -1319,19 +1316,19 @@ const styles = StyleSheet.create({
     borderColor: '#4A5D4E',
     fontSize: 24,
     fontWeight: '700',
-    color: '#1c1917',
+    color: '#2C332E',
     textAlign: 'center',
   },
   timeInputLabel: {
     fontSize: 10,
-    color: '#1c1917',
+    color: '#2C332E',
     marginTop: 4,
     textTransform: 'uppercase',
   },
   timeInputSeparator: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1c1917',
+    color: '#2C332E',
     marginHorizontal: spacing.md,
   },
   amPmIndicator: {
@@ -1345,7 +1342,7 @@ const styles = StyleSheet.create({
   },
   time12Hour: {
     fontSize: 12,
-    color: '#1c1917',
+    color: '#2C332E',
     marginTop: 2,
   },
   timePresets: {
@@ -1360,7 +1357,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: '#1c1917',
+    borderColor: '#2C332E',
   },
   timePresetButtonActive: {
     backgroundColor: '#4A5D4E',
@@ -1369,20 +1366,20 @@ const styles = StyleSheet.create({
   timePresetText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1c1917',
+    color: '#2C332E',
   },
   timePresetTextActive: {
-    color: '#1f2937',
+    color: '#2C332E',
   },
   // Legacy styles (kept for reference)
   timeOptionTextSelected: {
     fontFamily: fonts.bodyBold,
-    color: '#1f2937',
+    color: '#2C332E',
   },
   timeSeparator: {
     fontFamily: fonts.bodyBold,
     fontSize: 24,
-    color: '#1c1917',
+    color: '#2C332E',
     marginHorizontal: spacing.sm,
     marginTop: 20,
   },
@@ -1393,7 +1390,7 @@ const styles = StyleSheet.create({
   reminderPickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -1409,11 +1406,11 @@ const styles = StyleSheet.create({
     color: '#92400e',
   },
   reminderOptionsGrid: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: '#1c1917',
+    borderColor: '#2C332E',
   },
   reminderOption: {
     paddingVertical: spacing.sm,
@@ -1427,10 +1424,10 @@ const styles = StyleSheet.create({
   reminderOptionText: {
     fontFamily: fonts.body,
     fontSize: 14,
-    color: '#1c1917',
+    color: '#2C332E',
   },
   reminderOptionTextSelected: {
     fontFamily: fonts.bodyBold,
-    color: '#1f2937',
+    color: '#2C332E',
   },
 });

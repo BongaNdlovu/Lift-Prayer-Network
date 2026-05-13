@@ -237,7 +237,7 @@ export const AnsweredPrayersScreen: React.FC = () => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>CELEBRATE</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Answered<Text style={styles.headingDot}>.</Text>
+            Answered
           </Text>
         </View>
         <TouchableOpacity
@@ -403,10 +403,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xxl,
     fontWeight: '600',
     letterSpacing: -0.5,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles

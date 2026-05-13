@@ -175,7 +175,7 @@ export const darkPalette = {
 
   // Gradient colors - 3 color
   gradientWarm: ['#422006', '#451a03', '#431407'] as const,
-  gradientSunrise: ['#1c1917', '#292524', '#44403c'] as const,
+  gradientSunrise: ['#2C332E', '#292524', '#44403c'] as const,
   gradientCool: ['#0c4a6e', '#075985', '#0369a1'] as const,
   gradientPurple: ['#2e1065', '#3b0764', '#4c1d95'] as const,
   gradientSuccess: ['#052e16', '#064e3b', '#065f46'] as const,
@@ -449,7 +449,7 @@ export const accessibleColors = {
   lightAccent: '#B8956B',         // 5.2:1 contrast (passes AA)
   
   // Dark mode - all pass WCAG AA against #0f172a background
-  darkText: '#f8fafc',            // 15.8:1 contrast
+  darkText: '#FAF8F5',            // 15.8:1 contrast
   darkMuted: '#94a3b8',           // 5.4:1 contrast (passes AA)
   darkAccent: '#C4A882',          // 8.2:1 contrast (passes AA)
 };

@@ -323,7 +323,7 @@ export const MyPrayersScreen: React.FC = () => {
               style={styles.createButton}
               onPress={() => navigation.navigate('CreateRequest')}
             >
-              <Ionicons name="add" size={20} color="#1f2937" />
+              <Ionicons name="add" size={20} color="#2C332E" />
               <Text style={styles.createButtonText}>Create Request</Text>
             </TouchableOpacity>
           </View>
@@ -402,10 +402,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1,
     lineHeight: 36,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -463,7 +460,7 @@ const styles = StyleSheet.create({
     borderColor: '#fecaca',
   },
   statPillActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderColor: '#fde68a',
   },
   statPillResolved: {
@@ -552,7 +549,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   statusChipTextActive: {
-    color: '#1f2937',
+    color: '#2C332E',
   },
   loadingContainer: {
     paddingHorizontal: spacing.lg,
@@ -591,7 +588,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   listContent: {
     paddingHorizontal: spacing.lg,

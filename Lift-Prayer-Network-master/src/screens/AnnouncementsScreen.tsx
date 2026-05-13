@@ -170,7 +170,7 @@ export const AnnouncementsScreen: React.FC = () => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>UPDATES</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            News<Text style={styles.headingDot}>.</Text>
+            News
           </Text>
         </View>
         {isAdmin ? (
@@ -378,10 +378,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   mainContent: {
     flex: 1,

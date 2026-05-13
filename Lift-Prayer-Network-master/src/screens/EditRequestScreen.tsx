@@ -190,7 +190,7 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>MODIFY</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Edit<Text style={styles.headingDot}>.</Text>
+            Edit
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -425,10 +425,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -464,7 +461,7 @@ const styles = StyleSheet.create({
   adminBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -476,7 +473,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   card: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
@@ -492,7 +489,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     padding: spacing.md,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     borderWidth: 1,
     textAlignVertical: 'top',
@@ -510,7 +507,7 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -518,7 +515,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   categoryChipActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
   },
   categoryEmoji: {
     fontSize: 14,
@@ -532,7 +529,7 @@ const styles = StyleSheet.create({
   statusInfoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -593,7 +590,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   deleteButton: {
     flexDirection: 'row',

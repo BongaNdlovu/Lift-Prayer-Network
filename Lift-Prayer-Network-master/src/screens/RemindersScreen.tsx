@@ -393,10 +393,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1,
     lineHeight: 36,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -497,7 +494,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
@@ -583,10 +580,10 @@ const styles = StyleSheet.create({
     color: palette.muted,
   },
   dayBtnTextActive: {
-    color: '#1f2937',
+    color: '#2C332E',
   },
   messageInput: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -613,7 +610,7 @@ const styles = StyleSheet.create({
     color: palette.muted,
   },
   messageTextActive: {
-    color: '#1f2937',
+    color: '#2C332E',
   },
   saveBtn: {
     backgroundColor: palette.accent,
@@ -624,6 +621,6 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
 });

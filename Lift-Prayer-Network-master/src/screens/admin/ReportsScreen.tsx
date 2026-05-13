@@ -184,10 +184,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   mainContent: {
     flex: 1,
@@ -242,7 +239,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: palette.border,

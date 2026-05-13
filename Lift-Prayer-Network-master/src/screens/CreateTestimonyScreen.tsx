@@ -97,11 +97,11 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-    // Security check: Require email verification for non-anonymous users
+    // Security check: require email confirmation for non-anonymous users
     if (user && !user.isAnonymous && !user.emailVerified) {
       Alert.alert(
-        'Email Verification Required',
-        'To prevent scammers and ensure community trust, please verify your email address before sharing testimonies.\n\nCheck your inbox for a verification link, or go to your Profile to resend it.',
+        'Email Confirmation Required',
+        'To prevent scammers and ensure community trust, please confirm your email address before sharing testimonies.\n\nCheck your inbox for a confirmation link, or go to your Profile to resend it.',
         [
           { text: 'OK' },
           { 
@@ -222,7 +222,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>CELEBRATE</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Testimony<Text style={styles.headingDot}>.</Text>
+            Testimony
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -456,10 +456,10 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
               disabled={!content.trim() || submitting || offline}
             >
               {submitting ? (
-                <ActivityIndicator color="#1f2937" />
+                <ActivityIndicator color="#2C332E" />
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={20} color="#1f2937" />
+                  <Ionicons name="sparkles" size={20} color="#2C332E" />
                   <Text style={styles.submitText}>Share Testimony</Text>
                 </>
               )}
@@ -517,10 +517,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1,
     lineHeight: 36,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -602,7 +599,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     padding: spacing.md,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     borderWidth: 1,
   },
@@ -636,7 +633,7 @@ const styles = StyleSheet.create({
   requestChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     padding: spacing.md,
     borderRadius: radius.md,
     gap: spacing.sm,
@@ -745,7 +742,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderWidth: 1,
   },
   visibilityOptionActive: {
@@ -769,7 +766,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: spacing.md,
     borderRadius: radius.md,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderWidth: 1,
     gap: spacing.sm,
   },

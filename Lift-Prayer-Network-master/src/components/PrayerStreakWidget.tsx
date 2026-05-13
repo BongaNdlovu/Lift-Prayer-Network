@@ -54,12 +54,12 @@ export const PrayerStreakWidget: React.FC<Props> = ({
     return '#C4A882';
   };
 
-  const getStreakEmoji = () => {
-    if (!isStreakActive) return '❄️';
-    if (currentStreak >= 30) return '🔥';
-    if (currentStreak >= 14) return '⚡';
-    if (currentStreak >= 7) return '✨';
-    return '🙏';
+  const getStreakIcon = (): React.ComponentProps<typeof Ionicons>['name'] => {
+    if (!isStreakActive) return 'leaf-outline';
+    if (currentStreak >= 30) return 'flame';
+    if (currentStreak >= 14) return 'flash';
+    if (currentStreak >= 7) return 'sparkles';
+    return 'heart';
   };
 
   return (
@@ -72,7 +72,7 @@ export const PrayerStreakWidget: React.FC<Props> = ({
       activeOpacity={0.85}
     >
       <Animated.View style={[styles.iconContainer, { transform: [{ scale: flameAnim }] }]}>
-        <Text style={styles.emoji}>{getStreakEmoji()}</Text>
+        <Ionicons name={getStreakIcon()} size={30} color={getStreakColor()} />
       </Animated.View>
 
       <View style={styles.content}>
@@ -87,7 +87,7 @@ export const PrayerStreakWidget: React.FC<Props> = ({
 
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           {prayedToday
-            ? '🙏 Prayed today'
+            ? 'Prayed today'
             : isStreakActive
             ? 'Pray today to continue!'
             : 'Start a new streak'}

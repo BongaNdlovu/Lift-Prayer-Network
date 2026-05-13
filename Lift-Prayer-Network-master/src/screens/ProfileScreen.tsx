@@ -277,7 +277,7 @@ export const ProfileScreen: React.FC = () => {
         <View>
           <Text style={[styles.kicker, { color: colors.muted }]}>YOUR ACCOUNT</Text>
           <Text style={styles.heading}>
-            Profile<Text style={styles.headingDot}>.</Text>
+            Profile
           </Text>
         </View>
         {user && (
@@ -451,7 +451,7 @@ export const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-      {/* Email Verification Status */}
+      {/* Email confirmation status */}
       {user && !user.isAnonymous && user.email && (
         <View style={[styles.card, { backgroundColor: user.emailVerified ? colors.successLight : '#fef2f2' }]}>
           <View style={styles.row}>
@@ -462,12 +462,12 @@ export const ProfileScreen: React.FC = () => {
             />
             <View style={{ flex: 1, marginLeft: spacing.sm }}>
               <Text style={[styles.label, { color: user.emailVerified ? colors.success : "#dc2626" }]}>
-                {user.emailVerified ? 'Email Verified ✓' : 'Email Not Verified'}
+                {user.emailVerified ? 'Email confirmed' : 'Email not confirmed'}
               </Text>
               <Text style={[styles.value, { color: colors.muted, fontSize: 12 }]}>
                 {user.emailVerified 
-                  ? 'Your account is verified and trusted' 
-                  : 'Verify your email to get a verified badge'}
+                  ? 'Your account is confirmed and trusted' 
+                  : 'Confirm your email to get a trusted badge'}
               </Text>
             </View>
           </View>
@@ -479,8 +479,8 @@ export const ProfileScreen: React.FC = () => {
                 try {
                   await resendVerification();
                   Alert.alert(
-                    'Verification Email Sent! 📧',
-                    'Check your inbox (and spam folder) for the verification link. After clicking it, come back and refresh your profile.',
+                    'Confirmation Email Sent',
+                    'Check your inbox (and spam folder) for the confirmation link. After clicking it, come back and refresh your profile.',
                     [{ text: 'OK' }]
                   );
                 } catch (err: any) {
@@ -492,7 +492,7 @@ export const ProfileScreen: React.FC = () => {
               disabled={verifying}
             >
               <Text style={[styles.buttonText, { color: '#fff' }]}>
-                {verifying ? 'Sending...' : 'Send Verification Email'}
+                {verifying ? 'Sending...' : 'Send Confirmation Email'}
               </Text>
             </TouchableOpacity>
           )}
@@ -519,7 +519,7 @@ export const ProfileScreen: React.FC = () => {
             style={styles.menuItem}
             onPress={() => navigation.navigate('MyPrayers')}
           >
-            <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
               <Ionicons name="bookmark" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
@@ -583,7 +583,7 @@ export const ProfileScreen: React.FC = () => {
             style={styles.menuItem}
             onPress={() => navigation.navigate('Achievements')}
           >
-            <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
               <Ionicons name="trophy" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
@@ -615,7 +615,7 @@ export const ProfileScreen: React.FC = () => {
             style={styles.menuItem}
             onPress={() => navigation.navigate('NotificationsSettings')}
           >
-            <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
               <Ionicons name="notifications" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
@@ -632,7 +632,7 @@ export const ProfileScreen: React.FC = () => {
             onPress={() => navigation.navigate('Settings')}
           >
             <View style={[styles.menuIcon, { backgroundColor: '#f1f5f9' }]}>
-              <Ionicons name="settings-outline" size={20} color="#64748b" />
+              <Ionicons name="settings-outline" size={20} color="#6B756E" />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>Settings & Privacy</Text>
@@ -666,7 +666,7 @@ export const ProfileScreen: React.FC = () => {
             style={styles.menuItem}
             onPress={() => navigation.navigate('Help')}
           >
-            <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
               <Ionicons name="help-circle" size={20} color="#4A5D4E" />
             </View>
             <View style={styles.menuContent}>
@@ -781,10 +781,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -823,7 +820,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 40,
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   cameraBadge: {
     position: 'absolute',
@@ -849,7 +846,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 20,
     fontWeight: '700',
-    color: '#1c1917',
+    color: '#2C332E',
   },
   verifiedBadgeProfile: {
     flexDirection: 'row',
@@ -866,11 +863,11 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#6B756E',
   },
   photoHint: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#6B756E',
     marginTop: spacing.sm,
     fontStyle: 'italic',
   },
@@ -898,14 +895,14 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
-    color: '#64748b',
+    color: '#6B756E',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   value: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1c1917',
+    color: '#2C332E',
   },
   input: {
     borderWidth: 1,
@@ -913,8 +910,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: '#f8fafc',
-    color: '#1c1917',
+    backgroundColor: '#FAF8F5',
+    color: '#2C332E',
     marginBottom: spacing.sm,
   },
   button: {
@@ -927,7 +924,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   row: {
     flexDirection: 'row',
@@ -944,7 +941,7 @@ const styles = StyleSheet.create({
   menuHeading: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#6B756E',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.md,
@@ -969,13 +966,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1c1917',
+    color: '#2C332E',
     marginBottom: 2,
   },
   menuSubtitle: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: '#64748b',
+    color: '#6B756E',
   },
   menuDivider: {
     height: 1,
@@ -1018,23 +1015,23 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1c1917',
+    color: '#2C332E',
   },
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#6B756E',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   modalInput: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     fontSize: 16,
-    color: '#1c1917',
+    color: '#2C332E',
     borderWidth: 1,
     borderColor: '#e5e7eb',
     marginBottom: spacing.lg,
@@ -1051,6 +1048,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#2C332E',
   },
 });

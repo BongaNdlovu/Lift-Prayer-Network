@@ -71,7 +71,7 @@ export const FollowingScreen: React.FC = () => {
     const avatarColor = getAvatarColor(item.targetDisplayName);
 
     return (
-      <View style={[styles.followItem, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
+      <View style={[styles.followItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.userInfo}>
           {item.targetPhotoURL ? (
             <Image source={{ uri: item.targetPhotoURL }} style={styles.avatar} />

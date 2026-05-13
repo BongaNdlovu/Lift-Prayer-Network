@@ -150,7 +150,7 @@ export const TodayScreen: React.FC = () => {
             {renderSection('Answered', sections.answered)}
 
             <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={() => navigation.navigate('MainTabs')}>
-              <Ionicons name="reader-outline" size={20} color="#1f2937" />
+              <Ionicons name="reader-outline" size={20} color="#2C332E" />
               <Text style={styles.primaryButtonText}>Browse Prayer Wall</Text>
             </TouchableOpacity>
 
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   urgentBadge: { alignSelf: 'flex-start', backgroundColor: '#fee2e2', color: '#b91c1c', fontSize: 11, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
   actionsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   smallButton: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.md },
-  smallButtonText: { color: '#1f2937', fontWeight: '800' },
+  smallButtonText: { color: '#2C332E', fontWeight: '800' },
   outlineButton: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.md, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e7e5e4' },
   outlineButtonText: { fontWeight: '800' },
   iconButton: { padding: 9 },

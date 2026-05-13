@@ -76,7 +76,7 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
         <View>
           <Text style={[styles.kicker, { color: colors.muted }]}>GIVE BACK</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Support<Text style={styles.headingDot}>.</Text>
+            Support
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -342,9 +342,6 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     textAlign: 'center',
   },
-  headingDot: {
-    color: '#4A5D4E',
-  },
   
   // Content styles
   mainContent: {
@@ -532,7 +529,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   thankYouSection: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: 'center',

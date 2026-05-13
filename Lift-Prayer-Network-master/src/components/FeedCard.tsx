@@ -1089,7 +1089,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
-    color: '#1c1917',
+    color: '#2C332E',
     flexShrink: 1,
     letterSpacing: -0.2,
   },
@@ -1160,7 +1160,7 @@ const styles = StyleSheet.create({
     // Removed border for subtlety
   },
   statusActive: {
-    backgroundColor: '#fffbeb', // Lighter amber
+    backgroundColor: '#F7F1E8', // Lighter amber
     // Removed border
   },
   statusResolved: {
@@ -1187,7 +1187,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: fontSizes.md,
     lineHeight: 22,
-    color: '#1c1917',
+    color: '#2C332E',
     marginBottom: spacing.md,
     letterSpacing: 0.1,
   },
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: fontSizes.md,
     lineHeight: 22,
-    color: '#1c1917',
+    color: '#2C332E',
     marginBottom: 4,
     fontWeight: '700',
   },
@@ -1203,7 +1203,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
     lineHeight: 20,
-    color: '#1c1917',
+    color: '#2C332E',
     marginBottom: spacing.md,
     opacity: 0.88,
   },
@@ -1240,7 +1240,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     gap: spacing.xs,
-    backgroundColor: '#1c1917',
+    backgroundColor: '#2C332E',
     minHeight: 36,
   },
   amenButton: {
@@ -1285,7 +1285,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
-    color: '#fffbeb',
+    color: '#F7F1E8',
     letterSpacing: 0.2,
   },
   counter: {
@@ -1374,14 +1374,14 @@ const styles = StyleSheet.create({
     minWidth: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     paddingHorizontal: 4,
   },
   reactionButtonActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
   },
   reactionButtonWithCount: {
     paddingHorizontal: 6,
@@ -1432,11 +1432,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: radius.sm,
     marginBottom: spacing.xs,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     gap: spacing.sm,
   },
   reasonOptionSelected: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderWidth: 1,
   },
   reasonEmoji: {

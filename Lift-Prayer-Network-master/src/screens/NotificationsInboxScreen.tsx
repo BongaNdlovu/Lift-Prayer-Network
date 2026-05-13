@@ -483,10 +483,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -587,7 +584,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   unreadBadge: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
@@ -606,7 +603,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   notificationUnread: {
-    backgroundColor: '#fffbeb',
+    backgroundColor: '#F7F1E8',
   },
   notificationLeft: {
     position: 'relative',

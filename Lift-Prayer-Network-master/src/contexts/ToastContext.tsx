@@ -50,7 +50,7 @@ const TOAST_CONFIG: Record<ToastType, {
 }> = {
   success: { bg: '#dcfce7', border: '#86efac', text: '#166534', icon: 'checkmark-circle' },
   info: { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af', icon: 'information-circle' },
-  warning: { bg: '#fef3c7', border: '#fcd34d', text: '#92400e', icon: 'warning' },
+  warning: { bg: '#F7F1E8', border: '#fcd34d', text: '#92400e', icon: 'warning' },
   error: { bg: '#fee2e2', border: '#fca5a5', text: '#991b1b', icon: 'alert-circle' },
   critical: { bg: '#fecaca', border: '#f87171', text: '#7f1d1d', icon: 'close-circle' },
 };

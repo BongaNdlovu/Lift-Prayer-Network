@@ -202,7 +202,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
         <View style={styles.headerCenter}>
           <Text style={[styles.kicker, { color: colors.muted }]}>PREFERENCES</Text>
           <Text style={[styles.heading, { color: colors.text }]}>
-            Alerts<Text style={styles.headingDot}>.</Text>
+            Alerts
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -393,7 +393,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
                 }
               }}
             >
-              <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
+              <View style={[styles.iconContainer, { backgroundColor: '#F7F1E8' }]}>
                 <Ionicons name="flask" size={20} color="#4A5D4E" />
               </View>
               <View style={styles.debugButtonText}>
@@ -515,10 +515,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   iconButton: {
     width: 40,
@@ -569,19 +566,19 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1c1917',
+    color: '#2C332E',
     marginTop: spacing.md,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#6B756E',
     textAlign: 'center',
     marginTop: spacing.sm,
   },
   permissionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -608,7 +605,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#64748b',
+    color: '#6B756E',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.sm,
@@ -645,11 +642,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   settingTitleDisabled: {
-    color: '#64748b',
+    color: '#6B756E',
   },
   settingSubtitle: {
     fontSize: 13,
-    color: '#64748b',
+    color: '#6B756E',
     marginTop: 2,
   },
   divider: {

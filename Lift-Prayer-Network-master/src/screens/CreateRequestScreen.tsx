@@ -501,10 +501,10 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
               disabled={!content.trim() || !title.trim() || submitting}
             >
               {submitting ? (
-                <ActivityIndicator color="#1f2937" />
+                <ActivityIndicator color="#2C332E" />
               ) : (
                 <>
-                  <Ionicons name="send" size={20} color="#1f2937" />
+                  <Ionicons name="send" size={20} color="#2C332E" />
                   <Text style={styles.submitText}>
                     {offline ? 'Save for Later' : 'Submit Prayer Request'}
                   </Text>
@@ -564,10 +564,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1,
     lineHeight: 36,
-    color: '#1c1917',
-  },
-  headingDot: {
-    color: '#4A5D4E',
+    color: '#2C332E',
   },
   
   // Content styles
@@ -642,14 +639,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     padding: spacing.sm,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     borderWidth: 1,
   },
   titleInput: {
     fontSize: 15,
     padding: spacing.sm,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     borderRadius: radius.md,
     borderWidth: 1,
   },
@@ -666,7 +663,7 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
@@ -675,7 +672,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   categoryChipActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
   },
   categoryEmoji: {
     fontSize: 14,
@@ -725,10 +722,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FAF8F5',
   },
   supportOptionActive: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
   },
   supportOptionText: {
     fontSize: 12,
@@ -758,7 +755,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   previewCard: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#F7F1E8',
     borderRadius: radius.md,
     padding: spacing.sm,
     marginBottom: spacing.sm,
@@ -850,7 +847,7 @@ const styles = StyleSheet.create({
   submitText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#2C332E',
   },
   encouragement: {
     fontSize: 11,
