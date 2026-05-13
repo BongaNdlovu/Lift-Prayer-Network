@@ -497,7 +497,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   return (
-    <LiftScreen scroll>
+    <LiftScreen>
       {/* === HEADER SECTION === */}
       <View style={styles.headerSection}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>

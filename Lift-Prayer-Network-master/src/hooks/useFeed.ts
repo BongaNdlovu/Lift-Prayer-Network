@@ -103,6 +103,7 @@ export const useFeed = (
 ) => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<FeedErrorType>(null);
   const [isOffline, setIsOffline] = useState(false);
@@ -332,16 +333,22 @@ export const useFeed = (
 
     cursorRef.current = null;
     setHasMore(true);
-    setLoading(true);
+    setLoading(items.length === 0);
     await manualFetch(false);
-  }, [manualFetch]);
+  }, [items.length, manualFetch]);
 
   // Load more function for pagination
   const loadMore = useCallback(async () => {
-    if (!hasMore || loading) return;
-    setLoading(true);
-    await manualFetch(true);
-  }, [hasMore, loading, manualFetch]);
+    if (!hasMore || loading || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      await manualFetch(true);
+    } finally {
+      if (isMounted.current) {
+        setLoadingMore(false);
+      }
+    }
+  }, [hasMore, loading, loadingMore, manualFetch]);
 
   // Track mounted state
   useEffect(() => {
@@ -373,7 +380,7 @@ export const useFeed = (
     fetchData();
   }, [mode, refreshKey, manualFetch, loadCachedData]);
 
-  return { items, loading, error, errorType, isOffline, refresh, loadMore, hasMore };
+  return { items, loading, error, errorType, isOffline, refresh, loadMore, hasMore, loadingMore };
 };
 
 export const submitFeedItem = async (
