@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 
 export const BootScreen: React.FC = () => {
@@ -74,12 +73,7 @@ export const BootScreen: React.FC = () => {
   });
 
   return (
-    <LinearGradient
-      colors={[colors.background, colors.surface]}
-      style={styles.container}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View
         style={[
           styles.logoBox,
@@ -100,7 +94,7 @@ export const BootScreen: React.FC = () => {
       <Animated.Text style={[styles.subtitle, { color: colors.muted, opacity: subtitleOpacity }]}>
         Live Network of Prayer
       </Animated.Text>
-    </LinearGradient>
+    </View>
   );
 };
 

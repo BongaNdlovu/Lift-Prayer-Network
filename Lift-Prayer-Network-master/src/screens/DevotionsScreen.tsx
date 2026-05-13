@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,8 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { radius, spacing } from '../theme/colors';
-import { CinematicBackground } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen } from '../components/LiftLayout';
 import { HapticPatterns } from '../utils/haptics';
 import {
   StudyGuide,
@@ -220,50 +218,49 @@ export const DevotionsScreen: React.FC = () => {
   });
 
   return (
-    <CinematicBackground>
-      <SafeAreaView style={styles.container}>
-        {/* Header Section */}
-        <View style={styles.headerSection}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </TouchableOpacity>
-          
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>SABBATH SCHOOL</Text>
-            <Text style={[styles.heading, { color: colors.stone900 }]}>
-              Study<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          
-          <GlassIconButton onPress={() => {}}>
-            <Ionicons name="search-outline" size={20} color={colors.stone700} />
-          </GlassIconButton>
+    <LiftScreen scroll>
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>SABBATH SCHOOL</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Study<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        
+        <TouchableOpacity onPress={() => {}} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search-outline" size={20} color={colors.text} />
+        </TouchableOpacity>
+      </View>
 
-        {/* Stats Strip */}
-        <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
-            <Text style={[styles.statValue, { color: colors.stone800 }]}>{stats.currentStreak}</Text>
-            <Text style={[styles.statLabel, { color: colors.stone500 }]}>Day Streak</Text>
-          </View>
-          <View style={[styles.statCard, styles.statCardHighlight, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}>
-            <Text style={[styles.statValue, { color: colors.stone800 }]}>
-              {Math.round((stats.lessonsCompleted / 13) * 100)}%
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.stone600 }]}>Completed</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
-            <Text style={[styles.statValue, { color: colors.stone800 }]}>{stats.savedLessons.length}</Text>
-            <Text style={[styles.statLabel, { color: colors.stone500 }]}>Saved</Text>
-          </View>
+      {/* Stats Strip */}
+      <View style={styles.statsRow}>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.statValue, { color: colors.text }]}>{stats.currentStreak}</Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Day Streak</Text>
         </View>
+        <View style={[styles.statCard, styles.statCardHighlight, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {Math.round((stats.lessonsCompleted / 13) * 100)}%
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Completed</Text>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.statValue, { color: colors.text }]}>{stats.savedLessons.length}</Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Saved</Text>
+        </View>
+      </View>
 
-        {/* Main Content Sheet */}
-        <View style={[styles.contentSheet, { backgroundColor: colors.glassWhiteStrong, borderColor: colors.glassBorder }]}>
-          {/* Tabs */}
+      {/* Main Content Sheet */}
+      <View style={[styles.contentSheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {/* Tabs */}
           <View style={[styles.tabsContainer, { borderBottomColor: colors.stone100 }]}>
             {(['Current', 'Archive', 'Saved'] as TabOption[]).map((tab) => (
               <TouchableOpacity
@@ -398,8 +395,7 @@ export const DevotionsScreen: React.FC = () => {
             )}
           </ScrollView>
         </View>
-      </SafeAreaView>
-    </CinematicBackground>
+    </LiftScreen>
   );
 };
 
@@ -422,6 +418,14 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCenter: {
     flex: 1,

@@ -3,7 +3,6 @@ import {
   Alert,
   Clipboard,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,9 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { radius, spacing } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 
 // Bank Details
 const BANK_DETAILS = {
@@ -67,26 +65,25 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <View style={styles.headerLeft}>
-            <GlassIconButton onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-            </GlassIconButton>
-          </View>
-          <View>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>GIVE BACK</Text>
-            <Text style={styles.heading}>
-              Support<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
+          </TouchableOpacity>
         </View>
+        <View>
+          <Text style={[styles.kicker, { color: colors.muted }]}>GIVE BACK</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Support<Text style={styles.headingDot}>.</Text>
+          </Text>
+        </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
 
         <ScrollView
           style={styles.scrollView}
@@ -297,9 +294,8 @@ Branch Code: ${BANK_DETAILS.branchCode}`;
 
           <View style={{ height: 140 }} />
         </ScrollView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
@@ -321,6 +317,14 @@ const styles = StyleSheet.create({
   headerLeft: {
     width: 44,
   },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   kicker: {
     fontSize: 10,
     fontWeight: '700',
@@ -336,7 +340,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
     textAlign: 'center',
   },
   headingDot: {
@@ -365,10 +368,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
-    
-    
-    
-    
     elevation: 8,
   },
   heartEmoji: {
@@ -377,13 +376,11 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 28,
     fontWeight: '900',
-    color: palette.text,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   heroSubtitle: {
     fontSize: 16,
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: spacing.lg,
@@ -394,12 +391,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: spacing.sm,
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: palette.muted,
     marginBottom: spacing.md,
     lineHeight: 20,
   },
@@ -408,17 +403,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    
-    
-    
-    
     elevation: 2,
   },
   reasonIcon: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: palette.surface,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -429,28 +420,22 @@ const styles = StyleSheet.create({
   reasonTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.text,
     marginBottom: 4,
   },
   reasonText: {
     fontSize: 14,
-    color: palette.muted,
     lineHeight: 20,
   },
   bankCard: {
     borderRadius: radius.lg,
     overflow: 'hidden',
-    
-    
-    
-    
     elevation: 4,
   },
   bankHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.lg,
-    backgroundColor: palette.success,
+    backgroundColor: '#10b981',
   },
   bankLogoContainer: {
     width: 50,
@@ -469,7 +454,7 @@ const styles = StyleSheet.create({
   },
   accountType: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
+    color: '#fff',
     fontWeight: '500',
   },
   bankDetails: {
@@ -477,11 +462,11 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.md,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+    borderBottomColor: '#ddd',
   },
   detailRowLast: {
     borderBottomWidth: 0,
@@ -491,7 +476,6 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: palette.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -499,35 +483,31 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
   },
   detailValueLarge: {
     fontSize: 22,
     fontWeight: '800',
-    color: palette.text,
-    letterSpacing: 1,
   },
   copyButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: palette.surface,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
   copyButtonCopied: {
-    backgroundColor: palette.successLight,
+    backgroundColor: '#34c759',
   },
   copyAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.accent,
+    backgroundColor: '#10b981',
     paddingVertical: spacing.md,
-    gap: spacing.sm,
-    margin: spacing.md,
-    marginTop: 0,
+    paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
+    marginTop: spacing.md,
   },
   copyAllText: {
     fontSize: 14,
@@ -543,16 +523,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
-    
-    
-    
-    
     elevation: 2,
   },
   methodText: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.text,
     marginTop: spacing.sm,
     textAlign: 'center',
   },

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,9 +14,8 @@ import { Timestamp } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
-import { GlassIconButton } from '../../components/GlassCard';
+import { radius, spacing } from '../../theme/colors';
+import { LiftScreen } from '../../components/LiftLayout';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -499,36 +497,35 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kickerHeader, { color: colors.stone500 }]}>
-              {type === 'REQUEST' ? 'TRANSMISSION' : 'VERIFICATION'}
-            </Text>
-            <Text style={styles.heading}>
-              Details<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kickerHeader, { color: colors.muted }]}>
+            {type === 'REQUEST' ? 'TRANSMISSION' : 'VERIFICATION'}
+          </Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Details<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
           <ScrollView contentContainerStyle={styles.content}>
         {commentError && (
           <InlineError message={commentError} onDismiss={() => setCommentError(null)} />
         )}
-        <Text style={styles.kicker}>{type === 'REQUEST' ? 'Transmission' : 'Verification'}</Text>
-        <Text style={styles.title}>{(displayItem as any).title || displayItem.content.slice(0, 100)}</Text>
+        <Text style={[styles.kicker, { color: colors.muted }]}>{type === 'REQUEST' ? 'Transmission' : 'Verification'}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{(displayItem as any).title || displayItem.content.slice(0, 100)}</Text>
         
         {/* Author Info with Badge */}
         <View style={styles.authorRow}>
-          <Text style={styles.meta}>By {displayItem.userDisplayName}</Text>
+          <Text style={[styles.meta, { color: colors.muted }]}>By {displayItem.userDisplayName}</Text>
           {badgeStyle && badgeLabel && (
             <View style={[styles.authorBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
               <Ionicons name={badgeStyle.icon as any} size={10} color={badgeStyle.textColor} />
@@ -543,9 +540,9 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
         
         {item.location && (
-          <Text style={styles.meta}>Location: {item.location}</Text>
+          <Text style={[styles.body, { color: colors.text }]}>{item.location}</Text>
         )}
-        <Text style={styles.meta}>Created: {formatDate((item as any).createdAt)}</Text>
+        <Text style={[styles.meta, { color: colors.muted }]}>Created: {formatDate((item as any).createdAt)}</Text>
         
         {/* Admin viewing banner */}
         {isAdmin && !isOwner && (
@@ -569,24 +566,24 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
 
         {editMode ? (
-          <View style={styles.editor}>
+          <View style={[styles.editor, { borderColor: colors.border }]}>
             <TextInput
-              style={styles.editorInput}
+              style={[styles.editorInput, { color: colors.text }]}
               multiline
               value={contentDraft}
               onChangeText={setContentDraft}
               placeholder="Update content"
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
             />
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
+            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave} disabled={saving}>
               <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save changes'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setEditMode(false)}>
-              <Text style={styles.link}>Cancel</Text>
+              <Text style={[styles.link, { color: colors.accentDark }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <Text style={styles.body}>{item.content}</Text>
+          <Text style={[styles.body, { color: colors.text }]}>{item.content}</Text>
         )}
 
         <View style={styles.chipRow}>
@@ -595,8 +592,8 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               {type === 'REQUEST' ? (item as any).severity : 'RESOLVED'}
             </Text>
           </View>
-          {type === 'REQUEST' && <Text style={styles.meta}>Prayers: {(item as any).prayers ?? 0}</Text>}
-          {type === 'TESTIMONY' && <Text style={styles.meta}>Amens: {(item as any).likes ?? 0}</Text>}
+          {type === 'REQUEST' && <Text style={[styles.meta, { color: colors.muted }]}>Prayers: {(item as any).prayers ?? 0}</Text>}
+          {type === 'TESTIMONY' && <Text style={[styles.meta, { color: colors.muted }]}>Amens: {(item as any).likes ?? 0}</Text>}
         </View>
 
         {type === 'REQUEST' && (
@@ -612,7 +609,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         <View style={styles.actions}>
           {type === 'REQUEST' ? (
-            <TouchableOpacity style={styles.primaryButton} onPress={handlePray} disabled={busyAction}>
+            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={handlePray} disabled={busyAction}>
               <Ionicons name="heart" size={16} color="#1f2937" />
               <Text style={styles.primaryText}>Pray</Text>
             </TouchableOpacity>
@@ -620,17 +617,17 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           
           {/* Quick Edit - for simple content changes */}
           {canEdit && !editMode && (
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => setEditMode(true)}>
-              <Ionicons name="create-outline" size={16} color={palette.text} />
-              <Text style={styles.secondaryText}>Quick Edit</Text>
+            <TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={() => setEditMode(true)}>
+              <Ionicons name="create-outline" size={16} color={colors.text} />
+              <Text style={[styles.secondaryText, { color: colors.text }]}>Quick Edit</Text>
             </TouchableOpacity>
           )}
           
           {/* Advanced Edit - for full control (status, category, urgency, etc.) */}
           {canEdit && type === 'REQUEST' && (
-            <TouchableOpacity style={styles.advancedButton} onPress={handleAdvancedEdit}>
-              <Ionicons name="settings-outline" size={16} color={palette.accentDark} />
-              <Text style={styles.advancedText}>Full Edit</Text>
+            <TouchableOpacity style={[styles.advancedButton, { borderColor: colors.accent }]} onPress={handleAdvancedEdit}>
+              <Ionicons name="settings-outline" size={16} color={colors.accentDark} />
+              <Text style={[styles.advancedText, { color: colors.accentDark }]}>Full Edit</Text>
             </TouchableOpacity>
           )}
           
@@ -644,10 +641,10 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         {/* Comments Section */}
-        <View style={styles.commentsSection}>
+        <View style={[styles.commentsSection, { borderColor: colors.border }]}>
           <View style={styles.commentHeader}>
-            <Ionicons name="chatbubbles-outline" size={20} color={palette.text} />
-            <Text style={styles.commentTitle}>
+            <Ionicons name="chatbubbles-outline" size={20} color={colors.text} />
+            <Text style={[styles.commentTitle, { color: colors.text }]}>
               Encouragements ({comments.length})
             </Text>
           </View>
@@ -675,8 +672,8 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                     </View>
                     <View style={styles.commentContent}>
                       <View style={styles.commentMeta}>
-                        <Text style={styles.commentAuthor}>{comment.authorName}</Text>
-                        <Text style={styles.commentTime}>
+                        <Text style={[styles.commentAuthor, { color: colors.text }]}>{comment.authorName}</Text>
+                        <Text style={[styles.commentTime, { color: colors.muted }]}>
                           {formatRelativeTime(comment.createdAt)}
                           {(comment as any).editedAt && ' (edited)'}
                         </Text>
@@ -684,7 +681,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                       {isEditing ? (
                         <View style={styles.commentEditContainer}>
                           <TextInput
-                            style={styles.commentEditInput}
+                            style={[styles.commentEditInput, { color: colors.text, borderColor: colors.accent }]}
                             value={editingCommentText}
                             onChangeText={setEditingCommentText}
                             multiline
@@ -693,7 +690,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                           />
                           <View style={styles.commentEditActions}>
                             <TouchableOpacity
-                              style={styles.commentEditSave}
+                              style={[styles.commentEditSave, { backgroundColor: colors.accent }]}
                               onPress={handleSaveCommentEdit}
                             >
                               <Text style={styles.commentEditSaveText}>Save</Text>
@@ -702,12 +699,12 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                               style={styles.commentEditCancel}
                               onPress={handleCancelCommentEdit}
                             >
-                              <Text style={styles.commentEditCancelText}>Cancel</Text>
+                              <Text style={[styles.commentEditCancelText, { color: colors.muted }]}>Cancel</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
                       ) : (
-                        <Text style={styles.commentText}>{comment.content}</Text>
+                        <Text style={[styles.commentText, { color: colors.text }]}>{comment.content}</Text>
                       )}
                       {!isEditing && (canModifyComment || (user && !isOwnComment)) && (
                         <View style={styles.commentActions}>
@@ -717,8 +714,8 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                                 style={styles.commentActionBtn}
                                 onPress={() => handleEditComment(comment)}
                               >
-                                <Ionicons name="pencil-outline" size={14} color={palette.muted} />
-                                <Text style={styles.commentActionText}>Edit</Text>
+                                <Ionicons name="pencil-outline" size={14} color={colors.muted} />
+                                <Text style={[styles.commentActionText, { color: colors.muted }]}>Edit</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 style={styles.commentActionBtn}
@@ -764,30 +761,30 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           ) : (
             <View style={styles.noComments}>
               <Text style={styles.noCommentsEmoji}>💬</Text>
-              <Text style={styles.noCommentsText}>Be the first to encourage!</Text>
+              <Text style={[styles.noCommentsText, { color: colors.muted }]}>Be the first to encourage!</Text>
             </View>
           )}
 
           {user && !(type === 'REQUEST' && (item as any).supportPreference === 'PRAYER_ONLY') && (
-            <View style={styles.commentInput}>
+            <View style={[styles.commentInput, { borderTopColor: colors.border }]}>
               <TextInput
-                style={styles.commentTextInput}
+                style={[styles.commentTextInput, { color: colors.text, borderColor: colors.border }]}
                 placeholder="Write an encouraging message..."
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 value={newComment}
                 onChangeText={setNewComment}
                 multiline
-                maxLength={300}
+                maxLength={500}
               />
               <TouchableOpacity
-                style={[styles.commentSendButton, !newComment.trim() && styles.commentSendDisabled]}
+                style={[styles.commentSendButton, { backgroundColor: colors.accent }, !newComment.trim() && styles.commentSendDisabled]}
                 onPress={handleAddComment}
                 disabled={!newComment.trim() || submittingComment}
               >
                 <Ionicons
                   name="send"
                   size={20}
-                  color={newComment.trim() ? '#1f2937' : palette.muted}
+                  color={newComment.trim() ? '#1f2937' : colors.muted}
                 />
               </TouchableOpacity>
             </View>
@@ -795,17 +792,17 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         {type === 'REQUEST' && (
-          <View style={styles.commentsSection}>
+          <View style={[styles.commentsSection, { borderColor: colors.border }]}>
             <View style={styles.commentHeader}>
-              <Ionicons name="trail-sign-outline" size={20} color={palette.text} />
-              <Text style={styles.commentTitle}>Prayer Updates</Text>
+              <Ionicons name="trail-sign-outline" size={20} color={colors.text} />
+              <Text style={[styles.commentTitle, { color: colors.text }]}>Prayer Updates</Text>
             </View>
             {updates.length === 0 ? (
-              <Text style={styles.noCommentsText}>No updates yet.</Text>
+              <Text style={[styles.noCommentsText, { color: colors.muted }]}>No updates yet.</Text>
             ) : (
               <View style={styles.commentsList}>
                 {updates.map((update) => (
-                  <View key={update.id} style={styles.updateItem}>
+                  <View key={update.id} style={[styles.updateItem, { borderLeftColor: colors.accent }]}>
                     <Text style={styles.updateType}>{update.updateType.replace(/_/g, ' ')}</Text>
                     <Text style={styles.commentText}>{update.text}</Text>
                     <Text style={styles.commentTime}>{formatRelativeTime(update.createdAt)}</Text>
@@ -814,11 +811,11 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
             )}
             {isOwner && (item as any).status !== 'ANSWERED' && (
-              <View style={styles.ownerPanel}>
+              <View style={[styles.ownerPanel, { borderTopColor: colors.border }]}>
                 <TextInput
-                  style={styles.commentTextInput}
+                  style={[styles.commentTextInput, { color: colors.text, borderColor: colors.border }]}
                   placeholder="Add a short update..."
-                  placeholderTextColor={palette.muted}
+                  placeholderTextColor={colors.muted}
                   value={newUpdate}
                   onChangeText={setNewUpdate}
                   multiline
@@ -833,15 +830,15 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   ] as [PrayerRequestUpdateType, string][]).map(([value, label]) => (
                     <TouchableOpacity
                       key={value}
-                      style={[styles.updateChip, updateType === value && styles.updateChipActive]}
+                      style={[styles.updateChip, { borderColor: colors.border }, updateType === value && styles.updateChipActive]}
                       onPress={() => setUpdateType(value)}
                     >
-                      <Text style={[styles.updateChipText, updateType === value && styles.updateChipTextActive]}>{label}</Text>
+                      <Text style={[styles.updateChipText, { color: colors.muted }, updateType === value && styles.updateChipTextActive]}>{label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
-                <TouchableOpacity style={styles.secondaryButton} onPress={handleAddUpdate} disabled={busyAction}>
-                  <Text style={styles.secondaryText}>Add Update</Text>
+                <TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleAddUpdate} disabled={busyAction}>
+                  <Text style={[styles.secondaryText, { color: colors.text }]}>Add Update</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -857,7 +854,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <TextInput
               style={styles.flagInput}
               placeholder="Optional reflection or testimony..."
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
               value={answerReflection}
               onChangeText={setAnswerReflection}
               multiline
@@ -878,30 +875,37 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
 
-        <View style={styles.flagBox}>
-          <Text style={styles.flagTitle}>Flag / Report</Text>
+        <View style={[styles.flagBox, { borderColor: colors.border }]}>
+          <Text style={[styles.flagTitle, { color: colors.text }]}>Flag / Report</Text>
           <TextInput
-            style={styles.flagInput}
+            style={[styles.flagInput, { color: colors.text }]}
             placeholder="Why is this inappropriate or unsafe?"
-            placeholderTextColor={palette.muted}
+            placeholderTextColor={colors.muted}
             value={flagText}
             onChangeText={setFlagText}
             multiline
           />
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleFlag} disabled={busyAction}>
-            <Text style={styles.secondaryText}>Submit Flag</Text>
+          <TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleFlag} disabled={busyAction}>
+            <Text style={[styles.secondaryText, { color: colors.text }]}>Submit Flag</Text>
           </TouchableOpacity>
           </View>
           </ScrollView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   // Header styles
@@ -949,7 +953,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   backButton: {
     width: 40,
@@ -963,7 +966,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
     marginHorizontal: spacing.sm,
   },
@@ -972,7 +974,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   kicker: {
-    color: palette.muted,
     letterSpacing: 1,
     textTransform: 'uppercase',
     fontSize: 12,
@@ -980,10 +981,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '900',
-    color: palette.text,
   },
   meta: {
-    color: palette.muted,
   },
   authorRow: {
     flexDirection: 'row',
@@ -1021,7 +1020,6 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 16,
     lineHeight: 24,
-    color: palette.text,
   },
   chipRow: {
     flexDirection: 'row',
@@ -1052,7 +1050,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: palette.accent,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -1065,7 +1062,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    borderColor: palette.border,
     borderWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
@@ -1074,7 +1070,6 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     fontWeight: '700',
-    color: palette.text,
   },
   advancedButton: {
     flexDirection: 'row',
@@ -1085,11 +1080,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.accent,
   },
   advancedText: {
     fontWeight: '700',
-    color: palette.accentDark,
   },
   dangerButton: {
     flexDirection: 'row',
@@ -1108,17 +1101,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
     padding: spacing.md,
     gap: spacing.sm,
   },
   editorInput: {
     minHeight: 120,
-    color: palette.text,
     textAlignVertical: 'top',
   },
   saveButton: {
-    backgroundColor: palette.accent,
     paddingVertical: spacing.sm,
     alignItems: 'center',
     borderRadius: radius.md,
@@ -1128,7 +1118,6 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   link: {
-    color: palette.accentDark,
     fontWeight: '700',
   },
   flagBox: {
@@ -1136,16 +1125,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: palette.border,
     gap: spacing.sm,
   },
   flagTitle: {
     fontWeight: '800',
-    color: palette.text,
   },
   flagInput: {
     minHeight: 80,
-    color: palette.text,
     textAlignVertical: 'top',
   },
   loading: {
@@ -1154,14 +1140,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   muted: {
-    color: palette.muted,
   },
   commentsSection: {
     backgroundColor: '#fff',
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   supportSummary: {
     flexDirection: 'row',
@@ -1194,7 +1178,6 @@ const styles = StyleSheet.create({
   },
   updateItem: {
     borderLeftWidth: 3,
-    borderLeftColor: palette.accent,
     paddingLeft: spacing.sm,
     paddingVertical: spacing.xs,
   },
@@ -1210,7 +1193,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
   },
   updateTypeRow: {
     flexDirection: 'row',
@@ -1219,7 +1201,6 @@ const styles = StyleSheet.create({
   },
   updateChip: {
     borderWidth: 1,
-    borderColor: palette.border,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 5,
@@ -1227,10 +1208,8 @@ const styles = StyleSheet.create({
   },
   updateChipActive: {
     backgroundColor: '#fef3c7',
-    borderColor: palette.accent,
   },
   updateChipText: {
-    color: palette.muted,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1283,7 +1262,6 @@ const styles = StyleSheet.create({
   commentTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: palette.text,
   },
   commentsList: {
     gap: spacing.md,
@@ -1316,16 +1294,13 @@ const styles = StyleSheet.create({
   },
   commentAuthor: {
     fontWeight: '700',
-    color: palette.text,
     fontSize: 13,
   },
   commentTime: {
     fontSize: 11,
-    color: palette.muted,
   },
   commentText: {
     fontSize: 14,
-    color: palette.text,
     lineHeight: 20,
   },
   noComments: {
@@ -1337,7 +1312,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   noCommentsText: {
-    color: palette.muted,
     fontSize: 14,
   },
   commentInput: {
@@ -1347,7 +1321,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
   },
   commentTextInput: {
     flex: 1,
@@ -1356,16 +1329,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontSize: 14,
-    color: palette.text,
     maxHeight: 100,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   commentSendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1409,7 +1379,6 @@ const styles = StyleSheet.create({
   },
   commentActionText: {
     fontSize: 12,
-    color: palette.muted,
     fontWeight: '600',
   },
   commentEditContainer: {
@@ -1421,9 +1390,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     fontSize: 14,
-    color: palette.text,
     borderWidth: 1,
-    borderColor: palette.accent,
     minHeight: 60,
   },
   commentEditActions: {
@@ -1432,7 +1399,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   commentEditSave: {
-    backgroundColor: palette.accent,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
@@ -1449,7 +1415,6 @@ const styles = StyleSheet.create({
   commentEditCancelText: {
     fontSize: 12,
     fontWeight: '600',
-    color: palette.muted,
   },
   adminBadgeSmall: {
     marginLeft: 'auto',

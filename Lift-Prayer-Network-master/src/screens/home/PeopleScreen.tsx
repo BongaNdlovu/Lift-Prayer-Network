@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { db, firebaseEnabled } from '../../services/firebase';
-import { palette, radius, spacing } from '../../theme/colors';
-import { CinematicBackground, RoundedPage } from '../../components/CinematicBackground';
-import { GlassIconButton } from '../../components/GlassCard';
+import { radius, spacing } from '../../theme/colors';
+import { LiftScreen } from '../../components/LiftLayout';
 import type { PeopleStat } from '../../types';
 
 export const PeopleScreen: React.FC = () => {
@@ -41,33 +40,30 @@ export const PeopleScreen: React.FC = () => {
 
   if (!user) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.center}>
-          <Text style={[styles.title, { color: colors.text }]}>Sign in to see who you have prayed for.</Text>
-        </SafeAreaView>
-      </CinematicBackground>
+      <LiftScreen>
+        <Text style={[styles.title, { color: colors.text }]}>Sign in to see who you have prayed for.</Text>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR NETWORK</Text>
-            <Text style={styles.heading}>
-              People<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>YOUR NETWORK</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            People<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
       
       {loading ? (
         <View style={styles.center}>
@@ -78,7 +74,7 @@ export const PeopleScreen: React.FC = () => {
           data={people}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.summary, { color: colors.text }]}>{item.targetName || item.targetOwnerUid}</Text>
               <Text style={[styles.meta, { color: colors.muted }]}>Prayers: {item.count}</Text>
             </View>
@@ -99,9 +95,8 @@ export const PeopleScreen: React.FC = () => {
           }
         />
       )}
-      </RoundedPage>
-    </SafeAreaView>
-  </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
@@ -119,6 +114,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     zIndex: 20,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCenter: {
     flex: 1,
@@ -157,7 +160,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   backButton: {
     width: 40,
@@ -181,7 +183,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: palette.border,
     marginBottom: spacing.sm,
   },
   summary: {

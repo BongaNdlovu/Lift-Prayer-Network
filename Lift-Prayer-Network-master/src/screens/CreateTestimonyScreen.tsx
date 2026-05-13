@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -21,9 +20,8 @@ import { useFeed, submitFeedItem } from '../hooks/useFeed';
 import { subscribeToUserGroups } from '../services/groups';
 import { Confetti } from '../components/Confetti';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { radius, spacing } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import { checkUserBlockedFromPosting } from '../services/moderation';
 import type { RootStackParamList } from '../navigation/types';
@@ -71,7 +69,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      Alert.alert('Empty Testimony', 'Please share how God answered your prayer.');
+      Alert.alert('Empty Testimony', 'Please share how God answered your prayer.', [{ text: 'OK' }]);
       return;
     }
 
@@ -82,7 +80,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
       groupIds: selectedGroupIds,
     });
     if (privacyError) {
-      Alert.alert('Privacy Setting Needed', privacyError);
+      Alert.alert('Privacy Setting Needed', privacyError, [{ text: 'OK' }]);
       return;
     }
 
@@ -127,18 +125,18 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
     });
 
     if (!validation.isValid) {
-      Alert.alert('Cannot Submit', validation.error || 'Please revise your testimony.');
+      Alert.alert('Cannot Submit', validation.error || 'Please revise your testimony.', [{ text: 'OK' }]);
       return;
     }
 
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to share a testimony.');
+      Alert.alert('Sign In Required', 'Please sign in to share a testimony.', [{ text: 'OK' }]);
       return;
     }
 
     // Rate limiting check - per minute
     if (!checkRateLimit(`testimony_create_${user.uid}`, 2, 60000)) {
-      Alert.alert('Please Wait', 'You are submitting too many testimonies. Please wait a moment before trying again.');
+      Alert.alert('Please Wait', 'You are submitting too many testimonies. Please wait a moment before trying again.', [{ text: 'OK' }]);
       return;
     }
 
@@ -147,13 +145,14 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
     if (!dailyCheck.allowed) {
       Alert.alert(
         'Daily Limit Reached',
-        `You can only share ${CONTENT_LIMITS.TESTIMONIES_PER_DAY} testimonies per day. This helps keep our community focused and meaningful. Try again tomorrow!`
+        `You can only share ${CONTENT_LIMITS.TESTIMONIES_PER_DAY} testimonies per day. This helps keep our community focused and meaningful. Try again tomorrow!`,
+        [{ text: 'OK' }]
       );
       return;
     }
 
     if (offline) {
-      Alert.alert('Offline', 'You need to be online to share a testimony.');
+      Alert.alert('Offline', 'You need to be online to share a testimony.', [{ text: 'OK' }]);
       return;
     }
 
@@ -207,31 +206,30 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
         );
       }, 1500);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Could not share your testimony. Please try again.');
+      Alert.alert('Error', error.message || 'Could not share your testimony. Please try again.', [{ text: 'OK' }]);
       setSubmitting(false);
     }
   };
 
   return (
-    <CinematicBackground useOuterBackground>
+    <LiftScreen scroll>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>CELEBRATE</Text>
-            <Text style={styles.heading}>
-              Testimony<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>CELEBRATE</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Testimony<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
@@ -254,12 +252,12 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {/* Content Input */}
-            <View style={styles.card}>
-              <Text style={styles.label}>How did God answer your prayer?</Text>
+            <View style={[styles.card, { borderColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.text }]}>How did God answer your prayer?</Text>
               <TextInput
-                style={styles.textArea}
+                style={[styles.textArea, { color: colors.text, borderColor: colors.border }]}
                 placeholder="Share your testimony of God's faithfulness..."
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
@@ -267,14 +265,14 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                 onChangeText={setContent}
                 maxLength={1500}
               />
-              <Text style={styles.charCount}>{content.length}/1500</Text>
+              <Text style={[styles.charCount, { color: colors.muted }]}>{content.length}/1500</Text>
             </View>
 
             {/* Link to Original Request */}
             {userRequests.length > 0 && (
-              <View style={styles.card}>
-                <Text style={styles.label}>Link to Prayer Request (Optional)</Text>
-                <Text style={styles.hint}>
+              <View style={[styles.card, { borderColor: colors.border }]}>
+                <Text style={[styles.label, { color: colors.text }]}>Link to Prayer Request (Optional)</Text>
+                <Text style={[styles.hint, { color: colors.muted }]}>
                   Link your testimony to a prayer request to notify everyone who prayed for you.
                 </Text>
 
@@ -288,7 +286,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                       onPress={() => setLinkedRequestId(null)}
                       style={styles.unlinkButton}
                     >
-                      <Ionicons name="close-circle" size={20} color={palette.muted} />
+                      <Ionicons name="close-circle" size={20} color={colors.muted} />
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -296,7 +294,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                     {userRequests.slice(0, 5).map((req) => (
                       <TouchableOpacity
                         key={req.id}
-                        style={styles.requestChip}
+                        style={[styles.requestChip, { borderColor: colors.border }]}
                         onPress={() => {
                           setLinkedRequestId(req.id);
                           if (Platform.OS !== 'web') {
@@ -304,8 +302,8 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                           }
                         }}
                       >
-                        <Ionicons name="link" size={14} color={palette.muted} />
-                        <Text style={styles.requestChipText} numberOfLines={1}>
+                        <Ionicons name="link" size={14} color={colors.muted} />
+                        <Text style={[styles.requestChipText, { color: colors.muted }]} numberOfLines={1}>
                           {req.content.slice(0, 50)}...
                         </Text>
                       </TouchableOpacity>
@@ -316,11 +314,15 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
             )}
 
             {/* Privacy Options */}
-            <View style={styles.card}>
-              <Text style={styles.label}>Who can see this testimony?</Text>
+            <View style={[styles.card, { borderColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Who can see this testimony?</Text>
               <View style={styles.visibilityOptions}>
                 <TouchableOpacity
-                  style={[styles.visibilityOption, visibility === 'PUBLIC' && styles.visibilityOptionActive]}
+                  style={[
+                    styles.visibilityOption,
+                    { borderColor: colors.border },
+                    visibility === 'PUBLIC' && [styles.visibilityOptionActive, { borderColor: colors.accentDark }],
+                  ]}
                   onPress={() => {
                     setVisibility('PUBLIC');
                     setSelectedGroupIds([]);
@@ -330,15 +332,19 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                   <Ionicons 
                     name="globe-outline" 
                     size={20} 
-                    color={visibility === 'PUBLIC' ? '#166534' : palette.muted} 
+                    color={visibility === 'PUBLIC' ? '#166534' : colors.muted} 
                   />
-                  <Text style={[styles.visibilityOptionText, visibility === 'PUBLIC' && styles.visibilityOptionTextActive]}>
+                  <Text style={[styles.visibilityOptionText, { color: colors.muted }, visibility === 'PUBLIC' && [styles.visibilityOptionTextActive, { color: colors.text }]]}>
                     Everyone
                   </Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={[styles.visibilityOption, visibility === 'PRIVATE' && styles.visibilityOptionActive]}
+                  style={[
+                    styles.visibilityOption,
+                    { borderColor: colors.border },
+                    visibility === 'PRIVATE' && [styles.visibilityOptionActive, { borderColor: colors.accentDark }],
+                  ]}
                   onPress={() => {
                     setVisibility('PRIVATE');
                     setSelectedGroupIds([]);
@@ -348,16 +354,20 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                   <Ionicons 
                     name="lock-closed-outline" 
                     size={20} 
-                    color={visibility === 'PRIVATE' ? '#166534' : palette.muted} 
+                    color={visibility === 'PRIVATE' ? '#166534' : colors.muted} 
                   />
-                  <Text style={[styles.visibilityOptionText, visibility === 'PRIVATE' && styles.visibilityOptionTextActive]}>
+                  <Text style={[styles.visibilityOptionText, { color: colors.muted }, visibility === 'PRIVATE' && [styles.visibilityOptionTextActive, { color: colors.text }]]}>
                     Only Me
                   </Text>
                 </TouchableOpacity>
                 
                 {userGroups.length > 0 && (
                   <TouchableOpacity
-                    style={[styles.visibilityOption, visibility === 'GROUP' && styles.visibilityOptionActive]}
+                    style={[
+                    styles.visibilityOption,
+                    { borderColor: colors.border },
+                    visibility === 'GROUP' && [styles.visibilityOptionActive, { borderColor: colors.accentDark }],
+                  ]}
                     onPress={() => {
                       setVisibility('GROUP');
                       if (Platform.OS !== 'web') Haptics.selectionAsync();
@@ -366,9 +376,9 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                     <Ionicons 
                       name="people-outline" 
                       size={20} 
-                      color={visibility === 'GROUP' ? '#166534' : palette.muted} 
+                      color={visibility === 'GROUP' ? '#166534' : colors.muted} 
                     />
-                    <Text style={[styles.visibilityOptionText, visibility === 'GROUP' && styles.visibilityOptionTextActive]}>
+                    <Text style={[styles.visibilityOptionText, { color: colors.muted }, visibility === 'GROUP' && [styles.visibilityOptionTextActive, { color: colors.text }]]}>
                       Groups
                     </Text>
                   </TouchableOpacity>
@@ -378,13 +388,14 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
               {/* Group Selection */}
               {visibility === 'GROUP' && userGroups.length > 0 && (
                 <View style={styles.groupSelection}>
-                  <Text style={styles.hint}>Select groups to share with:</Text>
+                  <Text style={[styles.hint, { color: colors.muted }]}>Select groups to share with:</Text>
                   {userGroups.map((group) => (
                     <TouchableOpacity
                       key={group.id}
                       style={[
                         styles.groupChip,
-                        selectedGroupIds.includes(group.id) && styles.groupChipSelected,
+                        { borderColor: colors.border },
+                        selectedGroupIds.includes(group.id) && [styles.groupChipSelected, { borderColor: colors.accentDark }],
                       ]}
                       onPress={() => {
                         setSelectedGroupIds((prev) =>
@@ -398,7 +409,8 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                       <Text style={styles.groupChipEmoji}>{group.emoji || '🙏'}</Text>
                       <Text style={[
                         styles.groupChipText,
-                        selectedGroupIds.includes(group.id) && styles.groupChipTextSelected,
+                        { color: colors.muted },
+                        selectedGroupIds.includes(group.id) && [styles.groupChipTextSelected, { color: colors.text }],
                       ]}>
                         {group.name}
                       </Text>
@@ -417,15 +429,15 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                 <Text style={styles.previewLabel}>Preview</Text>
                 <View style={styles.previewContent}>
                   <View style={styles.previewHeader}>
-                    <Text style={styles.previewName}>{user?.displayName || 'You'}</Text>
+                    <Text style={[styles.previewName, { color: colors.text }]}>{user?.displayName || 'You'}</Text>
                     <View style={styles.resolvedBadge}>
                       <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
                       <Text style={styles.resolvedBadgeText}>Answered Prayer</Text>
                     </View>
                   </View>
-                  <Text style={styles.previewText}>{content}</Text>
+                  <Text style={[styles.previewText, { color: colors.text }]}>{content}</Text>
                   {linkedRequestId && (
-                    <View style={styles.previewLinked}>
+                    <View style={[styles.previewLinked, { borderTopColor: colors.border }]}>
                       <Ionicons name="link" size={12} color="#6b7280" />
                       <Text style={styles.previewLinkedText}>Linked to prayer request</Text>
                     </View>
@@ -454,20 +466,27 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
 
             {/* Encouragement */}
-            <Text style={styles.encouragement}>
+            <Text style={[styles.encouragement, { color: colors.muted }]}>
               &quot;Come and hear, all you who fear God; let me tell you what he has done for me.&quot; — Psalm 66:16
             </Text>
             </ScrollView>
           </KeyboardAvoidingView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   // Header styles
@@ -530,7 +549,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
   },
   placeholder: {
     width: 40,
@@ -569,34 +587,28 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   label: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.text,
     marginBottom: 4,
   },
   hint: {
     fontSize: 13,
-    color: palette.muted,
     marginBottom: spacing.md,
   },
   textArea: {
     minHeight: 140,
     fontSize: 16,
-    color: palette.text,
     lineHeight: 24,
     padding: spacing.md,
     backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   charCount: {
     textAlign: 'right',
     fontSize: 12,
-    color: palette.muted,
     marginTop: spacing.sm,
   },
   linkedRequest: {
@@ -629,12 +641,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   requestChipText: {
     flex: 1,
     fontSize: 13,
-    color: palette.muted,
   },
   previewCard: {
     backgroundColor: '#dcfce7',
@@ -666,7 +676,6 @@ const styles = StyleSheet.create({
   previewName: {
     fontSize: 15,
     fontWeight: '700',
-    color: palette.text,
   },
   resolvedBadge: {
     flexDirection: 'row',
@@ -684,7 +693,6 @@ const styles = StyleSheet.create({
   },
   previewText: {
     fontSize: 14,
-    color: palette.text,
     lineHeight: 20,
   },
   previewLinked: {
@@ -694,7 +702,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
   },
   previewLinkedText: {
     fontSize: 12,
@@ -721,7 +728,6 @@ const styles = StyleSheet.create({
   encouragement: {
     fontSize: 13,
     fontStyle: 'italic',
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -741,7 +747,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: palette.border,
   },
   visibilityOptionActive: {
     backgroundColor: '#dcfce7',
@@ -750,7 +755,6 @@ const styles = StyleSheet.create({
   visibilityOptionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.muted,
   },
   visibilityOptionTextActive: {
     color: '#166534',
@@ -762,11 +766,11 @@ const styles = StyleSheet.create({
   groupChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     padding: spacing.md,
     borderRadius: radius.md,
     backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: palette.border,
     gap: spacing.sm,
   },
   groupChipSelected: {
@@ -777,10 +781,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   groupChipText: {
-    flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: palette.text,
   },
   groupChipTextSelected: {
     color: '#166534',

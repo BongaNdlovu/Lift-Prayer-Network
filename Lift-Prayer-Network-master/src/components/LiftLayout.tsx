@@ -7,13 +7,14 @@ import {
   StyleProp,
   StyleSheet,
   Text,
+  TextInput,
   TextStyle,
   View,
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { brand, fonts, mediumLayout, radius, spacing } from '../theme/colors';
+import { fonts, mediumLayout, radius, spacing } from '../theme/colors';
 
 type ScreenProps = {
   children: React.ReactNode;
@@ -28,10 +29,15 @@ export const LiftScreen: React.FC<ScreenProps> = ({ children, scroll = false, co
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       {scroll ? (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           {content}
         </ScrollView>
-      ) : content}
+      ) : (
+        content
+      )}
     </SafeAreaView>
   );
 };
@@ -51,22 +57,30 @@ export const LiftHeader: React.FC<HeaderProps> = ({ title, subtitle, showBrand =
     <View style={styles.header}>
       <View style={styles.headerRow}>
         {onBack ? (
-          <Pressable onPress={onBack} style={[styles.iconButton, { borderColor: colors.border }]}>
+          <Pressable onPress={onBack} style={styles.headerIcon}>
             <Ionicons name="arrow-back" size={20} color={colors.text} />
           </Pressable>
         ) : null}
-        {showBrand ? (
-          <View style={styles.brandBlock}>
-            <Text style={[styles.brand, { color: colors.accentDark }]}>{brand.appName}</Text>
-            <Text style={[styles.tagline, { color: colors.muted }]}>{brand.tagline}</Text>
-          </View>
-        ) : (
-          <View style={styles.titleBlock}>
-            {title ? <Text style={[styles.title, { color: colors.text }]}>{title}</Text> : null}
-            {subtitle ? <Text style={[styles.subtitle, { color: colors.muted }]}>{subtitle}</Text> : null}
-          </View>
-        )}
-        {right ? <View style={styles.right}>{right}</View> : <View style={styles.rightPlaceholder} />}
+
+        <View style={styles.headerText}>
+          {showBrand ? (
+            <>
+              <Text style={[styles.brand, { color: colors.accentDark }]}>Lift.</Text>
+              <Text style={[styles.tagline, { color: colors.textSecondary }]}>
+                live network of prayer
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+              {subtitle ? (
+                <Text style={[styles.subtitle, { color: colors.muted }]}>{subtitle}</Text>
+              ) : null}
+            </>
+          )}
+        </View>
+
+        {right ? <View style={styles.headerRight}>{right}</View> : <View style={styles.headerRight} />}
       </View>
     </View>
   );
@@ -80,7 +94,12 @@ type CardProps = {
 
 export const LiftCard: React.FC<CardProps> = ({ children, style, onPress }) => {
   const { colors } = useTheme();
-  const body = <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>{children}</View>;
+  const body = (
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
+      {children}
+    </View>
+  );
+
   return onPress ? <Pressable onPress={onPress}>{body}</Pressable> : body;
 };
 
@@ -174,24 +193,179 @@ export const LiftStat: React.FC<StatProps> = ({ value, label }) => {
   );
 };
 
+type InputProps = {
+  value?: string;
+  onChangeText?: (text: string) => void;
+  placeholder?: string;
+  secureTextEntry?: boolean;
+  keyboardType?: any;
+  multiline?: boolean;
+  right?: React.ReactNode;
+};
+
+export const LiftInput: React.FC<InputProps> = ({
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  keyboardType,
+  multiline,
+  right,
+}) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        style={[styles.input, multiline && styles.inputMultiline, { color: colors.text }]}
+      />
+      {right ? <View style={styles.inputRight}>{right}</View> : null}
+    </View>
+  );
+};
+
+type ListItemProps = {
+  icon?: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  onPress?: () => void;
+  destructive?: boolean;
+};
+
+export const LiftListItem: React.FC<ListItemProps> = ({
+  icon,
+  title,
+  subtitle,
+  right,
+  onPress,
+  destructive = false,
+}) => {
+  const { colors } = useTheme();
+
+  return (
+    <Pressable onPress={onPress} style={styles.listItem}>
+      {icon ? (
+        <View style={[styles.listIcon, { backgroundColor: colors.accentLight }]}>{icon}</View>
+      ) : null}
+      <View style={styles.listText}>
+        <Text style={[styles.listTitle, { color: destructive ? colors.danger : colors.text }]}>{title}</Text>
+        {subtitle ? (
+          <Text style={[styles.listSubtitle, { color: colors.muted }]}>{subtitle}</Text>
+        ) : null}
+      </View>
+      {right ?? <Ionicons name="chevron-forward" size={18} color={colors.muted} />}
+    </Pressable>
+  );
+};
+
+type SegmentedTabsProps = {
+  tabs: { value: string; label: string }[];
+  active: string;
+  onChange: (value: string) => void;
+};
+
+export const LiftSegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, onChange }) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.segmentRow, { borderBottomColor: colors.border }]}>
+      {tabs.map((tab) => {
+        const selected = tab.value === active;
+        return (
+          <Pressable key={tab.value} onPress={() => onChange(tab.value)} style={styles.segmentButton}>
+            <Text style={[styles.segmentText, { color: selected ? colors.text : colors.muted }]}>
+              {tab.label}
+            </Text>
+            {selected ? (
+              <View style={[styles.segmentLine, { backgroundColor: colors.accentDark }]} />
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
+
+type BadgeProps = {
+  label: string;
+  tone?: 'neutral' | 'success' | 'danger' | 'accent';
+};
+
+export const LiftBadge: React.FC<BadgeProps> = ({ label, tone = 'neutral' }) => {
+  const { colors } = useTheme();
+  const bg =
+    tone === 'success'
+      ? colors.successLight
+      : tone === 'danger'
+      ? colors.dangerLight
+      : tone === 'accent'
+      ? colors.accentLight
+      : colors.surfaceSecondary;
+
+  const fg =
+    tone === 'success'
+      ? colors.success
+      : tone === 'danger'
+      ? colors.danger
+      : tone === 'accent'
+      ? colors.accentDark
+      : colors.textSecondary;
+
+  return (
+    <View style={[styles.badgePill, { backgroundColor: bg }]}>
+      <Text style={[styles.badgePillText, { color: fg }]}>{label}</Text>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { flex: 1, paddingHorizontal: mediumLayout.screenPadding },
-  scrollContent: { flexGrow: 1 },
-  header: { paddingTop: mediumLayout.headerTopPadding, paddingBottom: spacing.md },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brandBlock: { flex: 1 },
-  titleBlock: { flex: 1 },
-  brand: { fontFamily: fonts.heading, fontSize: 34, lineHeight: 38, fontWeight: '500' },
+  scrollContent: { flexGrow: 1, paddingBottom: 112 },
+
+  header: { paddingTop: mediumLayout.headerTopPadding, paddingBottom: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerText: { flex: 1 },
+  headerRight: { minWidth: 44, alignItems: 'flex-end' },
+  headerIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+
+  brand: { fontFamily: fonts.heading, fontSize: 34, lineHeight: 38 },
   tagline: { fontFamily: fonts.body, fontSize: 12, marginTop: 0 },
-  title: { fontFamily: fonts.heading, fontSize: 30, lineHeight: 36, fontWeight: '500' },
+  title: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 34 },
   subtitle: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20, marginTop: 4 },
-  right: { minWidth: 44, alignItems: 'flex-end' },
-  rightPlaceholder: { width: 44 },
-  iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginRight: spacing.sm },
-  card: { borderWidth: 1, borderRadius: mediumLayout.cardRadius, padding: spacing.lg },
-  button: { minHeight: 50, borderRadius: radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg },
+
+  card: { borderWidth: 1, borderRadius: mediumLayout.cardRadius, padding: 16 },
+  button: { minHeight: 50, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   buttonText: { fontFamily: fonts.bodyBold, fontSize: 15 },
+
+  inputWrap: { minHeight: 48, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
+  input: { flex: 1, fontFamily: fonts.body, fontSize: 15, paddingVertical: 12 },
+  inputMultiline: { minHeight: 132, textAlignVertical: 'top' },
+  inputRight: { marginLeft: 8 },
+
+  listItem: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  listIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  listText: { flex: 1 },
+  listTitle: { fontFamily: fonts.bodyMedium, fontSize: 15 },
+  listSubtitle: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17, marginTop: 2 },
+
+  segmentRow: { flexDirection: 'row', borderBottomWidth: 1 },
+  segmentButton: { minHeight: 42, marginRight: 24, justifyContent: 'center' },
+  segmentText: { fontFamily: fonts.bodyMedium, fontSize: 14 },
+  segmentLine: { height: 2, borderRadius: 1, marginTop: 10 },
+
+  badgePill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
+  badgePillText: { fontFamily: fonts.bodyMedium, fontSize: 11 },
+
+  // Legacy components
   logoLarge: { fontFamily: fonts.heading, fontSize: 42, lineHeight: 48, fontWeight: '500' },
   logoSmall: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 32, fontWeight: '500' },
   liftIconButton: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },

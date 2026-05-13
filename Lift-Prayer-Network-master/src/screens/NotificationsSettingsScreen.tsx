@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Switch,
@@ -18,9 +17,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { radius, spacing } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 import { db, firebaseEnabled } from '../services/firebase';
 import { registerForPushNotifications, storePushToken, sendTestNotification, getPushTokenStatus } from '../services/notifications';
 import { updateUserSettings } from '../services/userProfile';
@@ -182,40 +180,37 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
 
   if (!user) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.centerContent}>
-            <Ionicons name="notifications-off" size={64} color={palette.muted} />
-            <Text style={styles.emptyTitle}>Sign in Required</Text>
-            <Text style={styles.emptySubtitle}>
-              Please sign in to manage your notification preferences.
-            </Text>
-          </View>
-        </SafeAreaView>
-      </CinematicBackground>
+      <LiftScreen scroll>
+        <View style={styles.centerContent}>
+          <Ionicons name="notifications-off" size={64} color={colors.muted} />
+          <Text style={styles.emptyTitle}>Sign in Required</Text>
+          <Text style={styles.emptySubtitle}>
+            Please sign in to manage your notification preferences.
+          </Text>
+        </View>
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>PREFERENCES</Text>
-            <Text style={styles.heading}>
-              Alerts<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>PREFERENCES</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Alerts<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Permission Status Banner */}
         {permissionStatus !== 'granted' && (
           <TouchableOpacity style={styles.permissionBanner} onPress={requestPermission}>
@@ -226,7 +221,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
                 Tap to enable push notifications
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
         )}
 
@@ -371,7 +366,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
                       <Text style={styles.settingSubtitle}>Configure in Reminders</Text>
                     </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+                  <Ionicons name="chevron-forward" size={20} color={colors.muted} />
                 </TouchableOpacity>
               </>
             )}
@@ -405,7 +400,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
                 <Text style={styles.settingTitle}>Send Test Notification</Text>
                 <Text style={styles.settingSubtitle}>Verify notifications are working</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
             </TouchableOpacity>
             
             <View style={styles.divider} />
@@ -431,7 +426,7 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
                 <Text style={styles.settingTitle}>View Push Token</Text>
                 <Text style={styles.settingSubtitle}>Check your device&apos;s push token</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
             </TouchableOpacity>
           </View>
         </View>
@@ -445,9 +440,8 @@ export const NotificationsSettingsScreen: React.FC<Props> = ({ navigation }) => 
           </Text>
         </View>
           </ScrollView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
@@ -526,6 +520,14 @@ const styles = StyleSheet.create({
   headingDot: {
     color: '#f59e0b',
   },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   
   // Content styles
   mainContent: {
@@ -540,7 +542,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+    borderBottomColor: '#e5e7eb',
   },
   backButton: {
     width: 40,
@@ -553,7 +555,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   content: {
     padding: spacing.lg,
@@ -568,12 +569,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
+    color: '#1c1917',
     marginTop: spacing.md,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: palette.muted,
+    color: '#64748b',
     textAlign: 'center',
     marginTop: spacing.sm,
   },
@@ -607,7 +608,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: palette.muted,
+    color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.sm,
@@ -617,7 +618,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#e5e7eb',
     overflow: 'hidden',
   },
   settingRow: {
@@ -642,19 +643,18 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: palette.text,
   },
   settingTitleDisabled: {
-    color: palette.muted,
+    color: '#64748b',
   },
   settingSubtitle: {
-    fontSize: 12,
-    color: palette.muted,
+    fontSize: 13,
+    color: '#64748b',
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: palette.border,
+    backgroundColor: '#e5e7eb',
     marginLeft: 68,
   },
   timeRow: {

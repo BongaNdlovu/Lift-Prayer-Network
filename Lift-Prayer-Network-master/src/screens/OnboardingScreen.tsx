@@ -14,7 +14,6 @@ import {
   View,
   ViewToken,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +21,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { radius, spacing, fonts, fontSizes } from '../theme/colors';
 import { recordOnboardingAnalytics, type OnboardingAnswers } from '../services/userProfile';
 import { validateDisplayName } from '../utils/security';
-import { CinematicBackground } from '../components/CinematicBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -382,14 +380,10 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       ? true 
       : (currentAnswer && (Array.isArray(currentAnswer) ? currentAnswer.length > 0 : true));
 
-    // Bold diagonal gradient
-    const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
     return (
-      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.questionHeader}>
-          <TouchableOpacity onPress={handleQuestionBack} style={[styles.backButton, { backgroundColor: colors.surface }]}>
+          <TouchableOpacity onPress={handleQuestionBack} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.progressContainer}>
@@ -479,7 +473,6 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
           )}
         </View>
       </SafeAreaView>
-      </LinearGradient>
     );
   };
 
@@ -488,8 +481,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
   }
 
   return (
-    <CinematicBackground>
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.skipContainer}>
         {currentIndex < slides.length - 1 && (
           <TouchableOpacity onPress={() => setShowQuestionnaire(true)}>
@@ -524,8 +516,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
           </Text>
         </TouchableOpacity>
       </View>
-      </SafeAreaView>
-    </CinematicBackground>
+    </SafeAreaView>
   );
 };
 

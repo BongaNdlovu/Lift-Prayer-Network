@@ -2,18 +2,17 @@ import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing, fonts, shadows } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { radius, spacing, fonts, fontSizes, shadows } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 import {
   Achievement,
   ACHIEVEMENTS,
@@ -96,24 +95,23 @@ export const AchievementsScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>YOUR JOURNEY</Text>
-            <Text style={styles.heading}>
-              Badges<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>YOUR JOURNEY</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Badges<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
         
         <FlatList
           data={ACHIEVEMENTS}
@@ -134,7 +132,7 @@ export const AchievementsScreen: React.FC = () => {
                 </View>
                 <View style={[styles.progressBar, { backgroundColor: isDark ? colors.border : '#e5e7eb' }]}>
                   <View
-                    style={[styles.progressFill, { width: `${progress}%` }]}
+                    style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.accent }]}
                   />
                 </View>
                 <Text style={[styles.progressHint, { color: colors.muted }]}>
@@ -172,9 +170,8 @@ export const AchievementsScreen: React.FC = () => {
             </>
           }
         />
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
@@ -192,6 +189,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     zIndex: 20,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCenter: {
     flex: 1,
@@ -211,7 +216,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -1.5,
     lineHeight: 34,
-    color: '#1c1917',
   },
   headingDot: {
     color: '#f59e0b',
@@ -242,7 +246,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   list: {
     padding: spacing.lg,
@@ -262,14 +265,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   progressTitle: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    color: palette.text,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.lg,
+    fontWeight: '700',
   },
   progressCount: {
-    fontFamily: fonts.heading,
-    fontSize: 20,
-    color: palette.accent,
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.xl,
+    fontWeight: '800',
   },
   progressBar: {
     height: 8,
@@ -280,21 +283,20 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: palette.accent,
-    borderRadius: 4,
+    borderRadius: 9999,
   },
   progressHint: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: palette.muted,
   },
   recentSection: {
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    color: palette.text,
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.md,
+    fontWeight: '700',
+    marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
   recentBadges: {
@@ -345,16 +347,13 @@ const styles = StyleSheet.create({
   achievementTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: 16,
-    color: palette.text,
   },
   achievementDesc: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: palette.muted,
     marginTop: 2,
   },
   textLocked: {
-    color: palette.muted,
   },
   unlockedBadge: {
     alignSelf: 'flex-start',

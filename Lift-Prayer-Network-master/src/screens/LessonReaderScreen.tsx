@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -65,7 +64,7 @@ export const LessonReaderScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.cinematicBackground }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -75,7 +74,7 @@ export const LessonReaderScreen: React.FC = () => {
 
   if (!lesson) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.cinematicBackground }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <Text style={[styles.errorText, { color: colors.muted }]}>Lesson not found</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
@@ -90,13 +89,13 @@ export const LessonReaderScreen: React.FC = () => {
   const paragraphs = lesson.content.split('\n\n').filter(p => p.trim());
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.cinematicBackground }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Sticky Header (appears on scroll) */}
       <Animated.View 
         style={[
           styles.stickyHeader, 
           { 
-            backgroundColor: colors.cinematicBackground,
+            backgroundColor: colors.background,
             borderBottomColor: colors.border,
             opacity: headerOpacity,
           }
@@ -104,13 +103,13 @@ export const LessonReaderScreen: React.FC = () => {
       >
         <SafeAreaView style={styles.stickyHeaderInner}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.stickyTitle, { color: colors.stone800 }]} numberOfLines={1}>
+          <Text style={[styles.stickyTitle, { color: colors.text }]} numberOfLines={1}>
             {lesson.title}
           </Text>
           <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="bookmark-outline" size={22} color={colors.stone700} />
+            <Ionicons name="bookmark-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </SafeAreaView>
       </Animated.View>
@@ -121,13 +120,13 @@ export const LessonReaderScreen: React.FC = () => {
           style={styles.floatingBackButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={[styles.floatingBackInner, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
+          <View style={[styles.floatingBackInner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.floatingBackButton}>
-          <View style={[styles.floatingBackInner, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
-            <Ionicons name="bookmark-outline" size={22} color={colors.stone700} />
+          <View style={[styles.floatingBackInner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="bookmark-outline" size={22} color={colors.text} />
           </View>
         </TouchableOpacity>
       </SafeAreaView>
@@ -149,45 +148,41 @@ export const LessonReaderScreen: React.FC = () => {
             style={styles.heroImage}
             resizeMode="cover"
           />
-          <LinearGradient
-            colors={['transparent', colors.cinematicBackground]}
-            locations={[0.5, 1]}
-            style={styles.heroGradient}
-          />
+          <View style={[styles.heroGradient, { backgroundColor: colors.background }]} />
         </View>
 
         {/* Article Content */}
         <View style={styles.articleContainer}>
           {/* Meta Badge */}
           <View style={styles.metaRow}>
-            <View style={[styles.metaBadge, { backgroundColor: colors.amber100 }]}>
-              <Text style={[styles.metaBadgeText, { color: colors.amber700 }]}>
+            <View style={[styles.metaBadge, { backgroundColor: colors.accentLight }]}>
+              <Text style={[styles.metaBadgeText, { color: colors.accentDark }]}>
                 Lesson {lesson.number}
               </Text>
             </View>
-            <Text style={[styles.metaDate, { color: colors.stone400 }]}>
+            <Text style={[styles.metaDate, { color: colors.muted }]}>
               {lesson.date}
             </Text>
           </View>
 
           {/* Title */}
-          <Text style={[styles.articleTitle, { color: colors.stone900 }]}>
+          <Text style={[styles.articleTitle, { color: colors.text }]}>
             {lesson.title}
           </Text>
 
           {/* Memory Verse Card */}
           <View style={[styles.memoryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.memoryAccent, { backgroundColor: colors.amber500 }]} />
+            <View style={[styles.memoryAccent, { backgroundColor: colors.accent }]} />
             <Ionicons 
               name="book-outline" 
               size={36} 
-              color={colors.stone200} 
+              color={colors.muted} 
               style={styles.memoryIcon}
             />
-            <Text style={[styles.memoryText, { color: colors.stone700 }]}>
+            <Text style={[styles.memoryText, { color: colors.textSecondary }]}>
               &ldquo;{lesson.memoryText}&rdquo;
             </Text>
-            <Text style={[styles.memoryRef, { color: colors.amber700 }]}>
+            <Text style={[styles.memoryRef, { color: colors.accentDark }]}>
               — {lesson.memoryRef}
             </Text>
           </View>
@@ -195,8 +190,8 @@ export const LessonReaderScreen: React.FC = () => {
           {/* Readings */}
           {lesson.readings && (
             <View style={styles.readingsRow}>
-              <Ionicons name="library-outline" size={16} color={colors.stone400} />
-              <Text style={[styles.readingsText, { color: colors.stone500 }]}>
+              <Ionicons name="library-outline" size={16} color={colors.muted} />
+              <Text style={[styles.readingsText, { color: colors.textSecondary }]}>
                 {lesson.readings}
               </Text>
             </View>
@@ -212,7 +207,7 @@ export const LessonReaderScreen: React.FC = () => {
                 return (
                   <Text 
                     key={index} 
-                    style={[styles.bodyHeading, { color: colors.stone900 }]}
+                    style={[styles.bodyHeading, { color: colors.text }]}
                   >
                     {paragraph}
                   </Text>
@@ -248,26 +243,26 @@ export const LessonReaderScreen: React.FC = () => {
 
           {/* End Mark */}
           <View style={styles.endMark}>
-            <View style={[styles.endDot, { backgroundColor: colors.stone300 }]} />
-            <View style={[styles.endDot, { backgroundColor: colors.stone300 }]} />
-            <View style={[styles.endDot, { backgroundColor: colors.stone300 }]} />
+            <View style={[styles.endDot, { backgroundColor: colors.border }]} />
+            <View style={[styles.endDot, { backgroundColor: colors.border }]} />
+            <View style={[styles.endDot, { backgroundColor: colors.border }]} />
           </View>
 
           {/* Discussion Questions */}
-          <View style={[styles.discussionCard, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}>
+          <View style={[styles.discussionCard, { backgroundColor: colors.accentLight, borderColor: colors.accentDark }]}>
             <View style={styles.discussionHeader}>
-              <Ionicons name="chatbubbles-outline" size={20} color={colors.amber700} />
-              <Text style={[styles.discussionTitle, { color: colors.amber700 }]}>
+              <Ionicons name="chatbubbles-outline" size={20} color={colors.accentDark} />
+              <Text style={[styles.discussionTitle, { color: colors.accentDark }]}>
                 Discussion Questions
               </Text>
             </View>
-            <Text style={[styles.discussionText, { color: colors.stone800 }]}>
+            <Text style={[styles.discussionText, { color: colors.textSecondary }]}>
               1. How does Joshua&apos;s call to be &ldquo;strong and courageous&rdquo; apply to your life today?
             </Text>
-            <Text style={[styles.discussionText, { color: colors.stone800 }]}>
+            <Text style={[styles.discussionText, { color: colors.textSecondary }]}>
               2. What &ldquo;promised lands&rdquo; is God calling you to enter?
             </Text>
-            <Text style={[styles.discussionText, { color: colors.stone800 }]}>
+            <Text style={[styles.discussionText, { color: colors.textSecondary }]}>
               3. How can meditating on Scripture day and night transform your daily decisions?
             </Text>
           </View>

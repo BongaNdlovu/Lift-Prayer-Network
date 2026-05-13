@@ -30,7 +30,6 @@ import { db } from '../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, fontSizes, radius, spacing, shadows } from '../theme/colors';
 import { SkeletonGroups } from '../components/SkeletonCard';
-import { GlassCard, GlassIconButton } from '../components/GlassCard';
 import { LiftScreen } from '../components/LiftLayout';
 import type { PrayerGroup } from '../types';
 import type { RootStackParamList } from '../navigation/types';
@@ -260,19 +259,17 @@ export const GroupsScreen: React.FC = () => {
   }
 
   const renderGroup = ({ item }: { item: PrayerGroup }) => (
-    <GlassCard 
+    <TouchableOpacity 
       onPress={() => handleGroupPress(item)}
-      style={styles.groupCard}
-      padding="lg"
-      rounded="xl"
+      style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
       <View style={styles.groupHeader}>
         <View style={[styles.groupEmoji, { backgroundColor: isDark ? colors.glassWhite : colors.accentLight }]}>
           <Text style={styles.groupEmojiText}>{item.emoji || '🙏'}</Text>
         </View>
         <View style={styles.groupInfo}>
-          <Text style={[styles.groupName, { color: colors.stone900 }]}>{item.name}</Text>
-          <Text style={[styles.groupMembers, { color: colors.stone500 }]}>
+          <Text style={[styles.groupName, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.groupMembers, { color: colors.muted }]}>
             {item.memberUids.length} member{item.memberUids.length !== 1 ? 's' : ''}
           </Text>
         </View>
@@ -282,24 +279,24 @@ export const GroupsScreen: React.FC = () => {
               <Text style={[styles.ownerBadgeText, { color: colors.amber600 }]}>Owner</Text>
             </View>
           )}
-          <Ionicons name="chevron-forward" size={20} color={colors.stone400} />
+          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
         </View>
       </View>
       
       {item.description && (
-        <Text style={[styles.groupDesc, { color: colors.stone500 }]}>{item.description}</Text>
+        <Text style={[styles.groupDesc, { color: colors.muted }]}>{item.description}</Text>
       )}
 
-      <View style={[styles.groupActions, { borderTopColor: colors.glassBorder }]}>
+      <View style={[styles.groupActions, { borderTopColor: colors.border }]}>
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: isDark ? colors.glassWhite : colors.stone100 }]}
+          style={[styles.actionBtn, { backgroundColor: isDark ? colors.glassWhite : colors.surfaceSecondary }]}
           onPress={(e) => {
             e.stopPropagation();
             handleShareInvite(item);
           }}
         >
-          <Ionicons name="share-outline" size={18} color={colors.stone700} />
-          <Text style={[styles.actionBtnText, { color: colors.stone700 }]}>Invite</Text>
+          <Ionicons name="share-outline" size={18} color={colors.text} />
+          <Text style={[styles.actionBtnText, { color: colors.text }]}>Invite</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
@@ -315,7 +312,7 @@ export const GroupsScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </View>
-    </GlassCard>
+    </TouchableOpacity>
   );
 
   return (
@@ -328,17 +325,18 @@ export const GroupsScreen: React.FC = () => {
           </Text>
         </View>
         <View style={styles.headerButtons}>
-          <GlassIconButton
+          <TouchableOpacity
             onPress={() => setShowJoinModal(true)}
+            style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
             <Ionicons name="enter-outline" size={22} color={colors.muted} strokeWidth={1.5} />
-          </GlassIconButton>
-          <GlassIconButton
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => setShowCreateModal(true)}
-            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+            style={[styles.iconButton, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}
           >
             <Ionicons name="add" size={24} color={colors.amber700} strokeWidth={2} />
-          </GlassIconButton>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -572,6 +570,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: 4,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   // Content styles

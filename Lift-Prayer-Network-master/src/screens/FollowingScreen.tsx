@@ -16,8 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { useFollowing } from '../hooks/useFollowing';
 import { useTheme } from '../contexts/ThemeContext';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { palette, fonts, fontSizes, spacing, radius } from '../theme/colors';
+import { fonts, fontSizes, spacing, radius } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 import type { FollowRecord } from '../types';
 
 const getInitials = (name: string): string => {
@@ -83,7 +83,7 @@ export const FollowingScreen: React.FC = () => {
           )}
           <View style={styles.userDetails}>
             <Text style={[styles.userName, { color: colors.text }]}>{item.targetDisplayName}</Text>
-            <Text style={styles.followedAt}>
+            <Text style={[styles.followedAt, { color: colors.muted }]}>
               Following since {item.followedAt ? new Date((item.followedAt as any).toDate?.() || item.followedAt).toLocaleDateString() : 'recently'}
             </Text>
           </View>
@@ -99,35 +99,34 @@ export const FollowingScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground>
-      <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>Following</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+    <LiftScreen scroll>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>Following</Text>
+        <View style={styles.headerSpacer} />
+      </View>
 
-        <RoundedPage style={styles.content}>
+        <View style={styles.content}>
           {/* Info Banner */}
-          <View style={[styles.infoBanner, { backgroundColor: colors.glassWhiteLight, borderColor: colors.glassBorder }]}>
-            <Ionicons name="information-circle-outline" size={20} color={colors.amber600} />
-            <Text style={[styles.infoText, { color: colors.stone600 }]}>
+          <View style={[styles.infoBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="information-circle-outline" size={20} color={colors.accent} />
+            <Text style={[styles.infoText, { color: colors.muted }]}>
               Posts from people you follow appear first in your feed.
             </Text>
           </View>
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <Text style={[styles.loadingText, { color: colors.stone500 }]}>Loading...</Text>
+              <Text style={[styles.loadingText, { color: colors.muted }]}>Loading...</Text>
             </View>
           ) : following.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>👥</Text>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>Not following anyone yet</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.stone500 }]}>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                 Follow users from the feed to see their prayer requests first.
               </Text>
             </View>
@@ -141,9 +140,8 @@ export const FollowingScreen: React.FC = () => {
               ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
             />
           )}
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+        </View>
+    </LiftScreen>
   );
 };
 
@@ -270,7 +268,6 @@ const styles = StyleSheet.create({
   followedAt: {
     fontSize: fontSizes.xs,
     fontFamily: fonts.body,
-    color: palette.muted,
     marginTop: 2,
   },
   unfollowButton: {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -12,7 +11,6 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
@@ -28,9 +26,8 @@ import {
 import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, fontSizes, palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { fonts, fontSizes, radius, spacing } from '../theme/colors';
+import { LiftScreen, LiftCard } from '../components/LiftLayout';
 import { RootStackParamList } from '../navigation/types';
 import { Testimony, PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { Confetti } from '../components/Confetti';
@@ -99,12 +96,7 @@ const TestimonyCard: React.FC<{
       ]}
     >
       <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-        <LinearGradient
-          colors={['#f0fdf4', '#dcfce7', '#bbf7d0']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
+        <LiftCard style={styles.card}>
           {/* Celebration Badge */}
           <View style={styles.celebrationBadge}>
             <Text style={styles.celebrationEmoji}>🎉</Text>
@@ -141,15 +133,7 @@ const TestimonyCard: React.FC<{
               </View>
             )}
           </View>
-
-          {/* Decorative Elements */}
-          <View style={styles.sparkle1}>
-            <Text style={styles.sparkleEmoji}>✨</Text>
-          </View>
-          <View style={styles.sparkle2}>
-            <Text style={styles.sparkleEmoji}>⭐</Text>
-          </View>
-        </LinearGradient>
+        </LiftCard>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -244,31 +228,30 @@ export const AnsweredPrayersScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {showConfetti && <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />}
+    <LiftScreen scroll>
+      {showConfetti && <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />}
 
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>CELEBRATE</Text>
-            <Text style={styles.heading}>
-              Answered<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <GlassIconButton
-            onPress={() => navigation.navigate('CreateTestimony')}
-            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
-          >
-            <Ionicons name="add" size={24} color={colors.amber700} />
-          </GlassIconButton>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>CELEBRATE</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Answered<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('CreateTestimony')}
+          style={[styles.iconButton, { backgroundColor: colors.accentLight, borderColor: colors.accentDark }]}
+        >
+          <Ionicons name="add" size={24} color={colors.accentDark} />
+        </TouchableOpacity>
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
 
       {/* Stats Banner */}
       <View style={[styles.statsBanner, { backgroundColor: colors.surface }]}>
@@ -376,29 +359,28 @@ export const AnsweredPrayersScreen: React.FC = () => {
           }
           ListFooterComponent={
             <TouchableOpacity
-              style={styles.shareTestimonyButton}
+              style={[styles.shareTestimonyButton, { backgroundColor: colors.success }]}
               onPress={() => navigation.navigate('CreateTestimony')}
             >
-              <LinearGradient
-                colors={['#10b981', '#059669']}
-                style={styles.shareTestimonyGradient}
-              >
-                <Ionicons name="sparkles" size={20} color="#fff" />
-                <Text style={styles.shareTestimonyText}>Share Your Testimony</Text>
-              </LinearGradient>
+              <Ionicons name="sparkles" size={20} color="#fff" />
+              <Text style={styles.shareTestimonyText}>Share Your Testimony</Text>
             </TouchableOpacity>
           }
         />
       )}
-      </RoundedPage>
-    </SafeAreaView>
-  </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   // Header styles
@@ -406,10 +388,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
-    zIndex: 20,
   },
   headerCenter: {
     flex: 1,
@@ -497,12 +478,10 @@ const styles = StyleSheet.create({
   statBoxLabel: {
     fontSize: fontSizes.xs - 1,
     fontFamily: fonts.body,
-    color: palette.muted,
     marginTop: 2,
   },
   statDivider: {
     width: 1,
-    backgroundColor: palette.border,
     marginHorizontal: spacing.md,
   },
   categoryScroll: {
@@ -606,12 +585,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   card: {
-    borderRadius: radius.md,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: '#86efac',
     position: 'relative',
-    overflow: 'hidden',
   },
   celebrationBadge: {
     position: 'absolute',
@@ -715,29 +690,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     color: '#059669',
   },
-  sparkle1: {
-    position: 'absolute',
-    top: 50,
-    right: 16,
-    opacity: 0.3,
-  },
-  sparkle2: {
-    position: 'absolute',
-    bottom: 30,
-    left: 16,
-    opacity: 0.3,
-  },
-  sparkleEmoji: {
-    fontSize: 16,
-  },
   shareTestimonyButton: {
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  shareTestimonyGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     gap: spacing.xs,

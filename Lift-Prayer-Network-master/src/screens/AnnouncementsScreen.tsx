@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,8 +17,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { hasAdminPermission } from '../config/admins';
 import { radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { LiftScreen } from '../components/LiftLayout';
 import {
   Announcement,
   subscribeToAnnouncements,
@@ -164,30 +162,29 @@ export const AnnouncementsScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>UPDATES</Text>
-            <Text style={styles.heading}>
-              News<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          {isAdmin ? (
-            <GlassIconButton onPress={handleOpenCreate}>
-              <Ionicons name="add" size={22} color={colors.stone700} />
-            </GlassIconButton>
-          ) : (
-            <View style={{ width: 44 }} />
-          )}
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>UPDATES</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            News<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        {isAdmin ? (
+          <TouchableOpacity onPress={handleOpenCreate} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="add" size={22} color={colors.text} />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 44 }} />
+        )}
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -336,9 +333,8 @@ export const AnnouncementsScreen: React.FC = () => {
           </View>
         </View>
         </Modal>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
@@ -356,6 +352,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     zIndex: 20,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCenter: {
     flex: 1,
@@ -462,9 +466,6 @@ const styles = StyleSheet.create({
   adminActions: {
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  iconButton: {
-    padding: spacing.xs,
   },
   cardTitle: {
     fontSize: 16,

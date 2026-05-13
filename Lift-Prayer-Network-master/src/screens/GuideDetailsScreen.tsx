@@ -10,7 +10,6 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -81,7 +80,7 @@ export const GuideDetailsScreen: React.FC = () => {
 
   if (!guide) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.cinematicBackground }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -90,7 +89,7 @@ export const GuideDetailsScreen: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.cinematicBackground }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Hero Image Section */}
       <View style={styles.heroContainer}>
         <Image
@@ -98,12 +97,7 @@ export const GuideDetailsScreen: React.FC = () => {
           style={styles.heroImage}
           resizeMode="cover"
         />
-        {/* Gradient Overlay */}
-        <LinearGradient
-          colors={['rgba(0,0,0,0.3)', 'transparent', colors.cinematicBackground]}
-          locations={[0, 0.4, 1]}
-          style={styles.heroGradient}
-        />
+        <View style={[styles.heroGradient, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
         
         {/* Back Button */}
         <SafeAreaView style={styles.headerOverlay}>
@@ -125,7 +119,7 @@ export const GuideDetailsScreen: React.FC = () => {
       </View>
 
       {/* Content Sheet */}
-      <View style={[styles.contentSheet, { backgroundColor: colors.cinematicBackground }]}>
+      <View style={[styles.contentSheet, { backgroundColor: colors.background }]}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -138,28 +132,28 @@ export const GuideDetailsScreen: React.FC = () => {
 
           {/* Stats Row */}
           <View style={styles.statsRow}>
-            <View style={[styles.statItem, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
-              <Ionicons name="book-outline" size={18} color={colors.amber600} />
-              <Text style={[styles.statValue, { color: colors.stone800 }]}>{guide.lessonCount}</Text>
-              <Text style={[styles.statLabel, { color: colors.stone500 }]}>Lessons</Text>
+            <View style={[styles.statItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="book-outline" size={18} color={colors.accent} />
+              <Text style={[styles.statValue, { color: colors.text }]}>{guide.lessonCount}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Lessons</Text>
             </View>
-            <View style={[styles.statItem, { backgroundColor: colors.glassWhite, borderColor: colors.glassBorder }]}>
-              <Ionicons name="calendar-outline" size={18} color={colors.amber600} />
-              <Text style={[styles.statValue, { color: colors.stone800 }]}>{guide.dateRange}</Text>
-              <Text style={[styles.statLabel, { color: colors.stone500 }]}>Quarter</Text>
+            <View style={[styles.statItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="calendar-outline" size={18} color={colors.accent} />
+              <Text style={[styles.statValue, { color: colors.text }]}>{guide.dateRange}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Quarter</Text>
             </View>
           </View>
 
           {/* Lessons Section */}
           <View style={styles.lessonsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.stone400 }]}>THIS QUARTER</Text>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]}>THIS QUARTER</Text>
             
             {loading ? (
               <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 20 }} />
             ) : lessons.length === 0 ? (
               <View style={styles.emptyLessons}>
-                <Ionicons name="document-text-outline" size={48} color={colors.stone300} />
-                <Text style={[styles.emptyText, { color: colors.stone400 }]}>
+                <Ionicons name="document-text-outline" size={48} color={colors.border} />
+                <Text style={[styles.emptyText, { color: colors.muted }]}>
                   Lessons coming soon
                 </Text>
               </View>
@@ -172,21 +166,21 @@ export const GuideDetailsScreen: React.FC = () => {
                     onPress={() => handleSelectLesson(lesson)}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.lessonNumber, { backgroundColor: colors.stone100 }]}>
-                      <Text style={[styles.lessonNumberText, { color: colors.stone500 }]}>
+                    <View style={[styles.lessonNumber, { backgroundColor: colors.surfaceSecondary }]}>
+                      <Text style={[styles.lessonNumberText, { color: colors.muted }]}>
                         {lesson.number}
                       </Text>
                     </View>
                     <View style={styles.lessonContent}>
-                      <Text style={[styles.lessonTitle, { color: colors.stone800 }]} numberOfLines={1}>
+                      <Text style={[styles.lessonTitle, { color: colors.text }]} numberOfLines={1}>
                         {lesson.title}
                       </Text>
-                      <Text style={[styles.lessonDate, { color: colors.stone400 }]}>
+                      <Text style={[styles.lessonDate, { color: colors.muted }]}>
                         {lesson.date}
                       </Text>
                     </View>
-                    <View style={[styles.lessonArrow, { borderColor: colors.stone200 }]}>
-                      <Ionicons name="chevron-forward" size={16} color={colors.stone400} />
+                    <View style={[styles.lessonArrow, { borderColor: colors.border }]}>
+                      <Ionicons name="chevron-forward" size={16} color={colors.muted} />
                     </View>
                   </TouchableOpacity>
                 ))}

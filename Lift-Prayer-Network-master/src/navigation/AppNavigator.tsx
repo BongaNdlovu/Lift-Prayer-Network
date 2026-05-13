@@ -44,6 +44,8 @@ import { startOfflineSyncListener } from '../services/offlineSync';
 import { validateAndRepairCache } from '../services/offlineCache';
 import { LazyScreen } from '../components/LazyScreen';
 import { GlassTabBar } from '../components/GlassTabBar';
+import { LiftScreen } from '../components/LiftLayout';
+import { fonts } from '../theme/colors';
 
 const HAS_EVER_SIGNED_IN_KEY = '@lift_has_ever_signed_in';
 
@@ -175,18 +177,20 @@ export const AppNavigator: React.FC = () => {
   // Show banned screen if user was banned
   if (bannedReason) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 24 }}>
-        <Ionicons name="ban-outline" size={64} color="#dc2626" />
-        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text, marginTop: 16, textAlign: 'center' }}>
-          Account Suspended
-        </Text>
-        <Text style={{ fontSize: 16, color: colors.muted, marginTop: 12, textAlign: 'center', lineHeight: 24 }}>
-          {bannedReason}
-        </Text>
-        <Text style={{ fontSize: 14, color: colors.muted, marginTop: 24, textAlign: 'center' }}>
-          If you believe this is a mistake, please contact support.
-        </Text>
-      </View>
+      <LiftScreen contentStyle={{ justifyContent: 'center' }}>
+        <View style={{ alignItems: 'center', gap: 16 }}>
+          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: colors.surfaceSecondary, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="lock-closed" size={28} color={colors.accentDark} />
+          </View>
+          <Text style={{ fontFamily: fonts.heading, fontSize: 26, color: colors.text }}>Account Suspended</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: colors.muted, textAlign: 'center' }}>
+            {bannedReason}
+          </Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+            If you believe this is a mistake, contact support.
+          </Text>
+        </View>
+      </LiftScreen>
     );
   }
 
@@ -199,7 +203,7 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="RequestDetail"
               component={RequestDetailScreen}
-              options={{ headerShown: true, title: 'Detail' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="CreateRequest"
@@ -229,17 +233,17 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="NotificationsSettings"
               component={NotificationsSettingsScreen}
-              options={{ headerShown: true, title: 'Notification Settings' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="Reminders"
               component={RemindersScreen}
-              options={{ headerShown: true, title: 'Prayer Reminders' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="Settings"
               component={SettingsScreen}
-              options={{ headerShown: true, title: 'Settings' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="AdminDashboard"
@@ -258,7 +262,7 @@ export const AppNavigator: React.FC = () => {
             </Stack.Screen>
             <Stack.Screen
               name="AdminReports"
-              options={{ headerShown: true, title: 'Reports' }}
+              options={{ headerShown: false }}
             >
               {(props) => (
                 <LazyScreen
@@ -273,7 +277,7 @@ export const AppNavigator: React.FC = () => {
             </Stack.Screen>
             <Stack.Screen
               name="AdminPinnedRequests"
-              options={{ headerShown: true, title: 'Pinned Requests' }}
+              options={{ headerShown: false }}
             >
               {(props) => (
                 <LazyScreen
@@ -288,7 +292,7 @@ export const AppNavigator: React.FC = () => {
             </Stack.Screen>
             <Stack.Screen
               name="AdminGlobalStats"
-              options={{ headerShown: true, title: 'Global Stats' }}
+              options={{ headerShown: false }}
             >
               {(props) => (
                 <LazyScreen
@@ -334,17 +338,17 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="People"
               component={PeopleScreen}
-              options={{ headerShown: true, title: 'People I Prayed For' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="History"
               component={HistoryScreen}
-              options={{ headerShown: true, title: 'Prayer History' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="Achievements"
               component={AchievementsScreen}
-              options={{ headerShown: true, title: 'Achievements' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="Help"
@@ -414,7 +418,7 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="ForgotPassword"
               component={ForgotPasswordScreen}
-              options={{ headerShown: true, title: 'Reset Password' }}
+              options={{ headerShown: false }}
             />
           </>
         )}

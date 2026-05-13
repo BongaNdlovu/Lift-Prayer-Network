@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, TouchableOpacity, Alert, Modal, Image, Animated, Share } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing, fonts, fontSizes } from '../theme/colors';
+import { radius, spacing, fonts, fontSizes } from '../theme/colors';
 import type { FeedItem, LiftRequest } from '../types';
 import { reportContent, blockUser, banUser, blockUserFromPosting, REPORT_REASONS, ReportReason } from '../services/moderation';
 import { getVerifiedBadge, BADGE_STYLES, canEditContent, canDeleteContent, hasAdminPermission, hasModeratorPermission } from '../config/admins';
 import { deletePrayerRequest, deleteTestimony } from '../services/prayers';
+import { LiftCard } from './LiftLayout';
 
 // Relative time formatting
 export const formatRelativeTime = (date: any): string => {
@@ -101,7 +101,7 @@ export const FeedCard: React.FC<Props> = ({
   currentUserId,
   currentUserEmail,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const isRequest = item.type === 'REQUEST';
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null);
@@ -577,23 +577,9 @@ export const FeedCard: React.FC<Props> = ({
   const realDisplayName = (item as any)._realDisplayName;
   const realEmail = (item as any)._realEmail;
 
-  // Cinematic card colors - glassmorphism style
-  const cardColors: [string, string] = isDark
-    ? (isUrgent ? ['rgba(127,29,29,0.8)', 'rgba(69,10,10,0.8)'] : [colors.glassWhite, colors.glassWhiteLight])
-    : (isUrgent ? ['rgba(254,242,242,0.9)', 'rgba(254,226,226,0.9)'] : ['rgba(255,255,255,0.7)', 'rgba(255,255,255,0.5)']);
-  
-  const pinnedColors: [string, string] = isDark 
-    ? ['rgba(120,53,15,0.6)', 'rgba(113,63,18,0.6)'] 
-    : ['rgba(254,243,199,0.9)', 'rgba(253,230,138,0.9)'];
-
   return (
     <Pressable onPress={() => onPress?.(item)} style={isPinned && styles.pinnedCardWrapper}>
-      <LinearGradient
-        colors={isPinned ? pinnedColors : cardColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.card, isUrgent && styles.cardUrgent, isPinned && styles.cardPinned]}
-      >
+      <LiftCard style={[styles.mediumCard, isPinned && styles.cardPinned, isUrgent && styles.cardUrgent]}>
         {isPinned && (
           <View style={styles.pinnedBadge}>
             <Ionicons name="pin" size={10} color="#fff" />
@@ -646,7 +632,7 @@ export const FeedCard: React.FC<Props> = ({
                 </View>
               )}
               <View style={styles.metaRow}>
-                <Text style={styles.meta}>{formatRelativeTime((item as any).createdAt)}</Text>
+                <Text style={[styles.meta, { color: colors.muted }]}>{formatRelativeTime((item as any).createdAt)}</Text>
                 {/* Quick follow button - only show for non-owners */}
                 {!isOwner && currentUserId && (onFollow || onUnfollow) && (
                   <TouchableOpacity
@@ -706,7 +692,7 @@ export const FeedCard: React.FC<Props> = ({
                 <Ionicons 
                   name={isOwner ? "settings-outline" : "ellipsis-horizontal"} 
                   size={18} 
-                  color={isOwner ? palette.accentDark : palette.muted} 
+                  color={isOwner ? colors.accentDark : colors.muted} 
                 />
               </TouchableOpacity>
             )}
@@ -784,7 +770,8 @@ export const FeedCard: React.FC<Props> = ({
                       key={reaction.type}
                       style={[
                         styles.reactionButton,
-                        activeReaction === reaction.type && styles.reactionButtonActive,
+                        { borderColor: colors.border },
+                        activeReaction === reaction.type && [styles.reactionButtonActive, { borderColor: colors.accent }],
                         count > 0 && styles.reactionButtonWithCount,
                       ]}
                       onPress={() => {
@@ -838,7 +825,8 @@ export const FeedCard: React.FC<Props> = ({
                       key={reaction.type}
                       style={[
                         styles.reactionButton,
-                        activeReaction === reaction.type && styles.reactionButtonActive,
+                        { borderColor: colors.border },
+                        activeReaction === reaction.type && [styles.reactionButtonActive, { borderColor: colors.accent }],
                         count > 0 && styles.reactionButtonWithCount,
                       ]}
                       onPress={() => {
@@ -867,8 +855,8 @@ export const FeedCard: React.FC<Props> = ({
           <View style={styles.footerInfo}>
             {/* Comment indicator */}
             <View style={styles.commentBadge}>
-              <Ionicons name="chatbubble-outline" size={11} color={palette.muted} />
-              <Text style={styles.commentCount}>
+              <Ionicons name="chatbubble-outline" size={11} color={colors.muted} />
+              <Text style={[styles.commentCount, { color: colors.muted }]}>
                 {((item as any).commentCount ?? 0) > 0 
                   ? `${(item as any).commentCount} ${(item as any).commentCount === 1 ? 'comment' : 'comments'}`
                   : 'Comment'}
@@ -878,13 +866,13 @@ export const FeedCard: React.FC<Props> = ({
             {/* Share button - only for shareable requests */}
             {canShare && (
               <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-                <Ionicons name="share-outline" size={14} color={palette.muted} />
-                <Text style={styles.shareButtonText}>Share</Text>
+                <Ionicons name="share-outline" size={14} color={colors.muted} />
+                <Text style={[styles.shareButtonText, { color: colors.muted }]}>Share</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
-      </LinearGradient>
+      </LiftCard>
 
       {/* Report Modal */}
       <Modal
@@ -896,25 +884,26 @@ export const FeedCard: React.FC<Props> = ({
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Report Content</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Report Content</Text>
               <TouchableOpacity onPress={() => setShowReportModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalSubtitle}>Why are you reporting this?</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.muted }]}>Why are you reporting this?</Text>
             
             {REPORT_REASONS.map((reason) => (
               <TouchableOpacity
                 key={reason.id}
                 style={[
                   styles.reasonOption,
-                  selectedReason === reason.id && styles.reasonOptionSelected,
+                  selectedReason === reason.id && [styles.reasonOptionSelected, { borderColor: colors.accent }],
                 ]}
                 onPress={() => setSelectedReason(reason.id)}
               >
                 <Text style={styles.reasonEmoji}>{reason.emoji}</Text>
                 <Text style={[
                   styles.reasonLabel,
+                  { color: colors.text },
                   selectedReason === reason.id && styles.reasonLabelSelected,
                 ]}>{reason.label}</Text>
                 {selectedReason === reason.id && (
@@ -946,13 +935,13 @@ export const FeedCard: React.FC<Props> = ({
         <Pressable style={styles.optionsOverlay} onPress={() => setShowOptionsModal(false)}>
           <Pressable style={styles.optionsSheet} onPress={(e) => e.stopPropagation()}>
             {/* Header */}
-            <View style={styles.optionsHeader}>
+            <View style={[styles.optionsHeader, { borderBottomColor: colors.border }]}>
               <View style={styles.optionsHandle} />
-              <Text style={styles.optionsTitle}>
+              <Text style={[styles.optionsTitle, { color: colors.text }]}>
                 {isOwner ? 'Manage Your Post' : (isAdmin ? '🛡️ Admin Options' : 'Options')}
               </Text>
               {isAdmin && !isOwner && (
-                <Text style={styles.optionsSubtitle}>Viewing: {item.userDisplayName}</Text>
+                <Text style={[styles.optionsSubtitle, { color: colors.muted }]}>Viewing: {item.userDisplayName}</Text>
               )}
             </View>
 
@@ -971,11 +960,12 @@ export const FeedCard: React.FC<Props> = ({
                   <Ionicons
                     name={option.icon as any}
                     size={22}
-                    color={option.destructive ? '#ef4444' : palette.text}
+                    color={option.destructive ? '#ef4444' : colors.text}
                   />
                   <Text
                     style={[
                       styles.optionText,
+                      { color: colors.text },
                       option.destructive && styles.optionTextDestructive,
                     ]}
                   >
@@ -990,7 +980,7 @@ export const FeedCard: React.FC<Props> = ({
               style={styles.optionsCancelButton}
               onPress={() => setShowOptionsModal(false)}
             >
-              <Text style={styles.optionsCancelText}>Cancel</Text>
+              <Text style={[styles.optionsCancelText, { color: colors.muted }]}>Cancel</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -1000,6 +990,9 @@ export const FeedCard: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
+  mediumCard: {
+    marginVertical: spacing.xs,
+  },
   card: {
     borderRadius: radius.lg,
     padding: spacing.md,
@@ -1110,7 +1103,6 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: fontSizes.xs - 1,
     fontFamily: fonts.body,
-    color: palette.muted,
     marginTop: 1,
   },
   metaRow: {
@@ -1222,7 +1214,6 @@ const styles = StyleSheet.create({
   commentCount: {
     fontSize: fontSizes.xs - 2,
     fontFamily: fonts.body,
-    color: palette.muted,
     fontWeight: '500',
   },
   prayButtonWrapper: {
@@ -1306,7 +1297,6 @@ const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: fontSizes.xs - 1,
     fontFamily: fonts.body,
-    color: palette.muted,
     fontWeight: '500',
   },
   disabled: {
@@ -1375,12 +1365,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: palette.border,
     paddingHorizontal: 4,
   },
   reactionButtonActive: {
     backgroundColor: '#fef3c7',
-    borderColor: palette.accent,
   },
   reactionButtonWithCount: {
     paddingHorizontal: 6,
@@ -1418,12 +1406,10 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
-    color: palette.text,
   },
   modalSubtitle: {
     fontSize: fontSizes.xs,
     fontFamily: fonts.body,
-    color: palette.muted,
     marginBottom: spacing.md,
   },
   reasonOption: {
@@ -1439,7 +1425,6 @@ const styles = StyleSheet.create({
   reasonOptionSelected: {
     backgroundColor: '#fef3c7',
     borderWidth: 1,
-    borderColor: palette.accent,
   },
   reasonEmoji: {
     fontSize: 16,
@@ -1449,7 +1434,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm - 1,
     fontWeight: '500',
     fontFamily: fonts.body,
-    color: palette.text,
   },
   reasonLabelSelected: {
     color: '#92400e',
@@ -1533,7 +1517,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   optionsHandle: {
     width: 32,
@@ -1546,12 +1529,10 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
-    color: palette.text,
   },
   optionsSubtitle: {
     fontSize: fontSizes.xs - 1,
     fontFamily: fonts.body,
-    color: palette.muted,
     marginTop: 2,
   },
   optionsList: {
@@ -1571,7 +1552,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm - 1,
     fontWeight: '500',
     fontFamily: fonts.body,
-    color: palette.text,
   },
   optionTextDestructive: {
     color: '#ef4444',
@@ -1588,6 +1568,5 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm - 1,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
-    color: palette.muted,
   },
 });

@@ -28,13 +28,12 @@ import { getGroup, getGroupMembers, updateGroup, leaveGroup, deleteGroup, getInv
 import { subscribeToGroupRequests, submitGroupRequest, logPrayer, logReaction, likeTestimony } from '../services/prayers';
 import type { ReactionType } from '../services/prayers';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, fontSizes, palette, radius, spacing } from '../theme/colors';
+import { fonts, fontSizes, radius, spacing } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 import { FeedCard } from '../components/FeedCard';
 import { hasAdminPermission, getVerifiedBadge, BADGE_STYLES } from '../config/admins';
 import type { PrayerGroup, FeedItem, LiftRequest } from '../types';
 import type { RootStackParamList } from '../navigation/types';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GroupDetail'>;
 
@@ -742,34 +741,30 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
-        </SafeAreaView>
-      </CinematicBackground>
+      <LiftScreen>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>COMMUNITY</Text>
-            <Text style={styles.headingTitle} numberOfLines={1}>
-              {group?.name || groupName}<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>COMMUNITY</Text>
+          <Text style={[styles.headingTitle, { color: colors.text }]} numberOfLines={1}>
+            {group?.name || groupName}<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
-
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
       <FlatList
         data={prayers}
         keyExtractor={(item) => item.id}
@@ -792,6 +787,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       />
+      </View>
 
       {/* Members Modal */}
       <Modal
@@ -931,7 +927,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Share Prayer Request</Text>
               <TouchableOpacity onPress={() => setShowPostModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
 
@@ -939,7 +935,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <TextInput
               style={[styles.input, styles.textArea, { minHeight: 120 }]}
               placeholder="Share your prayer request with the group..."
-              placeholderTextColor={palette.muted}
+              placeholderTextColor={colors.muted}
               value={newPrayerContent}
               onChangeText={setNewPrayerContent}
               multiline
@@ -982,13 +978,13 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Pending Requests</Text>
               <TouchableOpacity onPress={() => setShowPendingModal(false)}>
-                <Ionicons name="close" size={24} color={palette.muted} />
+                <Ionicons name="close" size={24} color={colors.muted} />
               </TouchableOpacity>
             </View>
             
             {pendingUsers.length === 0 ? (
               <View style={styles.emptyPending}>
-                <Ionicons name="checkmark-circle" size={48} color={palette.muted} />
+                <Ionicons name="checkmark-circle" size={48} color={colors.muted} />
                 <Text style={styles.emptyPendingText}>No pending requests</Text>
               </View>
             ) : (
@@ -1056,10 +1052,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             )}
           </View>
         </View>
-        </Modal>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </Modal>
+    </LiftScreen>
   );
 };
 
@@ -1082,6 +1076,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     zIndex: 20,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCenter: {
     flex: 1,
@@ -1119,7 +1121,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
     backgroundColor: '#fff',
   },
   backButton: {
@@ -1128,7 +1129,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: palette.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -1180,11 +1180,9 @@ const styles = StyleSheet.create({
   groupTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
   },
   memberCount: {
     fontSize: 14,
-    color: palette.muted,
     marginTop: 2,
   },
   editIconButton: {
@@ -1194,7 +1192,6 @@ const styles = StyleSheet.create({
   },
   groupDescription: {
     fontSize: 14,
-    color: palette.muted,
     lineHeight: 20,
     marginBottom: spacing.md,
   },
@@ -1202,7 +1199,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
     paddingTop: spacing.md,
   },
   actionButton: {
@@ -1219,7 +1215,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontWeight: '700',
     fontSize: fontSizes.sm,
-    color: palette.accentDark,
   },
   leaveButton: {
     backgroundColor: '#fef2f2',
@@ -1235,7 +1230,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: palette.accent,
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
     marginBottom: spacing.md,
@@ -1261,12 +1255,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: fontSizes.lg,
     fontWeight: '800',
-    color: palette.text,
   },
   sectionCount: {
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
-    color: palette.muted,
   },
   emptyState: {
     alignItems: 'center',
@@ -1280,13 +1272,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: fontSizes.lg,
     fontWeight: '800',
-    color: palette.text,
     marginBottom: spacing.xs,
   },
   emptySubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
-    color: palette.muted,
     textAlign: 'center',
   },
   // Modal styles
@@ -1312,27 +1302,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: fontSizes.xl,
     fontWeight: '800',
-    color: palette.text,
   },
   inputLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.xs,
     fontWeight: '600',
-    color: palette.muted,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   input: {
     fontFamily: fonts.body,
-    backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     fontSize: fontSizes.md,
-    color: palette.text,
     borderWidth: 1,
-    borderColor: palette.border,
     marginBottom: spacing.md,
   },
   textArea: {
@@ -1343,13 +1328,10 @@ const styles = StyleSheet.create({
   charCount: {
     fontFamily: fonts.body,
     textAlign: 'right',
-    fontSize: fontSizes.xs,
-    color: palette.muted,
     marginTop: -spacing.sm,
     marginBottom: spacing.md,
   },
   saveButton: {
-    backgroundColor: palette.accent,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
@@ -1359,7 +1341,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.md,
     fontWeight: '800',
-    color: '#1f2937',
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -1375,7 +1356,6 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: palette.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1387,10 +1367,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.md,
     fontWeight: '600',
-    color: palette.text,
   },
   postSubmitButton: {
-    backgroundColor: palette.accent,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
@@ -1399,7 +1377,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.md,
     fontWeight: '800',
-    color: '#1f2937',
   },
   // Members list
   membersList: {
@@ -1410,7 +1387,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   memberAvatar: {
     width: 48,
@@ -1430,7 +1406,6 @@ const styles = StyleSheet.create({
   memberAvatarText: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#fff',
   },
   memberInfo: {
     flex: 1,
@@ -1445,7 +1420,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.md,
     fontWeight: '700',
-    color: palette.text,
   },
   memberBadge: {
     flexDirection: 'row',
@@ -1470,7 +1444,6 @@ const styles = StyleSheet.create({
   ownerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef3c7',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -1480,17 +1453,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.xs,
     fontWeight: '700',
-    color: '#92400e',
   },
   memberEmail: {
     fontFamily: fonts.body,
     fontSize: fontSizes.xs,
-    color: palette.muted,
   },
   memberRole: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.xs,
-    color: palette.accent,
     fontWeight: '600',
   },
   memberActions: {
@@ -1532,7 +1502,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: palette.border,
     borderStyle: 'dashed',
   },
   photoButtons: {
@@ -1546,14 +1515,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    backgroundColor: '#fef3c7',
     borderRadius: radius.md,
   },
   photoButtonText: {
     fontFamily: fonts.bodyBold,
     fontWeight: '700',
     fontSize: fontSizes.sm,
-    color: palette.accentDark,
   },
   photoButtonRemove: {
     flexDirection: 'row',
@@ -1562,27 +1529,23 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    backgroundColor: '#fef2f2',
     borderRadius: radius.md,
   },
   photoButtonRemoveText: {
     fontFamily: fonts.bodyBold,
     fontWeight: '700',
     fontSize: fontSizes.sm,
-    color: '#dc2626',
   },
   // Pending requests styles
   pendingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fef3c7',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#fcd34d',
   },
   pendingBannerContent: {
     flexDirection: 'row',
@@ -1593,7 +1556,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.sm,
     fontWeight: '700',
-    color: '#92400e',
   },
   emptyPending: {
     alignItems: 'center',
@@ -1603,7 +1565,6 @@ const styles = StyleSheet.create({
   emptyPendingText: {
     fontFamily: fonts.body,
     fontSize: fontSizes.md,
-    color: palette.muted,
     marginTop: spacing.md,
   },
   pendingList: {
@@ -1615,7 +1576,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   pendingUserInfo: {
     flexDirection: 'row',
@@ -1640,7 +1600,6 @@ const styles = StyleSheet.create({
   pendingAvatarText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#fff',
   },
   pendingUserDetails: {
     flex: 1,
@@ -1649,12 +1608,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.md,
     fontWeight: '700',
-    color: palette.text,
   },
   pendingUserEmail: {
     fontFamily: fonts.body,
     fontSize: fontSizes.xs,
-    color: palette.muted,
     marginTop: 2,
   },
   pendingActions: {
@@ -1666,17 +1623,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#fef2f2',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#fecaca',
   },
   approveButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#10b981',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1690,31 +1644,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     borderRadius: radius.md,
-    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: palette.border,
     gap: spacing.md,
   },
   privacyOptionActive: {
-    backgroundColor: '#fef3c7',
-    borderColor: '#fcd34d',
   },
   privacyOptionContent: {
     flex: 1,
   },
   privacyOptionTitle: {
-    fontFamily: fonts.bodyBold,
+    fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.md,
     fontWeight: '700',
-    color: palette.text,
   },
   privacyOptionTitleActive: {
-    color: palette.accentDark,
   },
   privacyOptionDesc: {
     fontFamily: fonts.body,
     fontSize: fontSizes.xs,
-    color: palette.muted,
     marginTop: 2,
   },
   privacyInfoBox: {

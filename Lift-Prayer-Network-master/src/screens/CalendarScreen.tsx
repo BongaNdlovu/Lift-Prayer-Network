@@ -15,8 +15,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing, fonts, shadows } from '../theme/colors';
-import { GlassIconButton } from '../components/GlassCard';
+import { radius, spacing, fonts, shadows } from '../theme/colors';
 import { LiftScreen } from '../components/LiftLayout';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requestNotificationPermissions } from '../services/reminders';
@@ -484,12 +483,12 @@ export const CalendarScreen: React.FC = () => {
             Calendar<Text style={styles.headingDot}>.</Text>
           </Text>
         </View>
-        <GlassIconButton
+        <TouchableOpacity
           onPress={goToToday}
-          style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+          style={[styles.todayButton, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}
         >
           <Text style={{ fontWeight: '700', color: colors.amber700, fontSize: 12 }}>TODAY</Text>
-        </GlassIconButton>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.mainContent}>
@@ -582,7 +581,7 @@ export const CalendarScreen: React.FC = () => {
                     style={styles.addFirstButton}
                     onPress={openAddModal}
                   >
-                    <Ionicons name="add-circle-outline" size={18} color={palette.accentDark} />
+                    <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
                     <Text style={styles.addFirstText}>Add Prayer Event</Text>
                   </TouchableOpacity>
                 </View>
@@ -596,7 +595,7 @@ export const CalendarScreen: React.FC = () => {
                           <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
                           {eventTime && (
                             <View style={styles.eventTimeBadge}>
-                              <Ionicons name="time-outline" size={12} color={palette.muted} />
+                              <Ionicons name="time-outline" size={12} color={colors.muted} />
                               <Text style={styles.eventTimeText}>
                                 {formatDisplayTime(eventTime.hour, eventTime.minute)}
                               </Text>
@@ -615,7 +614,7 @@ export const CalendarScreen: React.FC = () => {
                           </View>
                           {event.reminder && (
                             <View style={styles.reminderBadge}>
-                              <Ionicons name="notifications" size={12} color={palette.accent} />
+                              <Ionicons name="notifications" size={12} color={colors.accent} />
                               <Text style={styles.reminderBadgeText}>
                                 {REMINDER_OPTIONS.find((r) => r.value === event.reminderMinutesBefore)?.label || 'Reminder set'}
                               </Text>
@@ -628,7 +627,7 @@ export const CalendarScreen: React.FC = () => {
                           style={styles.editEventButton}
                           onPress={() => openEditModal(event)}
                         >
-                          <Ionicons name="pencil-outline" size={18} color={palette.accent} />
+                          <Ionicons name="pencil-outline" size={18} color={colors.accent} />
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.deleteEventButton}
@@ -672,7 +671,7 @@ export const CalendarScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="e.g., Job interview, Doctor's appointment"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 value={newTitle}
                 onChangeText={setNewTitle}
               />
@@ -681,7 +680,7 @@ export const CalendarScreen: React.FC = () => {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Add prayer points..."
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 value={newDescription}
                 onChangeText={setNewDescription}
                 multiline
@@ -705,7 +704,7 @@ export const CalendarScreen: React.FC = () => {
                     keyboardType="number-pad"
                     maxLength={2}
                     placeholder="HH"
-                    placeholderTextColor={palette.muted}
+                    placeholderTextColor={colors.muted}
                     selectTextOnFocus
                   />
                   <Text style={styles.timeInputLabel}>Hour</Text>
@@ -728,7 +727,7 @@ export const CalendarScreen: React.FC = () => {
                     keyboardType="number-pad"
                     maxLength={2}
                     placeholder="MM"
-                    placeholderTextColor={palette.muted}
+                    placeholderTextColor={colors.muted}
                     selectTextOnFocus
                   />
                   <Text style={styles.timeInputLabel}>Min</Text>
@@ -809,7 +808,7 @@ export const CalendarScreen: React.FC = () => {
                 <Ionicons
                   name={newReminder ? 'checkbox' : 'square-outline'}
                   size={24}
-                  color={newReminder ? palette.accent : palette.muted}
+                  color={newReminder ? colors.accent : colors.muted}
                 />
                 <Text style={styles.reminderText}>Remind me to pray</Text>
               </TouchableOpacity>
@@ -822,11 +821,11 @@ export const CalendarScreen: React.FC = () => {
                     style={styles.reminderPickerButton}
                     onPress={() => setShowReminderPicker(!showReminderPicker)}
                   >
-                    <Ionicons name="notifications-outline" size={18} color={palette.accent} />
+                    <Ionicons name="notifications-outline" size={18} color={colors.accent} />
                     <Text style={styles.reminderPickerText}>
                       {REMINDER_OPTIONS.find((r) => r.value === newReminderMinutes)?.label || '15 minutes before'}
                     </Text>
-                    <Ionicons name={showReminderPicker ? 'chevron-up' : 'chevron-down'} size={18} color={palette.muted} />
+                    <Ionicons name={showReminderPicker ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
                   </TouchableOpacity>
 
                   {showReminderPicker && (
@@ -968,6 +967,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  todayButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   monthNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -987,11 +994,11 @@ const styles = StyleSheet.create({
   monthTitle: {
     fontFamily: fonts.heading,
     fontSize: 20,
-    color: palette.text,
+    color: '#1c1917',
   },
   calendarCard: {
     marginHorizontal: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: '#fff',
     borderRadius: radius.lg,
     padding: spacing.md,
     ...shadows.md,
@@ -1008,7 +1015,7 @@ const styles = StyleSheet.create({
   dayHeaderText: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: palette.muted,
+    color: '#1c1917',
   },
   daysGrid: {
     flexDirection: 'row',
@@ -1023,25 +1030,25 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   todayCell: {
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#f59e0b',
     borderRadius: radius.full,
   },
   selectedCell: {
-    backgroundColor: palette.accent,
+    backgroundColor: '#f59e0b',
     borderRadius: radius.full,
   },
   dayText: {
     fontFamily: fonts.body,
     fontSize: 14,
-    color: palette.text,
+    color: '#1c1917',
   },
   todayText: {
     fontFamily: fonts.bodyBold,
-    color: palette.accentDark,
+    color: '#1c1917',
   },
   selectedText: {
     fontFamily: fonts.bodyBold,
-    color: '#1f2937',
+    color: '#1c1917',
   },
   eventDots: {
     flexDirection: 'row',
@@ -1066,13 +1073,13 @@ const styles = StyleSheet.create({
   eventsSectionTitle: {
     fontFamily: fonts.heading,
     fontSize: 18,
-    color: palette.text,
+    color: '#1c1917',
   },
   addEventButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: palette.accent,
+    backgroundColor: '#f59e0b',
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.glow,
@@ -1089,21 +1096,21 @@ const styles = StyleSheet.create({
   },
   noEventsText: {
     fontFamily: fonts.body,
-    color: palette.muted,
+    color: '#1c1917',
     marginBottom: spacing.md,
   },
   addFirstButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#f59e0b',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
   },
   addFirstText: {
     fontFamily: fonts.bodyBold,
-    color: palette.accentDark,
+    color: '#1c1917',
   },
   eventCard: {
     flexDirection: 'row',
@@ -1126,7 +1133,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: 16,
-    color: palette.text,
+    color: '#1c1917',
     flex: 1,
   },
   eventTimeBadge: {
@@ -1141,12 +1148,12 @@ const styles = StyleSheet.create({
   eventTimeText: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: palette.muted,
+    color: '#1c1917',
   },
   eventDescription: {
     fontFamily: fonts.body,
     fontSize: 14,
-    color: palette.muted,
+    color: '#1c1917',
     marginTop: 4,
   },
   eventMeta: {
@@ -1170,7 +1177,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#f59e0b',
     borderRadius: radius.sm,
   },
   reminderBadgeText: {
@@ -1211,12 +1218,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: fonts.heading,
     fontSize: 20,
-    color: palette.text,
+    color: '#1c1917',
   },
   inputLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: palette.muted,
+    color: '#1c1917',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
@@ -1228,9 +1235,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     fontFamily: fonts.body,
     fontSize: 16,
-    color: palette.text,
+    color: '#1c1917',
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#1c1917',
     marginBottom: spacing.md,
   },
   textArea: {
@@ -1251,7 +1258,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#1c1917',
     backgroundColor: '#f8fafc',
   },
   categoryEmoji: {
@@ -1260,7 +1267,7 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: palette.muted,
+    color: '#1c1917',
   },
   reminderToggle: {
     flexDirection: 'row',
@@ -1271,10 +1278,10 @@ const styles = StyleSheet.create({
   reminderText: {
     fontFamily: fonts.body,
     fontSize: 16,
-    color: palette.text,
+    color: '#1c1917',
   },
   saveButton: {
-    backgroundColor: palette.accent,
+    backgroundColor: '#f59e0b',
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
@@ -1297,7 +1304,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#1c1917',
     marginBottom: spacing.sm,
   },
   timeInputWrapper: {
@@ -1309,22 +1316,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: palette.accent,
+    borderColor: '#f59e0b',
     fontSize: 24,
     fontWeight: '700',
-    color: palette.text,
+    color: '#1c1917',
     textAlign: 'center',
   },
   timeInputLabel: {
     fontSize: 10,
-    color: palette.muted,
+    color: '#1c1917',
     marginTop: 4,
     textTransform: 'uppercase',
   },
   timeInputSeparator: {
     fontSize: 28,
     fontWeight: '700',
-    color: palette.text,
+    color: '#1c1917',
     marginHorizontal: spacing.md,
   },
   amPmIndicator: {
@@ -1334,11 +1341,11 @@ const styles = StyleSheet.create({
   amPmText: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.accent,
+    color: '#f59e0b',
   },
   time12Hour: {
     fontSize: 12,
-    color: palette.muted,
+    color: '#1c1917',
     marginTop: 2,
   },
   timePresets: {
@@ -1353,16 +1360,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#1c1917',
   },
   timePresetButtonActive: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
+    backgroundColor: '#f59e0b',
+    borderColor: '#f59e0b',
   },
   timePresetText: {
     fontSize: 12,
     fontWeight: '600',
-    color: palette.muted,
+    color: '#1c1917',
   },
   timePresetTextActive: {
     color: '#1f2937',
@@ -1375,7 +1382,7 @@ const styles = StyleSheet.create({
   timeSeparator: {
     fontFamily: fonts.bodyBold,
     fontSize: 24,
-    color: palette.text,
+    color: '#1c1917',
     marginHorizontal: spacing.sm,
     marginTop: 20,
   },
@@ -1391,7 +1398,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: palette.accent,
+    borderColor: '#f59e0b',
     marginBottom: spacing.sm,
     gap: spacing.sm,
   },
@@ -1406,7 +1413,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#1c1917',
   },
   reminderOption: {
     paddingVertical: spacing.sm,
@@ -1415,12 +1422,12 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   reminderOptionSelected: {
-    backgroundColor: palette.accent,
+    backgroundColor: '#f59e0b',
   },
   reminderOptionText: {
     fontFamily: fonts.body,
     fontSize: 14,
-    color: palette.text,
+    color: '#1c1917',
   },
   reminderOptionTextSelected: {
     fontFamily: fonts.bodyBold,

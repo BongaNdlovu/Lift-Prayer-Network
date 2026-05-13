@@ -32,7 +32,7 @@ import {
 import { db, firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
+import { radius, spacing } from '../theme/colors';
 import { LiftScreen, LiftHeader, LiftIconButton } from '../components/LiftLayout';
 import { SkeletonNotifications } from '../components/SkeletonCard';
 import { RootStackParamList } from '../navigation/types';
@@ -79,7 +79,7 @@ const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionic
     case NOTIFICATION_TYPES.ADMIN:
       return { name: 'shield-checkmark', color: '#dc2626' };
     default:
-      return { name: 'notifications', color: palette.muted };
+      return { name: 'notifications', color: '#6b7280' };
   }
 };
 
@@ -430,7 +430,7 @@ export const NotificationsInboxScreen: React.FC = () => {
                   <Text style={styles.unreadBadgeText}>{unreadCount} new</Text>
                 </View>
               )}
-              <Text style={styles.swipeHint}>Swipe left to delete</Text>
+              <Text style={[styles.swipeHint, { color: colors.muted }]}>Swipe left to delete</Text>
             </View>
           }
           initialNumToRender={10}
@@ -506,7 +506,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   backButton: {
     padding: spacing.xs,
@@ -514,7 +513,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   markAllButton: {
     paddingHorizontal: spacing.sm,
@@ -523,7 +521,6 @@ const styles = StyleSheet.create({
   markAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.accentDark,
   },
   headerActions: {
     flexDirection: 'row',
@@ -574,12 +571,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: palette.text,
     marginBottom: spacing.xs,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -593,7 +588,6 @@ const styles = StyleSheet.create({
   },
   swipeHint: {
     fontSize: 12,
-    color: palette.muted,
     fontStyle: 'italic',
   },
   unreadBadge: {
@@ -614,7 +608,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   notificationUnread: {
     backgroundColor: '#fffbeb',
@@ -656,7 +649,6 @@ const styles = StyleSheet.create({
   },
   notificationText: {
     fontSize: 14,
-    color: palette.text,
     lineHeight: 20,
   },
   actorName: {
@@ -664,13 +656,11 @@ const styles = StyleSheet.create({
   },
   targetSummary: {
     fontSize: 13,
-    color: palette.muted,
     fontStyle: 'italic',
     marginTop: 2,
   },
   timeAgo: {
     fontSize: 12,
-    color: palette.muted,
     marginTop: 4,
   },
   unreadDot: {

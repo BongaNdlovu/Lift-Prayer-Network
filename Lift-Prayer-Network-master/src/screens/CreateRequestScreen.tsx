@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -21,9 +20,8 @@ import { useAuth } from '../hooks/useAuth';
 import { submitFeedItem } from '../hooks/useFeed';
 import { queuePendingRequest } from '../services/offlineCache';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { fonts, radius, spacing } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 import { PRAYER_CATEGORIES, PrayerCategory, SupportPreference } from '../types';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import { checkUserBlockedFromPosting } from '../services/moderation';
@@ -240,23 +238,22 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={styles.heading}>
-              New Prayer Request
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            New Prayer Request
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
@@ -279,25 +276,25 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
             )}
 
             {/* Content Input */}
-            <View style={styles.card}>
-              <Text style={styles.label}>Short Summary</Text>
+            <View style={[styles.card, { borderColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Short Summary</Text>
               <TextInput
-                style={styles.titleInput}
+                style={[styles.titleInput, { color: colors.text, borderColor: colors.border }]}
                 placeholder="A short title for this prayer"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 value={title}
                 onChangeText={setTitle}
                 maxLength={90}
               />
-              <Text style={styles.charCount}>{title.length}/90</Text>
+              <Text style={[styles.charCount, { color: colors.muted }]}>{title.length}/90</Text>
             </View>
 
-            <View style={styles.card}>
-              <Text style={styles.label}>Prayer Details</Text>
+            <View style={[styles.card, { borderColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Prayer Details</Text>
               <TextInput
-                style={styles.textArea}
+                style={[styles.textArea, { color: colors.text, borderColor: colors.border }]}
                 placeholder="What do you need prayer for?"
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
@@ -305,19 +302,20 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 onChangeText={setContent}
                 maxLength={1000}
               />
-              <Text style={styles.charCount}>{content.length}/1000</Text>
+              <Text style={[styles.charCount, { color: colors.muted }]}>{content.length}/1000</Text>
             </View>
 
             {/* Category Selection */}
-            <View style={styles.card}>
-              <Text style={styles.label}>Category</Text>
+            <View style={[styles.card, { borderColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Category</Text>
               <View style={styles.categoryGrid}>
                 {PRAYER_CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat.id}
                     style={[
                       styles.categoryChip,
-                      selectedCategory === cat.id && styles.categoryChipActive,
+                      { borderColor: colors.border },
+                      selectedCategory === cat.id && [styles.categoryChipActive, { borderColor: colors.accentDark }],
                     ]}
                     onPress={() => {
                       setSelectedCategory(cat.id);
@@ -330,7 +328,8 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     <Text
                       style={[
                         styles.categoryText,
-                        selectedCategory === cat.id && styles.categoryTextActive,
+                        { color: colors.muted },
+                        selectedCategory === cat.id && [styles.categoryTextActive, { color: colors.text }],
                       ]}
                     >
                       {cat.label}
@@ -341,8 +340,8 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             {/* Options */}
-            <View style={styles.card}>
-              <Text style={styles.label}>Options</Text>
+            <View style={[styles.card, { borderColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Options</Text>
               {groupName && (
                 <View style={styles.groupNotice}>
                   <Ionicons name="people-outline" size={16} color="#7c3aed" />
@@ -351,12 +350,12 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
               )}
 
               {/* Urgent Toggle */}
-              <View style={styles.optionRow}>
+              <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.optionInfo}>
                   <Text style={styles.optionEmoji}>🚨</Text>
                   <View>
-                    <Text style={styles.optionTitle}>Urgent</Text>
-                    <Text style={styles.optionHint}>Critical need</Text>
+                    <Text style={[styles.optionTitle, { color: colors.text }]}>Urgent</Text>
+                    <Text style={[styles.optionHint, { color: colors.muted }]}>Critical need</Text>
                   </View>
                 </View>
                 <Switch
@@ -373,12 +372,12 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
 
               {/* Private Toggle */}
-              <View style={styles.optionRow}>
+              <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.optionInfo}>
                   <Text style={styles.optionEmoji}>🔒</Text>
                   <View>
-                    <Text style={styles.optionTitle}>Private</Text>
-                    <Text style={styles.optionHint}>Groups only</Text>
+                    <Text style={[styles.optionTitle, { color: colors.text }]}>Private</Text>
+                    <Text style={[styles.optionHint, { color: colors.muted }]}>Groups only</Text>
                   </View>
                 </View>
                 <Switch
@@ -396,7 +395,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
 
               <View style={styles.supportBox}>
-                <Text style={styles.supportLabel}>Support preference</Text>
+                <Text style={[styles.supportLabel, { color: colors.muted }]}>Support Preference</Text>
                 {([
                   ['PRAYER_ONLY', 'Prayer only'],
                   ['ENCOURAGEMENT_WELCOME', 'Encouragement welcome'],
@@ -406,14 +405,16 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     key={value}
                     style={[
                       styles.supportOption,
-                      supportPreference === value && styles.supportOptionActive,
+                      { borderColor: colors.border },
+                      supportPreference === value && [styles.supportOptionActive, { borderColor: colors.accentDark }],
                     ]}
                     onPress={() => setSupportPreference(value)}
                   >
                     <Text
                       style={[
                         styles.supportOptionText,
-                        supportPreference === value && styles.supportOptionTextActive,
+                        { color: colors.muted },
+                        supportPreference === value && [styles.supportOptionTextActive, { color: colors.text }],
                       ]}
                     >
                       {label}
@@ -423,12 +424,12 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
 
               {/* Anonymous Toggle */}
-              <View style={styles.optionRow}>
+              <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.optionInfo}>
                   <Text style={styles.optionEmoji}>🎭</Text>
                   <View>
-                    <Text style={styles.optionTitle}>Anonymous</Text>
-                    <Text style={styles.optionHint}>Hide name</Text>
+                    <Text style={[styles.optionTitle, { color: colors.text }]}>Anonymous</Text>
+                    <Text style={[styles.optionHint, { color: colors.muted }]}>Hide name</Text>
                   </View>
                 </View>
                 <Switch
@@ -469,23 +470,23 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
 
             {/* Preview */}
             {(title.trim().length > 0 || content.trim().length > 0) && (
-              <View style={styles.previewCard}>
-                <Text style={styles.previewLabel}>Preview</Text>
+              <View style={[styles.previewCard, { borderColor: colors.accentDark }]}>
+                <Text style={[styles.previewLabel, { color: colors.text }]}>Preview</Text>
                 <View style={styles.previewContent}>
                   <View style={styles.previewHeader}>
-                    <Text style={styles.previewName}>{isAnonymous ? 'Anonymous' : (user?.displayName || 'You')}</Text>
-                    {isUrgent && <Text style={styles.urgentBadge}>🚨 URGENT</Text>}
-                    {isPrivate && <Text style={styles.privateBadge}>🔒 Private</Text>}
-                    {isAnonymous && <Text style={styles.anonymousBadge}>🎭 Anonymous</Text>}
+                    <Text style={[styles.previewName, { color: colors.text }]}>{isAnonymous ? 'Anonymous' : (user?.displayName || 'You')}</Text>
+                    {isUrgent && <Text style={[styles.urgentBadge, { color: '#dc2626' }]}>🚨 URGENT</Text>}
+                    {isPrivate && <Text style={[styles.privateBadge, { color: colors.muted }]}>🔒 Private</Text>}
+                    {isAnonymous && <Text style={[styles.anonymousBadge, { color: colors.accent }]}>🎭 Anonymous</Text>}
                   </View>
                   <View style={styles.previewCategory}>
                     <Text style={styles.previewCategoryEmoji}>{getCategoryEmoji(selectedCategory)}</Text>
-                    <Text style={styles.previewCategoryText}>
+                    <Text style={[styles.previewCategoryText, { color: colors.muted }]}>
                       {PRAYER_CATEGORIES.find(c => c.id === selectedCategory)?.label}
                     </Text>
                   </View>
-                  <Text style={styles.previewTitle}>{title || 'Prayer request summary'}</Text>
-                  <Text style={styles.previewText}>{content}</Text>
+                  <Text style={[styles.previewTitle, { color: colors.text }]}>{title || 'Prayer request summary'}</Text>
+                  <Text style={[styles.previewText, { color: colors.text }]}>{content}</Text>
                 </View>
               </View>
             )}
@@ -512,20 +513,27 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
             </TouchableOpacity>
 
             {/* Encouragement */}
-            <Text style={styles.encouragement}>
+            <Text style={[styles.encouragement, { color: colors.muted }]}>
               &quot;Therefore I tell you, whatever you ask for in prayer, believe that you have received it, and it will be yours.&quot; — Mark 11:24
             </Text>
             </ScrollView>
           </KeyboardAvoidingView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   // Header styles
@@ -589,7 +597,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 20,
     fontWeight: '700',
-    color: palette.text,
   },
   placeholder: {
     width: 40,
@@ -617,46 +624,38 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   label: {
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
     fontWeight: '600',
-    color: palette.text,
     marginBottom: spacing.xs,
   },
   hint: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: palette.muted,
     marginBottom: spacing.md,
     lineHeight: 18,
   },
   textArea: {
     minHeight: 100,
     fontSize: 14,
-    color: palette.text,
     lineHeight: 20,
     padding: spacing.sm,
     backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   titleInput: {
     fontSize: 15,
-    color: palette.text,
     padding: spacing.sm,
     backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   charCount: {
     textAlign: 'right',
     fontSize: 12,
-    color: palette.muted,
     marginTop: spacing.sm,
   },
   categoryGrid: {
@@ -672,13 +671,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: palette.border,
     gap: spacing.xs,
     marginBottom: 2,
   },
   categoryChipActive: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
+    backgroundColor: '#fef3c7',
   },
   categoryEmoji: {
     fontSize: 14,
@@ -686,10 +683,8 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 12,
     fontWeight: '500',
-    color: palette.muted,
   },
   categoryTextActive: {
-    color: '#1f2937',
   },
   optionRow: {
     flexDirection: 'row',
@@ -697,7 +692,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   optionRowLast: {
     borderBottomWidth: 0,
@@ -724,12 +718,10 @@ const styles = StyleSheet.create({
   supportLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: palette.muted,
     marginBottom: 2,
   },
   supportOption: {
     borderWidth: 1,
-    borderColor: palette.border,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -737,15 +729,12 @@ const styles = StyleSheet.create({
   },
   supportOptionActive: {
     backgroundColor: '#fef3c7',
-    borderColor: palette.accent,
   },
   supportOptionText: {
     fontSize: 12,
-    color: palette.muted,
     fontWeight: '600',
   },
   supportOptionTextActive: {
-    color: '#92400e',
   },
   optionInfo: {
     flexDirection: 'row',
@@ -759,11 +748,13 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.text,
+  },
+  optionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   optionHint: {
     fontSize: 11,
-    color: palette.muted,
     marginTop: 1,
   },
   previewCard: {
@@ -772,12 +763,10 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: '#fcd34d',
   },
   previewLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#92400e',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
@@ -796,12 +785,10 @@ const styles = StyleSheet.create({
   previewName: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.text,
   },
   urgentBadge: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#dc2626',
     backgroundColor: '#fee2e2',
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -810,7 +797,6 @@ const styles = StyleSheet.create({
   privateBadge: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#6b7280',
     backgroundColor: '#f3f4f6',
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -819,7 +805,6 @@ const styles = StyleSheet.create({
   anonymousBadge: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#7c3aed',
     backgroundColor: '#ede9fe',
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -836,17 +821,14 @@ const styles = StyleSheet.create({
   },
   previewCategoryText: {
     fontSize: 11,
-    color: palette.muted,
     fontWeight: '500',
   },
   previewText: {
     fontSize: 12,
-    color: palette.text,
     lineHeight: 18,
   },
   previewTitle: {
     fontSize: 13,
-    color: palette.text,
     fontWeight: '800',
     marginBottom: 3,
   },
@@ -854,18 +836,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.accent,
+    backgroundColor: '#d97706',
     borderRadius: radius.sm,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
     marginBottom: spacing.md,
     marginTop: spacing.xs,
-    
-    
-    
-    
-    elevation: 4,
   },
   submitButtonDisabled: {
     opacity: 0.5,
@@ -878,7 +855,6 @@ const styles = StyleSheet.create({
   encouragement: {
     fontSize: 11,
     fontStyle: 'italic',
-    color: palette.muted,
     textAlign: 'center',
     lineHeight: 16,
   },

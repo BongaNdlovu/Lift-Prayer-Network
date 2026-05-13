@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Animated,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,9 +14,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { radius, spacing } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 
 const SUPPORT_EMAIL = 'fanelesibonge50@gmail.com';
 
@@ -444,24 +442,23 @@ export const HelpScreen: React.FC = () => {
   };
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>LEARN MORE</Text>
-            <Text style={styles.heading}>
-              Help<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>LEARN MORE</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Help<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
 
       <ScrollView
         style={styles.scrollView}
@@ -574,9 +571,8 @@ export const HelpScreen: React.FC = () => {
 
         <View style={{ height: 140 }} />
         </ScrollView>
-      </RoundedPage>
-    </SafeAreaView>
-  </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
@@ -618,6 +614,14 @@ const styles = StyleSheet.create({
   headingDot: {
     color: '#f59e0b',
   },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   
   // Content styles
   mainContent: {
@@ -632,20 +636,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+    borderBottomColor: '#e5e7eb',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: palette.surface,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: palette.text,
+    color: '#1c1917',
   },
   scrollView: {
     flex: 1,
@@ -654,7 +658,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   welcomeBanner: {
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#fef3c7',
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: 'center',
@@ -664,14 +668,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: palette.surface,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
-    
-    
-    
-    
     elevation: 4,
   },
   emojiText: {
@@ -680,12 +680,12 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: palette.accentDark,
+    color: '#b45309',
     marginBottom: spacing.xs,
   },
   welcomeSubtitle: {
     fontSize: 14,
-    color: palette.accent,
+    color: '#b45309',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -701,19 +701,19 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#fef3c7',
     borderRadius: radius.md,
   },
   expandButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: palette.accentDark,
+    color: '#b45309',
   },
   section: {
-    backgroundColor: palette.surface,
+    backgroundColor: '#fff',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#e5e7eb',
     marginBottom: spacing.md,
     overflow: 'hidden',
   },
@@ -734,13 +734,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
-    color: palette.text,
+    color: '#1c1917',
   },
   sectionContent: {
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
+    borderTopColor: '#e5e7eb',
     paddingTop: spacing.md,
   },
   helpItem: {
@@ -749,18 +749,18 @@ const styles = StyleSheet.create({
   helpItemTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: palette.text,
+    color: '#1c1917',
     marginBottom: spacing.xs,
   },
   helpItemDescription: {
     fontSize: 14,
-    color: palette.muted,
+    color: '#666',
     lineHeight: 20,
   },
   tipContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#fef3c7',
     padding: spacing.sm,
     borderRadius: radius.sm,
     marginTop: spacing.sm,
@@ -769,15 +769,15 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: 13,
-    color: palette.accentDark,
+    color: '#b45309',
     lineHeight: 18,
   },
   quickTipsCard: {
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#fef3c7',
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: palette.accent,
+    borderColor: '#b45309',
     marginBottom: spacing.lg,
   },
   quickTipsHeader: {
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   quickTipsTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: palette.accentDark,
+    color: '#b45309',
   },
   quickTipsList: {
     gap: spacing.sm,
@@ -800,34 +800,34 @@ const styles = StyleSheet.create({
   },
   quickTipBullet: {
     fontSize: 14,
-    color: palette.accent,
+    color: '#b45309',
     marginRight: spacing.sm,
     fontWeight: '700',
   },
   quickTipText: {
     flex: 1,
     fontSize: 14,
-    color: palette.accent,
+    color: '#b45309',
     lineHeight: 20,
   },
   contactCard: {
-    backgroundColor: palette.surface,
+    backgroundColor: '#fff',
     borderRadius: radius.md,
     padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#e5e7eb',
   },
   contactTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: palette.text,
+    color: '#1c1917',
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
   contactText: {
     fontSize: 14,
-    color: palette.muted,
+    color: '#666',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: spacing.md,
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: palette.accent,
+    backgroundColor: '#b45309',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
@@ -848,15 +848,15 @@ const styles = StyleSheet.create({
   },
   supportEmail: {
     fontSize: 12,
-    color: palette.muted,
+    color: '#666',
     marginTop: spacing.sm,
   },
   comingSoonCard: {
-    backgroundColor: palette.accentLight,
+    backgroundColor: '#fef3c7',
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: palette.accent,
+    borderColor: '#b45309',
     marginBottom: spacing.lg,
   },
   comingSoonHeader: {
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   comingSoonTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: palette.accentDark,
+    color: '#b45309',
   },
   comingSoonList: {
     gap: spacing.sm,
@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
   comingSoonText: {
     flex: 1,
     fontSize: 14,
-    color: palette.accent,
+    color: '#f59e0b',
     lineHeight: 20,
   },
 });

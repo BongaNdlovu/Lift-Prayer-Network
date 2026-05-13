@@ -1,10 +1,9 @@
 import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, spacing } from '../theme/colors';
+import { spacing } from '../theme/colors';
 
 const LAST_UPDATED = 'November 30, 2025';
 const CONTACT_EMAIL = 'support@liftprayer.app';
@@ -31,13 +30,9 @@ export const PrivacyPolicyScreen: React.FC = () => {
     </View>
   );
 
-  // Bold diagonal gradient
-  const gradientColors = [...colors.gradientBoldScreen] as [string, string, ...string[]];
-
   return (
-    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -130,14 +125,12 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
-    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.background,
   },
   header: {
     flexDirection: 'row',
@@ -146,7 +139,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   backButton: {
     padding: spacing.xs,

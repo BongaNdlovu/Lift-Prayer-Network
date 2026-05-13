@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,9 +18,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { editPrayerRequest, editTestimony, deletePrayerRequest, deleteTestimony } from '../services/prayers';
 import { useTheme } from '../contexts/ThemeContext';
-import { palette, radius, spacing } from '../theme/colors';
-import { CinematicBackground, RoundedPage } from '../components/CinematicBackground';
-import { GlassIconButton } from '../components/GlassCard';
+import { radius, spacing } from '../theme/colors';
+import { LiftScreen } from '../components/LiftLayout';
 import { PRAYER_CATEGORIES, PrayerCategory } from '../types';
 import { canEditContent, canDeleteContent, hasAdminPermission } from '../config/admins';
 import { validateContent } from '../utils/security';
@@ -176,33 +174,30 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (!canEdit) {
     return (
-      <CinematicBackground useOuterBackground>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={palette.accent} />
-        </SafeAreaView>
-      </CinematicBackground>
+      <LiftScreen>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </LiftScreen>
     );
   }
 
   return (
-    <CinematicBackground useOuterBackground>
-      <SafeAreaView style={styles.container}>
-        {/* === HEADER SECTION === */}
-        <View style={styles.headerSection}>
-          <GlassIconButton onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color={colors.stone700} />
-          </GlassIconButton>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.kicker, { color: colors.stone500 }]}>MODIFY</Text>
-            <Text style={styles.heading}>
-              Edit<Text style={styles.headingDot}>.</Text>
-            </Text>
-          </View>
-          <View style={{ width: 44 }} />
+    <LiftScreen scroll>
+      {/* === HEADER SECTION === */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.kicker, { color: colors.muted }]}>MODIFY</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>
+            Edit<Text style={styles.headingDot}>.</Text>
+          </Text>
         </View>
+        <View style={{ width: 44 }} />
+      </View>
 
-        {/* === MAIN CONTENT === */}
-        <RoundedPage style={styles.mainContent}>
+      {/* === MAIN CONTENT === */}
+      <View style={styles.mainContent}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
@@ -215,21 +210,21 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
 
             {/* Admin Badge */}
             {isAdmin && !isOwner && (
-              <View style={styles.adminBanner}>
+              <View style={[styles.adminBanner, { borderColor: colors.border }]}>
                 <Ionicons name="shield-checkmark" size={18} color="#3b82f6" />
-                <Text style={styles.adminBannerText}>
+                <Text style={[styles.adminBannerText, { color: colors.text }]}>
                   Editing as Admin
                 </Text>
               </View>
             )}
 
             {/* Content Input */}
-            <View style={styles.card}>
-              <Text style={styles.label}>Content</Text>
+            <View style={[styles.card, { borderColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Content</Text>
               <TextInput
-                style={styles.textArea}
+                style={[styles.textArea, { color: colors.text, borderColor: colors.border }]}
                 placeholder={isRequest ? "What do you need prayer for?" : "Share your testimony..."}
-                placeholderTextColor={palette.muted}
+                placeholderTextColor={colors.muted}
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
@@ -237,7 +232,7 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 onChangeText={setContent}
                 maxLength={isRequest ? 1000 : 1500}
               />
-              <Text style={styles.charCount}>
+              <Text style={[styles.charCount, { color: colors.muted }]}>
                 {content.length}/{isRequest ? 1000 : 1500}
               </Text>
             </View>
@@ -246,15 +241,16 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
             {isRequest && (
               <>
                 {/* Category Selection */}
-                <View style={styles.card}>
-                  <Text style={styles.label}>Category</Text>
+                <View style={[styles.card, { borderColor: colors.border }]}>
+                  <Text style={[styles.label, { color: colors.text }]}>Category</Text>
                   <View style={styles.categoryGrid}>
                     {PRAYER_CATEGORIES.map((cat) => (
                       <TouchableOpacity
                         key={cat.id}
                         style={[
                           styles.categoryChip,
-                          selectedCategory === cat.id && styles.categoryChipActive,
+                          { borderColor: colors.border },
+                          selectedCategory === cat.id && [styles.categoryChipActive, { borderColor: colors.accentDark }],
                         ]}
                         onPress={() => {
                           setSelectedCategory(cat.id);
@@ -263,11 +259,12 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                           }
                         }}
                       >
-                        <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                        <Text style={[styles.categoryEmoji, { color: colors.text }]}>{cat.emoji}</Text>
                         <Text
                           style={[
                             styles.categoryText,
-                            selectedCategory === cat.id && styles.categoryTextActive,
+                            { color: colors.muted },
+                            selectedCategory === cat.id && [styles.categoryTextActive, { color: colors.text }],
                           ]}
                         >
                           {cat.label}
@@ -278,27 +275,27 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 </View>
 
                 {/* Status Info (read-only) */}
-                <View style={styles.statusInfoCard}>
+                <View style={[styles.statusInfoCard, { borderColor: colors.border }]}>
                   <Ionicons name="information-circle" size={20} color="#3b82f6" />
                   <View style={styles.statusInfoContent}>
-                    <Text style={styles.statusInfoTitle}>Current Status: {requestItem?.status || 'PENDING'}</Text>
-                    <Text style={styles.statusInfoText}>
+                    <Text style={[styles.statusInfoTitle, { color: colors.text }]}>Current Status: {requestItem?.status || 'PENDING'}</Text>
+                    <Text style={[styles.statusInfoText, { color: colors.muted }]}>
                       Status changes automatically when your prayer receives engagement from the community.
                     </Text>
                   </View>
                 </View>
 
                 {/* Options */}
-                <View style={styles.card}>
-                  <Text style={styles.label}>Options</Text>
+                <View style={[styles.card, { borderColor: colors.border }]}>
+                  <Text style={[styles.label, { color: colors.text }]}>Options</Text>
 
                   {/* Urgent Toggle */}
-                  <View style={styles.optionRow}>
+                  <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
                     <View style={styles.optionInfo}>
                       <Text style={styles.optionEmoji}>🚨</Text>
                       <View>
-                        <Text style={styles.optionTitle}>Mark as Urgent</Text>
-                        <Text style={styles.optionHint}>Highlight as a critical need</Text>
+                        <Text style={[styles.optionTitle, { color: colors.text }]}>Mark as Urgent</Text>
+                        <Text style={[styles.optionHint, { color: colors.muted }]}>Highlight as a critical need</Text>
                       </View>
                     </View>
                     <Switch
@@ -309,8 +306,8 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                           Haptics.selectionAsync();
                         }
                       }}
-                      trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                      thumbColor={isUrgent ? '#f59e0b' : '#f4f4f5'}
+                      trackColor={{ false: colors.border, true: colors.accent }}
+                      thumbColor={isUrgent ? colors.accent : colors.surface}
                     />
                   </View>
 
@@ -319,8 +316,8 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                     <View style={styles.optionInfo}>
                       <Text style={styles.optionEmoji}>🔒</Text>
                       <View>
-                        <Text style={styles.optionTitle}>Private Request</Text>
-                        <Text style={styles.optionHint}>Only visible to your groups</Text>
+                        <Text style={[styles.optionTitle, { color: colors.text }]}>Private Request</Text>
+                        <Text style={[styles.optionHint, { color: colors.muted }]}>Only visible to your groups</Text>
                       </View>
                     </View>
                     <Switch
@@ -331,8 +328,8 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                           Haptics.selectionAsync();
                         }
                       }}
-                      trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                      thumbColor={isPrivate ? '#f59e0b' : '#f4f4f5'}
+                      trackColor={{ false: colors.border, true: colors.accent }}
+                      thumbColor={isPrivate ? colors.accent : colors.surface}
                     />
                   </View>
                 </View>
@@ -349,10 +346,10 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
               disabled={!content.trim() || saving}
             >
               {saving ? (
-                <ActivityIndicator color="#1f2937" />
+                <ActivityIndicator color={colors.text} />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle" size={20} color="#1f2937" />
+                  <Ionicons name="checkmark-circle" size={20} color={colors.text} />
                   <Text style={styles.saveButtonText}>Save Changes</Text>
                 </>
               )}
@@ -366,10 +363,10 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 disabled={deleting}
               >
                 {deleting ? (
-                  <ActivityIndicator color="#dc2626" />
+                  <ActivityIndicator color='#dc2626' />
                 ) : (
                   <>
-                    <Ionicons name="trash-outline" size={20} color="#dc2626" />
+                    <Ionicons name="trash-outline" size={20} color='#dc2626' />
                     <Text style={styles.deleteButtonText}>Delete</Text>
                   </>
                 )}
@@ -377,15 +374,22 @@ export const EditRequestScreen: React.FC<Props> = ({ route, navigation }) => {
             )}
             </ScrollView>
           </KeyboardAvoidingView>
-        </RoundedPage>
-      </SafeAreaView>
-    </CinematicBackground>
+      </View>
+    </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -453,7 +457,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
   },
   placeholder: {
     width: 40,
@@ -461,49 +464,42 @@ const styles = StyleSheet.create({
   adminBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: '#93c5fd',
   },
   adminBannerText: {
-    color: '#1d4ed8',
     fontWeight: '700',
     fontSize: 14,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   label: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.text,
     marginBottom: spacing.sm,
   },
   textArea: {
     minHeight: 120,
     fontSize: 16,
-    color: palette.text,
     lineHeight: 24,
     padding: spacing.md,
     backgroundColor: '#f8fafc',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
     textAlignVertical: 'top',
   },
   charCount: {
     textAlign: 'right',
     fontSize: 12,
-    color: palette.muted,
     marginTop: spacing.sm,
   },
   categoryGrid: {
@@ -519,12 +515,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.border,
     gap: spacing.xs,
   },
   categoryChipActive: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
+    backgroundColor: '#fef3c7',
   },
   categoryEmoji: {
     fontSize: 14,
@@ -532,21 +526,18 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.muted,
   },
   categoryTextActive: {
-    color: '#1f2937',
   },
   statusInfoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#eff6ff',
+    backgroundColor: '#f8fafc',
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: '#bfdbfe',
   },
   statusInfoContent: {
     flex: 1,
@@ -554,12 +545,10 @@ const styles = StyleSheet.create({
   statusInfoTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1e40af',
     marginBottom: 4,
   },
   statusInfoText: {
     fontSize: 13,
-    color: '#3b82f6',
     lineHeight: 18,
   },
   optionRow: {
@@ -568,7 +557,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
   },
   optionRowLast: {
     borderBottomWidth: 0,
@@ -586,26 +574,20 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: palette.text,
   },
   optionHint: {
     fontSize: 12,
-    color: palette.muted,
     marginTop: 2,
   },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.accent,
+    backgroundColor: '#d97706',
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     gap: spacing.sm,
     marginBottom: spacing.md,
-    
-    
-    
-    
     elevation: 4,
   },
   saveButtonText: {

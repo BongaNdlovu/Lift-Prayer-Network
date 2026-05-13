@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Alert, FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,13 +14,12 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { FeedCard } from '../../components/FeedCard';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { Confetti } from '../../components/Confetti';
-import { GlassStatCard, GlassChip, GlassIconButton } from '../../components/GlassCard';
-import { LiftScreen } from '../../components/LiftLayout';
+import { LiftScreen, LiftCard } from '../../components/LiftLayout';
 import { queuePendingPrayer, queuePendingPrayerPromise } from '../../services/offlineCache';
 import { createOrUpdatePrayerPromise } from '../../services/prayerPromises';
 import { subscribeToUserGroups } from '../../services/groups';
 import { prefetchFeedAvatars } from '../../utils/imagePrefetch';
-import { fonts, fontSizes, radius, spacing, shadows } from '../../theme/colors';
+import { fonts, fontSizes, radius, spacing } from '../../theme/colors';
 import type { FeedItem, PrayerCategory } from '../../types';
 import { PRAYER_CATEGORIES } from '../../types';
 import type { RootStackParamList } from '../../navigation/types';
@@ -439,15 +437,13 @@ export const FeedScreen: React.FC = () => {
               </Text>
             </View>
             <View style={styles.topRowRight}>
-              <GlassIconButton
-                onPress={() => navigation.navigate('NotificationsInbox')}
-                badge={unreadCount}
-              >
+              <TouchableOpacity onPress={() => navigation.navigate('NotificationsInbox')} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Ionicons name="notifications-outline" size={20} color={colors.muted} />
-              </GlassIconButton>
-              <GlassIconButton onPress={() => navigation.navigate('Search')}>
+                {unreadCount > 0 && <View style={[styles.badgeDot, { backgroundColor: colors.danger }]} />}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Search')} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Ionicons name="search-outline" size={20} color={colors.muted} />
-              </GlassIconButton>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -473,9 +469,18 @@ export const FeedScreen: React.FC = () => {
 
           {/* Stats Strip - Compact */}
           <View style={styles.statsRow}>
-            <GlassStatCard value={headerCounts.items} label="Requests" />
-            <GlassStatCard value={headerCounts.totalPrayers} label="Prayers" accent />
-            <GlassStatCard value={user ? '🔥' : '—'} label="Streak" />
+            <LiftCard style={styles.statCard}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{headerCounts.items}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Requests</Text>
+            </LiftCard>
+            <LiftCard style={styles.statCard}>
+              <Text style={[styles.statValue, { color: colors.accentDark }]}>{headerCounts.totalPrayers}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Prayers</Text>
+            </LiftCard>
+            <LiftCard style={styles.statCard}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{user ? '🔥' : '—'}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Streak</Text>
+            </LiftCard>
           </View>
         </View>
 
@@ -561,48 +566,48 @@ export const FeedScreen: React.FC = () => {
               style={styles.filterScroll}
               contentContainerStyle={styles.filterContainer}
             >
-              <GlassChip
-                active={selectedCategory === 'all'}
+              <TouchableOpacity
                 onPress={() => setSelectedCategory('all')}
+                style={[styles.chip, { backgroundColor: colors.surfaceSecondary }, selectedCategory === 'all' && [styles.chipActive, { backgroundColor: colors.accentLight, borderColor: colors.accentDark }]]}
               >
                 <Text style={[
                   styles.chipText,
-                  { color: colors.stone500 },
-                  selectedCategory === 'all' && styles.chipTextActive,
+                  { color: colors.muted },
+                  selectedCategory === 'all' && { color: colors.text },
                 ]}>
                   All
                 </Text>
-              </GlassChip>
+              </TouchableOpacity>
               {PRAYER_CATEGORIES.map((cat) => (
-                <GlassChip
+                <TouchableOpacity
                   key={cat.id}
-                  active={selectedCategory === cat.id}
                   onPress={() => setSelectedCategory(selectedCategory === cat.id ? 'all' : cat.id)}
-                  icon={<Text style={styles.chipEmoji}>{cat.emoji}</Text>}
+                  style={[styles.chip, { backgroundColor: colors.surfaceSecondary }, selectedCategory === cat.id && [styles.chipActive, { backgroundColor: colors.accentLight, borderColor: colors.accentDark }]]}
                 >
+                  <Text style={styles.chipEmoji}>{cat.emoji}</Text>
                   <Text style={[
                     styles.chipText,
-                    { color: colors.stone500 },
-                    selectedCategory === cat.id && styles.chipTextActive,
+                    { color: colors.muted },
+                    selectedCategory === cat.id && { color: colors.text },
                   ]}>
                     {cat.label}
                   </Text>
-                </GlassChip>
+                </TouchableOpacity>
               ))}
               {/* Urgent filter */}
               {mode === 'REQUEST' && headerCounts.urgentCount > 0 && (
-                <GlassChip
-                  active={showUrgentOnly}
+                <TouchableOpacity
                   onPress={() => setShowUrgentOnly(!showUrgentOnly)}
-                  icon={<Text style={styles.chipEmoji}>🚨</Text>}
+                  style={[styles.chip, { backgroundColor: colors.surfaceSecondary }, showUrgentOnly && styles.chipActiveUrgent]}
                 >
+                  <Text style={styles.chipEmoji}>🚨</Text>
                   <Text style={[
                     styles.chipText,
                     { color: showUrgentOnly ? '#fff' : '#dc2626' },
                   ]}>
                     Urgent ({headerCounts.urgentCount})
                   </Text>
-                </GlassChip>
+                </TouchableOpacity>
               )}
             </ScrollView>
           </View>
@@ -757,21 +762,11 @@ export const FeedScreen: React.FC = () => {
             { transform: [{ scale: fabPulseAnim }] }
           ]} />
           <TouchableOpacity
-            style={styles.fab}
+            style={[styles.fab, { backgroundColor: mode === 'TESTIMONY' ? colors.success : colors.accent }]}
             onPress={navigateToCreate}
             activeOpacity={0.9}
           >
-            <LinearGradient
-              colors={mode === 'TESTIMONY' 
-                ? ['#22c55e', '#16a34a'] 
-                : [colors.amber400, colors.orange500]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.fabGradient}
-            >
-              <Ionicons name="add" size={32} color="#fff" strokeWidth={2.5} />
-            </LinearGradient>
+            <Ionicons name="add" size={32} color="#fff" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
     </LiftScreen>
@@ -859,6 +854,60 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginBottom: spacing.xs,
   },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  statValue: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.lg,
+    fontWeight: '600',
+  },
+  statLabel: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    marginTop: 2,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    marginRight: spacing.xs,
+  },
+  chipActive: {
+    borderWidth: 1,
+  },
+  chipActiveUrgent: {
+    backgroundColor: '#dc2626',
+  },
+  chipText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
+  },
+  chipEmoji: {
+    fontSize: 14,
+  },
   
   // === MAIN CONTENT AREA ===
   mainContent: {
@@ -932,16 +981,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.xs,
   },
-  chipText: {
-    fontSize: fontSizes.xs,
-    fontWeight: '500',
-    fontFamily: fonts.body,
-  },
   chipTextActive: {
     color: '#fff',
-  },
-  chipEmoji: {
-    fontSize: 14,
   },
   
   // === FEED CONTAINER ===
@@ -1052,24 +1093,22 @@ const styles = StyleSheet.create({
   },
   fabGlow: {
     position: 'absolute',
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: 36,
-    backgroundColor: 'rgba(245,158,11,0.4)',
-  },
-  fab: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    overflow: 'hidden',
-    ...shadows.fabGlow,
+    backgroundColor: 'rgba(56, 92, 59, 0.2)',
   },
-  fabGradient: {
-    flex: 1,
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   
   // === MOST PRAYED SECTION ===
@@ -1101,7 +1140,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.xl,
     borderWidth: 1,
-    ...shadows.cinematicCard,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
   },
   mostPrayedRank: {
     position: 'absolute',

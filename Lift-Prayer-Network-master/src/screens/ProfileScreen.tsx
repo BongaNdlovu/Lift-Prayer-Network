@@ -24,8 +24,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, palette, radius, spacing } from '../theme/colors';
-import { GlassIconButton } from '../components/GlassCard';
+import { fonts, radius, spacing } from '../theme/colors';
 import { LiftScreen } from '../components/LiftLayout';
 import { db, firebaseEnabled, storage } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
@@ -298,12 +297,12 @@ export const ProfileScreen: React.FC = () => {
           </Text>
         </View>
         {user && (
-          <GlassIconButton
+          <TouchableOpacity
             onPress={handleEditProfile}
-            style={{ backgroundColor: colors.amber100, borderColor: colors.amber200 }}
+            style={[styles.iconButton, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}
           >
             <Ionicons name="pencil" size={20} color={colors.amber700} />
-          </GlassIconButton>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -411,32 +410,6 @@ export const ProfileScreen: React.FC = () => {
         </View>
       {user?.isAnonymous && (
         <View style={styles.card}>
-          <Text style={styles.label}>Upgrade account</Text>
-          <Text style={styles.value}>Link guest to email/password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Display name"
-            placeholderTextColor={palette.muted}
-            value={upgradeName}
-            onChangeText={setUpgradeName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={palette.muted}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={upgradeEmail}
-            onChangeText={setUpgradeEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={palette.muted}
-            secureTextEntry
-            value={upgradePassword}
-            onChangeText={setUpgradePassword}
-          />
           <TouchableOpacity
             style={styles.button}
             onPress={async () => {
@@ -563,7 +536,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>People I Prayed For</Text>
               <Text style={styles.menuSubtitle}>Track your prayer connections</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
@@ -579,7 +552,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Following</Text>
               <Text style={styles.menuSubtitle}>Manage users you follow</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
@@ -595,7 +568,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Prayer History</Text>
               <Text style={styles.menuSubtitle}>View all your prayers</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
@@ -611,7 +584,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Achievements</Text>
               <Text style={styles.menuSubtitle}>View your badges and progress</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
@@ -627,7 +600,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Prayer Reminders</Text>
               <Text style={styles.menuSubtitle}>Set daily prayer notifications</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
@@ -643,7 +616,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Notification Settings</Text>
               <Text style={styles.menuSubtitle}>Customize your alerts</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
@@ -659,7 +632,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Settings & Privacy</Text>
               <Text style={styles.menuSubtitle}>Account, blocked users, data</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           {isAdminUser && (
@@ -676,7 +649,7 @@ export const ProfileScreen: React.FC = () => {
                   <Text style={styles.menuTitle}>Moderation Reports</Text>
                   <Text style={styles.menuSubtitle}>Review community flags</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+                <Ionicons name="chevron-forward" size={20} color={colors.muted} />
               </TouchableOpacity>
             </>
           )}
@@ -694,7 +667,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Help & Tutorial</Text>
               <Text style={styles.menuSubtitle}>Learn how to use Lift</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -708,7 +681,7 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.menuTitle}>Support Lift</Text>
               <Text style={styles.menuSubtitle}>Help keep the app running</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={palette.muted} />
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </TouchableOpacity>
         </View>
       )}
@@ -788,6 +761,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
     opacity: 0.8,
   },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   heading: {
     fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     fontSize: 32,
@@ -822,7 +803,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: palette.accent,
+    backgroundColor: '#f59e0b',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -831,7 +812,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: palette.accent,
+    borderColor: '#e5e7eb',
   },
   avatarText: {
     fontSize: 40,
@@ -845,15 +826,11 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: palette.accentDark,
+    backgroundColor: '#f59e0b',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: '#fff',
-    
-    
-    
-    
     elevation: 4,
   },
   nameRowProfile: {
@@ -866,7 +843,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 20,
     fontWeight: '700',
-    color: palette.text,
+    color: '#1c1917',
   },
   verifiedBadgeProfile: {
     flexDirection: 'row',
@@ -883,20 +860,20 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 14,
-    color: palette.muted,
+    color: '#64748b',
   },
   photoHint: {
     fontSize: 12,
-    color: palette.muted,
+    color: '#64748b',
     marginTop: spacing.sm,
     fontStyle: 'italic',
   },
   card: {
-    backgroundColor: palette.surface,
+    backgroundColor: '#e5e7eb',
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#e5e7eb',
     gap: spacing.sm,
   },
   infoRow: {
@@ -910,32 +887,32 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: palette.border,
+    backgroundColor: '#e5e7eb',
     marginVertical: spacing.sm,
   },
   label: {
     fontSize: 11,
-    color: palette.muted,
+    color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   value: {
     fontSize: 15,
     fontWeight: '600',
-    color: palette.text,
+    color: '#1c1917',
   },
   input: {
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#e5e7eb',
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     backgroundColor: '#f8fafc',
-    color: palette.text,
+    color: '#1c1917',
     marginBottom: spacing.sm,
   },
   button: {
-    backgroundColor: palette.accent,
+    backgroundColor: '#f59e0b',
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -952,16 +929,16 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   menuCard: {
-    backgroundColor: palette.surface,
+    backgroundColor: '#e5e7eb',
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#e5e7eb',
   },
   menuHeading: {
     fontSize: 12,
     fontWeight: '600',
-    color: palette.muted,
+    color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.md,
@@ -986,17 +963,17 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
+    color: '#1c1917',
     marginBottom: 2,
   },
   menuSubtitle: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: palette.muted,
+    color: '#64748b',
   },
   menuDivider: {
     height: 1,
-    backgroundColor: palette.border,
+    backgroundColor: '#e5e7eb',
     marginVertical: spacing.sm,
   },
   signOutButton: {
@@ -1035,12 +1012,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: palette.text,
+    color: '#1c1917',
   },
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: palette.muted,
+    color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
@@ -1051,13 +1028,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     fontSize: 16,
-    color: palette.text,
+    color: '#1c1917',
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: '#e5e7eb',
     marginBottom: spacing.lg,
   },
   saveButton: {
-    backgroundColor: palette.accent,
+    backgroundColor: '#f59e0b',
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
