@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -26,26 +26,14 @@ function BootStatusBar() {
 }
 
 function App() {
-  const [booting, setBooting] = useState(true);
   const { fontsLoaded } = useAppFonts();
 
   useEffect(() => {
-    // Wait for fonts to load before hiding boot screen
-    if (fontsLoaded) {
-      const timer = setTimeout(() => setBooting(false), 1600);
-      return () => clearTimeout(timer);
-    }
-  }, [fontsLoaded]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setupNotificationHandler();
-    }, 1000);
-    return () => clearTimeout(timer);
+    setupNotificationHandler();
   }, []);
 
   // Show boot screen while fonts are loading
-  if (!fontsLoaded || booting) {
+  if (!fontsLoaded) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
