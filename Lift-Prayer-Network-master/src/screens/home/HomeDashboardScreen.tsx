@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,6 +25,7 @@ export const HomeDashboardScreen: React.FC = () => {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { items, loading } = useFeed('REQUEST', user?.uid);
+  const todayPulse = useRef(new Animated.Value(1)).current;
 
   const activeRequest = useMemo(() => items.find((item) => item.type === 'REQUEST') || items[0], [items]);
   const displayName = user?.displayName?.split(' ')[0] || 'friend';
@@ -35,6 +36,31 @@ export const HomeDashboardScreen: React.FC = () => {
     { id: '4', name: 'Faith Circle' },
     { id: '5', name: 'Support Team' },
   ];
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(todayPulse, {
+          toValue: 1.14,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(todayPulse, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulse.start();
+    return () => pulse.stop();
+  }, [todayPulse]);
+
+  const todayOpacity = todayPulse.interpolate({
+    inputRange: [1, 1.14],
+    outputRange: [1, 0.82],
+  });
 
   return (
     <LiftScreen scroll>
@@ -66,11 +92,20 @@ export const HomeDashboardScreen: React.FC = () => {
             return (
               <View key={`${day}-${index}`} style={styles.dayCol}>
                 <Text style={[styles.dayLabel, { color: colors.muted }]}>{day}</Text>
-                <View style={[styles.dayDot, { backgroundColor: done || today ? colors.accent : colors.border }]}>
+                <Animated.View
+                  style={[
+                    styles.dayDot,
+                    { backgroundColor: done || today ? colors.accent : colors.border },
+                    today && {
+                      opacity: todayOpacity,
+                      transform: [{ scale: todayPulse }],
+                    },
+                  ]}
+                >
                   <Text style={[styles.dayDotText, { color: done || today ? '#fff' : colors.textSecondary }]}>
                     {done ? '✓' : today ? '7' : '·'}
                   </Text>
-                </View>
+                </Animated.View>
               </View>
             );
           })}
