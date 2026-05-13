@@ -14,6 +14,7 @@ import {
   arrayRemove,
   onSnapshot,
   Unsubscribe,
+  writeBatch,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, firebaseEnabled, storage } from './firebase';
@@ -374,12 +375,20 @@ export const deleteGroup = async (groupId: string, ownerUid: string): Promise<bo
     const group = await getGroup(groupId);
     if (!group || group.ownerUid !== ownerUid) return false;
 
-    // Remove group from all members
-    for (const memberId of group.memberUids) {
-      const userRef = doc(db, 'users', memberId);
-      await updateDoc(userRef, {
-        groupIds: arrayRemove(groupId),
-      });
+    // Batch remove group from all members (Firestore batch limit is 500)
+    const FIRESTORE_BATCH_LIMIT = 500;
+    for (let i = 0; i < group.memberUids.length; i += FIRESTORE_BATCH_LIMIT) {
+      const batch = writeBatch(db);
+      const chunk = group.memberUids.slice(i, i + FIRESTORE_BATCH_LIMIT);
+
+      for (const memberId of chunk) {
+        const userRef = doc(db, 'users', memberId);
+        batch.update(userRef, {
+          groupIds: arrayRemove(groupId),
+        });
+      }
+
+      await batch.commit();
     }
 
     await deleteDoc(doc(db, 'groups', groupId));

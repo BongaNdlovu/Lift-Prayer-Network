@@ -25,7 +25,7 @@ import { clearAllCache, getCacheStats } from '../services/offlineCache';
 import { cleanupUserData } from '../services/userCleanup';
 import { deleteProfilePhoto } from '../services/profilePhotos';
 import { checkUserBanned } from '../services/moderation';
-import { registerForPushNotifications, storePushToken, setupNotificationHandler } from '../services/notifications';
+import { registerForPushNotifications, storePushToken } from '../services/notifications';
 
 const ONBOARDING_ANSWERS_KEY = '@lift_onboarding_answers';
 
@@ -59,7 +59,6 @@ const cleanupPushTokens = async (uid: string): Promise<void> => {
 const registerPushTokenInBackground = (uid: string): void => {
   void (async () => {
     try {
-      setupNotificationHandler();
       const registration = await registerForPushNotifications();
       if (registration.status === 'granted' && registration.expoPushToken) {
         await storePushToken(uid, registration.expoPushToken, registration.devicePushToken);

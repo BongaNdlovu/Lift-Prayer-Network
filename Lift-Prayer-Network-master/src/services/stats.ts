@@ -35,7 +35,7 @@ const getWeekStart = (): Date => {
   const now = new Date();
   const day = now.getDay();
   const diff = now.getDate() - day;
-  return new Date(now.setDate(diff));
+  return new Date(now.getFullYear(), now.getMonth(), diff);
 };
 
 const getMonthStart = (): Date => {

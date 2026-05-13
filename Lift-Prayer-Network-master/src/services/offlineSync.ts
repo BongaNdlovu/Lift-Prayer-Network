@@ -16,10 +16,6 @@ import { firebaseEnabled } from './firebase';
 const BACKOFF_DELAYS = [1000, 5000, 15000, 30000, 60000];
 const MAX_RETRIES = 5;
 
-let retryCount = 0;
-let retryTimeout: ReturnType<typeof setTimeout> | null = null;
-let isSyncing = false;
-
 const syncRequests = async (user: User): Promise<boolean> => {
   const pending = await getPendingRequests();
   const retained: typeof pending = [];
@@ -125,70 +121,52 @@ export const syncPendingOfflineActions = async (user: User | null): Promise<bool
   return requestsOk && prayersOk && promisesOk;
 };
 
-const syncWithBackoff = async (user: User): Promise<void> => {
-  if (isSyncing) {
-    console.log('[OfflineSync] Sync already in progress, skipping');
-    return;
-  }
-
-  isSyncing = true;
-
-  try {
-    const success = await syncPendingOfflineActions(user);
-
-    if (success) {
-      retryCount = 0;
-      console.log('[OfflineSync] Sync completed successfully');
-    } else {
-      throw new Error('Offline sync incomplete');
-    }
-  } catch (err) {
-    console.warn('[OfflineSync] Sync failed:', err);
-
-    if (retryCount < MAX_RETRIES) {
-      const delay = BACKOFF_DELAYS[Math.min(retryCount, BACKOFF_DELAYS.length - 1)];
-      retryCount++;
-
-      console.log(`[OfflineSync] Retrying in ${delay}ms (attempt ${retryCount}/${MAX_RETRIES})`);
-
-      retryTimeout = setTimeout(() => {
-        syncWithBackoff(user);
-      }, delay);
-    } else {
-      console.error('[OfflineSync] Max retries exceeded, giving up until next connection change');
-      retryCount = 0;
-    }
-  } finally {
-    isSyncing = false;
-  }
-};
-
 export const startOfflineSyncListener = (user: User | null) => {
   if (!user || !firebaseEnabled) {
     return () => {};
   }
 
-  if (retryTimeout) {
-    clearTimeout(retryTimeout);
-    retryTimeout = null;
-  }
-  retryCount = 0;
+  // Per-listener state to prevent interference between multiple listeners
+  let retryCount = 0;
+  let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+  let isSyncing = false;
+  let disposed = false;
+
+  const syncWithBackoff = async (user: User): Promise<void> => {
+    if (disposed || isSyncing) return;
+
+    isSyncing = true;
+
+    try {
+      const success = await syncPendingOfflineActions(user);
+      if (success) retryCount = 0;
+      else throw new Error('Offline sync incomplete');
+    } catch {
+      if (!disposed && retryCount < MAX_RETRIES) {
+        const delay = BACKOFF_DELAYS[Math.min(retryCount, BACKOFF_DELAYS.length - 1)];
+        retryCount++;
+        retryTimeout = setTimeout(() => syncWithBackoff(user), delay);
+      } else {
+        retryCount = 0;
+      }
+    } finally {
+      isSyncing = false;
+    }
+  };
 
   // Initial drain
   syncWithBackoff(user);
 
   const unsubscribe = NetInfo.addEventListener((state) => {
     if (state.isConnected && state.isInternetReachable) {
-      // Reset retries on a fresh connection
       retryCount = 0;
       syncWithBackoff(user);
     }
   });
 
   return () => {
+    disposed = true;
     unsubscribe();
-    if (retryTimeout) {
-      clearTimeout(retryTimeout);
-    }
+    if (retryTimeout) clearTimeout(retryTimeout);
   };
 };

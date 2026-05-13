@@ -11,7 +11,6 @@ import {
   increment,
   getDocs,
   startAfter,
-  where,
   type QueryDocumentSnapshot,
   type DocumentData,
   type QueryConstraint,
@@ -38,12 +37,18 @@ const generateMockItem = (mode: Mode): FeedItem => {
     id: Math.random().toString(36).slice(2),
     ownerUid: 'mock',
     userDisplayName: 'Anonymous',
+    userPhotoURL: null,
+    userEmail: undefined,
     location: '',
     content:
       mode === 'REQUEST'
         ? 'Please pray for this request.'
         : 'Thank you for your prayers.',
     createdAt: new Date(),
+    commentCount: 0,
+    heartCount: 0,
+    fireCount: 0,
+    strongCount: 0,
   };
   if (mode === 'REQUEST') {
     return {
@@ -52,6 +57,12 @@ const generateMockItem = (mode: Mode): FeedItem => {
       severity: Math.random() > 0.7 ? 'CRITICAL' : 'HIGH',
       prayers: Math.floor(Math.random() * 50),
       status: 'ACTIVE',
+      category: 'other',
+      isUrgent: false,
+      isPrivate: false,
+      isAnonymous: true,
+      visibility: 'PUBLIC' as const,
+      title: '',
     };
   }
   return {
@@ -59,6 +70,8 @@ const generateMockItem = (mode: Mode): FeedItem => {
     type: 'TESTIMONY',
     severity: 'RESOLVED',
     likes: Math.floor(Math.random() * 200),
+    isPrivate: false,
+    visibility: 'PUBLIC' as const,
   };
 };
 
@@ -113,7 +126,8 @@ export const useFeed = (
   const isMounted = useRef(true);
   const cursorRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
   const lastFetchTime = useRef<number>(0);
-  
+  const loadingMoreRef = useRef(false);
+
   // Track viewerUid changes to re-filter when user signs in
   const viewerUidRef = useRef(viewerUid);
   viewerUidRef.current = viewerUid;
@@ -250,7 +264,6 @@ export const useFeed = (
 
     const col = collection(db, mode === 'REQUEST' ? 'requests' : 'testimonies');
     const constraints: QueryConstraint[] = [
-      where('visibility', '==', 'PUBLIC'),
       orderBy('createdAt', 'desc'),
     ];
 
@@ -339,16 +352,20 @@ export const useFeed = (
 
   // Load more function for pagination
   const loadMore = useCallback(async () => {
-    if (!hasMore || loading || loadingMore) return;
+    if (!hasMore || loading || loadingMoreRef.current) return;
+
+    loadingMoreRef.current = true;
     setLoadingMore(true);
+
     try {
       await manualFetch(true);
     } finally {
+      loadingMoreRef.current = false;
       if (isMounted.current) {
         setLoadingMore(false);
       }
     }
-  }, [hasMore, loading, loadingMore, manualFetch]);
+  }, [hasMore, loading, manualFetch]);
 
   // Track mounted state
   useEffect(() => {

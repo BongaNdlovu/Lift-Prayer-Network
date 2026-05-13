@@ -25,7 +25,7 @@ const RATE_LIMITS = {
   prayers: { maxPerHour: 100, maxPerDay: 500 },
   requests: { maxPerHour: 10, maxPerDay: 30 },
   testimonies: { maxPerHour: 10, maxPerDay: 20 },
-  comments: { maxPerHour: 20, maxPerDay: 10 },  // Limited to 10 comments per day
+  comments: { maxPerHour: 5, maxPerDay: 10 },  // Limited to 10 comments per day
   notifications: { maxPerMinute: 10 },
   groupJoins: { maxPerHour: 5, maxPerDay: 10 },  // Limit group join attempts
   reports: { maxPerHour: 5, maxPerDay: 15 },     // Limit report submissions
@@ -1033,11 +1033,39 @@ exports.onRequestCreated = onDocumentCreated('requests/{requestId}', async (even
           },
         },
       };
-      
+
       await admin.messaging().send(message);
-      console.log('Critical alert sent successfully');
+      console.log('Critical FCM alert sent successfully');
     } catch (err) {
-      console.error('Error sending critical alert:', err);
+      console.error('Error sending critical FCM alert:', err);
+    }
+
+    // Also send to Expo token users
+    try {
+      const usersSnapshot = await db.collection('users').get();
+      const allExpoTokens = [];
+
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        // Check if user has critical notifications enabled
+        if (userData?.settings?.notificationsCritical !== false && userData?.settings?.notifications !== false) {
+          const tokens = await getUserPushTokens(userDoc.id);
+          allExpoTokens.push(...tokens);
+        }
+      }
+
+      if (allExpoTokens.length > 0) {
+        await sendExpoPushNotification(
+          allExpoTokens,
+          '🚨 Critical Prayer Request',
+          `${data.userDisplayName || 'Someone'}: ${content.slice(0, 100)}...`,
+          { type: 'CRITICAL_REQUEST', requestId },
+          { channelId: 'critical', priority: 'high' }
+        );
+        console.log(`Critical Expo alert sent to ${allExpoTokens.length} tokens`);
+      }
+    } catch (err) {
+      console.error('Error sending critical Expo alert:', err);
     }
   }
 

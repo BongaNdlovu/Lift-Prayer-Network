@@ -70,7 +70,7 @@ export const createOrUpdatePrayerPromise = async (args: CreateOrUpdatePrayerProm
     };
 
     if (exists) {
-      txn.set(promiseRef, baseData, { merge: true });
+      txn.update(promiseRef, baseData);
     } else {
       txn.set(promiseRef, {
         ...baseData,

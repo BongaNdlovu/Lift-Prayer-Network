@@ -454,8 +454,8 @@ export const RATE_LIMIT_CONFIG = {
     maxPerDay: 20,
     windowMs: 60 * 60 * 1000,
   },
-  comments: { 
-    maxPerHour: 20, 
+  comments: {
+    maxPerHour: 5,
     maxPerDay: 10,
     windowMs: 60 * 60 * 1000,
   },

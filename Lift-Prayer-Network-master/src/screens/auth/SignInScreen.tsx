@@ -20,7 +20,7 @@ import { RootStackParamList } from '../../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 export const SignInScreen: React.FC<Props> = ({ navigation }) => {
-  const { signIn, signInGuest, resetPassword } = useAuth();
+  const { signIn, signInGuest } = useAuth();
   const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,9 +56,9 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
           "We couldn't sign you in. This could be because:\n\n• No account exists with this email\n• The password is incorrect\n\nWould you like to create a new account or try again?",
           [
             { text: 'Try Again', style: 'cancel' },
-            { text: 'Forgot Password', onPress: handleForgotPassword },
-            { 
-              text: 'Create Account', 
+            { text: 'Forgot Password', onPress: () => navigation.navigate('ForgotPassword') },
+            {
+              text: 'Create Account',
               onPress: () => navigation.navigate('SignUp')
             }
           ]
@@ -69,38 +69,6 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      Alert.alert(
-        'Email Required',
-        'Please enter your email address first, then tap "Forgot password".'
-      );
-      return;
-    }
-
-    Alert.alert(
-      'Reset Password',
-      `Send password reset email to ${email.trim()}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send',
-          onPress: async () => {
-            try {
-              await resetPassword(email);
-              Alert.alert(
-                'Email Sent',
-                'Check your inbox for password reset instructions. Don\'t forget to check your spam folder.'
-              );
-            } catch (error: any) {
-              Alert.alert('Reset Failed', error.message || 'Could not send reset email.');
-            }
-          },
-        },
-      ]
-    );
   };
 
   const handleGuestSignIn = async () => {

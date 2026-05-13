@@ -36,32 +36,32 @@ let storage: FirebaseStorage | null = null;
 
 if (firebaseEnabled) {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  
+
   // Initialize auth with proper persistence
+  // Check if auth is already initialized to avoid warnings
   try {
-    if (Platform.OS === 'web') {
-      // Web uses browser local persistence
-      auth = initializeAuth(app, {
-        persistence: browserLocalPersistence,
-      });
-    } else {
-      // React Native - use AsyncStorage for persistent auth
-      // This keeps users logged in even after closing the app
-      auth = initializeAuth(app, {
-        persistence: getReactNativePersistence(AsyncStorage),
-      });
-    }
-  } catch (error) {
-    // Auth may already be initialized
-    const firebaseError = error as { code?: string };
-    if (firebaseError.code === 'auth/already-initialized') {
-      auth = getAuth(app);
-    } else {
-      console.warn('[Firebase] Auth initialization error:', error);
+    auth = getAuth(app);
+  } catch {
+    // Auth not yet initialized, initialize it
+    try {
+      if (Platform.OS === 'web') {
+        auth = initializeAuth(app, {
+          persistence: browserLocalPersistence,
+        });
+      } else {
+        auth = initializeAuth(app, {
+          persistence: getReactNativePersistence(AsyncStorage),
+        });
+      }
+    } catch (error) {
+      const firebaseError = error as { code?: string };
+      if (firebaseError.code !== 'auth/already-initialized') {
+        console.warn('[Firebase] Auth initialization error:', error);
+      }
       auth = getAuth(app);
     }
   }
-  
+
   db = getFirestore(app);
   storage = getStorage(app);
 }
