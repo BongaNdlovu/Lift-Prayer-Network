@@ -10,12 +10,87 @@ const filter = new Filter();
 const EXPO_PUSH_BATCH_SIZE = 100;
 const FIRESTORE_BATCH_LIMIT = 450;
 
+const SPECIAL_TIME_ACHIEVEMENTS = {
+  early_bird: {
+    title: 'Early Bird',
+    description: 'Prayed before 6 AM',
+    emoji: '🌅',
+  },
+  night_owl: {
+    title: 'Night Owl',
+    description: 'Prayed after 11 PM',
+    emoji: '🌙',
+  },
+};
+
 function chunkArray(items, size) {
   const chunks = [];
   for (let i = 0; i < items.length; i += size) {
     chunks.push(items.slice(i, i + size));
   }
   return chunks;
+}
+
+async function unlockSpecialTimeAchievement(userId, achievementId) {
+  if (!userId || !SPECIAL_TIME_ACHIEVEMENTS[achievementId]) return false;
+
+  const userRef = db.doc(`users/${userId}`);
+  let unlocked = false;
+
+  await db.runTransaction(async (txn) => {
+    const userSnap = await txn.get(userRef);
+    if (!userSnap.exists) return;
+
+    const userData = userSnap.data() || {};
+    const currentIds = userData.achievements?.unlockedIds || [];
+    if (currentIds.includes(achievementId)) return;
+
+    txn.update(userRef, {
+      'achievements.unlockedIds': [...currentIds, achievementId],
+      [`achievements.unlockedAt.${achievementId}`]: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    unlocked = true;
+  });
+
+  if (!unlocked) return false;
+
+  try {
+    const userSnap = await userRef.get();
+    const userData = userSnap.data() || {};
+    const settings = userData.settings || {};
+    const notificationsEnabled = settings.notifications !== false;
+    const achievementNotificationsEnabled = settings.notificationsAchievements !== false;
+
+    if (notificationsEnabled && achievementNotificationsEnabled) {
+      const tokens = await getUserPushTokens(userId);
+      const achievement = SPECIAL_TIME_ACHIEVEMENTS[achievementId];
+      if (tokens.length > 0) {
+        await sendExpoPushNotification(
+          tokens,
+          `${achievement.emoji} Achievement Unlocked!`,
+          `${achievement.title}: ${achievement.description}`,
+          { type: 'achievement', achievementId },
+          { priority: 'normal' }
+        );
+      }
+    }
+  } catch (err) {
+    console.error(`[Achievements] Could not notify ${achievementId}:`, err);
+  }
+
+  return true;
+}
+
+async function checkPrayerTimeAchievement(userId, prayedAt) {
+  const prayedDate = prayedAt?.toDate?.();
+  if (!userId || !prayedDate) return;
+
+  const hour = prayedDate.getUTCHours();
+  if (hour < 6) {
+    await unlockSpecialTimeAchievement(userId, 'early_bird');
+  } else if (hour >= 23) {
+    await unlockSpecialTimeAchievement(userId, 'night_owl');
+  }
 }
 
 // ============================================================================
@@ -870,6 +945,12 @@ exports.onPrayerCreated = onDocumentCreated('prayers/{prayerId}', async (event) 
   const { actorUid, targetRequestId, targetOwnerUid, targetSummary, actorDisplayName, isSelfPrayer } = data;
   
   console.log(`[onPrayerCreated] Prayer created: actor=${actorUid}, target=${targetOwnerUid}, requestId=${targetRequestId}`);
+
+  try {
+    await checkPrayerTimeAchievement(actorUid, data.prayedAt);
+  } catch (err) {
+    console.error('[onPrayerCreated] Error checking prayer time achievement:', err);
+  }
   
   // Skip notification for self-prayers (handled client-side)
   if (isSelfPrayer) {
