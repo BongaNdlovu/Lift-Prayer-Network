@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,7 +14,9 @@ import {
   LiftEmptyState,
   LiftHeader,
   LiftIconButton,
+  LiftPrayerRhythmCard,
   LiftScreen,
+  LiftSectionHeader,
   LiftSectionLabel,
 } from '../../components/LiftLayout';
 import { fonts, shadows, spacing } from '../../theme/colors';
@@ -25,7 +27,6 @@ export const HomeDashboardScreen: React.FC = () => {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { items, loading } = useFeed('REQUEST', user?.uid);
-  const todayPulse = useRef(new Animated.Value(1)).current;
 
   const activeRequest = useMemo(() => items.find((item) => item.type === 'REQUEST') || items[0], [items]);
   const displayName = user?.displayName?.split(' ')[0] || 'friend';
@@ -36,31 +37,6 @@ export const HomeDashboardScreen: React.FC = () => {
     { id: '4', name: 'Faith Circle' },
     { id: '5', name: 'Support Team' },
   ];
-
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(todayPulse, {
-          toValue: 1.14,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(todayPulse, {
-          toValue: 1,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    pulse.start();
-    return () => pulse.stop();
-  }, [todayPulse]);
-
-  const todayOpacity = todayPulse.interpolate({
-    inputRange: [1, 1.14],
-    outputRange: [1, 0.82],
-  });
 
   return (
     <LiftScreen scroll>
@@ -75,44 +51,15 @@ export const HomeDashboardScreen: React.FC = () => {
         }
       />
 
-      <LiftCard style={styles.streakCard}>
-        <View style={styles.streakHeader}>
-          <View style={[styles.streakIcon, { backgroundColor: colors.amber100 }]}>
-            <Ionicons name="flame-outline" size={22} color={colors.amber700} />
-          </View>
-          <View style={styles.streakCopy}>
-            <Text style={[styles.streakTitle, { color: colors.text }]}>You are showing up in prayer</Text>
-            <Text style={[styles.streakSub, { color: colors.textSecondary }]}>Keep your rhythm gentle and steady.</Text>
-          </View>
-        </View>
-        <View style={styles.daysRow}>
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => {
-            const done = index < 5;
-            const today = index === 6;
-            return (
-              <View key={`${day}-${index}`} style={styles.dayCol}>
-                <Text style={[styles.dayLabel, { color: colors.muted }]}>{day}</Text>
-                <Animated.View
-                  style={[
-                    styles.dayDot,
-                    { backgroundColor: done || today ? colors.accent : colors.border },
-                    today && {
-                      opacity: todayOpacity,
-                      transform: [{ scale: todayPulse }],
-                    },
-                  ]}
-                >
-                  <Text style={[styles.dayDotText, { color: done || today ? '#fff' : colors.textSecondary }]}>
-                    {done ? '✓' : today ? '7' : '·'}
-                  </Text>
-                </Animated.View>
-              </View>
-            );
-          })}
-        </View>
-      </LiftCard>
+      <LiftPrayerRhythmCard
+        prayersCount={items.length}
+        supportedCount={37}
+        answeredCount={18}
+        onPress={() => navigation.navigate('Stats')}
+        style={{ marginTop: 6 }}
+      />
 
-      <LiftSectionLabel title="Active Request" />
+      <LiftSectionHeader title="Active Request" />
       {activeRequest ? (
         <Pressable
           onPress={() => navigation.navigate('RequestDetail', { id: activeRequest.id, type: activeRequest.type, item: activeRequest })}

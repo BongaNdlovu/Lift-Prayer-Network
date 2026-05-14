@@ -21,7 +21,7 @@ import { subscribeToUserGroups } from '../services/groups';
 import { Confetti } from '../components/Confetti';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, radius, spacing } from '../theme/colors';
-import { LiftScreen } from '../components/LiftLayout';
+import { LiftFormSection, LiftScreen, LiftTopBar } from '../components/LiftLayout';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import { checkUserBlockedFromPosting } from '../services/moderation';
 import type { RootStackParamList } from '../navigation/types';
@@ -214,19 +214,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <LiftScreen scroll>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
-      {/* === HEADER SECTION === */}
-      <View style={styles.headerSection}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.kicker, { color: colors.muted }]}>CELEBRATE</Text>
-          <Text style={[styles.heading, { color: colors.text }]}>
-            Testimony
-          </Text>
-        </View>
-        <View style={{ width: 44 }} />
-      </View>
+      <LiftTopBar title="Share Testimony" onBack={() => navigation.goBack()} />
 
       {/* === MAIN CONTENT === */}
       <View style={styles.mainContent}>
@@ -251,9 +239,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Content Input */}
-            <View style={[styles.card, { borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.text }]}>How did God answer your prayer?</Text>
+            <LiftFormSection label="How did God answer your prayer?" hint={`${content.length}/1500`}>
               <TextInput
                 style={[styles.textArea, { color: colors.text, borderColor: colors.border }]}
                 placeholder="Share your testimony of God's faithfulness..."
@@ -265,8 +251,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                 onChangeText={setContent}
                 maxLength={1500}
               />
-              <Text style={[styles.charCount, { color: colors.muted }]}>{content.length}/1500</Text>
-            </View>
+            </LiftFormSection>
 
             {/* Link to Original Request */}
             {userRequests.length > 0 && (
@@ -313,9 +298,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             )}
 
-            {/* Privacy Options */}
-            <View style={[styles.card, { borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.text }]}>Who can see this testimony?</Text>
+            <LiftFormSection label="Who can see this testimony?">
               <View style={styles.visibilityOptions}>
                 <TouchableOpacity
                   style={[
@@ -421,7 +404,7 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
                   ))}
                 </View>
               )}
-            </View>
+            </LiftFormSection>
 
             {/* Preview */}
             {content.trim().length > 0 && (

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { db, firebaseEnabled } from '../../services/firebase';
-import { radius, spacing } from '../../theme/colors';
-import { LiftAvatar, LiftEmptyState, LiftHeader, LiftInput, LiftScreen, LiftTabs } from '../../components/LiftLayout';
+import { spacing } from '../../theme/colors';
+import { LiftActionRow, LiftEmptyState, LiftHeader, LiftInput, LiftScreen, LiftSectionHeader, LiftTabs } from '../../components/LiftLayout';
 import type { PeopleStat } from '../../types';
 
 export const PeopleScreen: React.FC = () => {
@@ -85,6 +85,7 @@ export const PeopleScreen: React.FC = () => {
             if (value === 'following') navigation.navigate('Following' as never);
           }}
         />
+        <LiftSectionHeader title="Prayer Network" count={filteredPeople.length} />
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={colors.accent} />
@@ -95,13 +96,12 @@ export const PeopleScreen: React.FC = () => {
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
             renderItem={({ item }) => (
-              <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <LiftAvatar name={item.targetName || item.targetOwnerUid} size={42} />
-                <View style={styles.personText}>
-                  <Text style={[styles.summary, { color: colors.text }]}>{item.targetName || item.targetOwnerUid}</Text>
-                  <Text style={[styles.meta, { color: colors.muted }]}>Prayers: {item.count}</Text>
-                </View>
-              </View>
+              <LiftActionRow
+                icon="person-outline"
+                title={item.targetName || item.targetOwnerUid}
+                subtitle={`Prayers: ${item.count}`}
+                onPress={() => {}}
+              />
             )}
             ListEmptyComponent={
               <LiftEmptyState
@@ -128,26 +128,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
   },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    marginBottom: spacing.sm,
-  },
   searchInput: {
     marginBottom: spacing.sm,
-  },
-  personText: {
-    flex: 1,
-  },
-  summary: {
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  meta: {
-    fontSize: 13,
   },
 });

@@ -516,6 +516,191 @@ export const LiftAvatarPrayerRow: React.FC<{
   );
 };
 
+export const LiftMiniStat: React.FC<{
+  label: string;
+  value: string | number;
+  icon: keyof typeof Ionicons.glyphMap;
+  style?: StyleProp<ViewStyle>;
+}> = ({ label, value, icon, style }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.miniStat, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm, style]}>
+      <View style={styles.miniStatHeader}>
+        <Ionicons name={icon} size={15} color={colors.accent} />
+        <Text style={[styles.miniStatLabel, { color: colors.textSecondary }]}>{label}</Text>
+      </View>
+      <Text style={[styles.miniStatValue, { color: colors.text }]}>{value}</Text>
+    </View>
+  );
+};
+
+export const LiftSectionHeader: React.FC<{
+  title: string;
+  count?: number;
+  actionLabel?: string;
+  onAction?: () => void;
+  style?: StyleProp<ViewStyle>;
+}> = ({ title, count, actionLabel, onAction, style }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.sectionHeader, style]}>
+      <Text style={[styles.sectionHeaderTitle, { color: colors.muted }]}>
+        {title}
+        {count !== undefined ? ` · ${count}` : ''}
+      </Text>
+      {onAction && actionLabel ? (
+        <Pressable onPress={onAction}>
+          <Text style={[styles.sectionHeaderAction, { color: colors.accent }]}>{actionLabel}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+};
+
+export const LiftStreakCard: React.FC<{
+  currentStreak: number;
+  longestStreak?: number;
+  daysCompleted?: boolean[];
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+}> = ({ currentStreak, longestStreak, daysCompleted, onPress, style }) => {
+  const { colors } = useTheme();
+  const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const completed = daysCompleted || [true, true, true, true, true, false, false];
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.streakCard, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.md, pressed && styles.pressed, style]}>
+      <View style={styles.streakHeader}>
+        <View>
+          <Text style={[styles.streakLabel, { color: colors.textSecondary }]}>CURRENT STREAK</Text>
+          <Text style={[styles.streakValue, { color: colors.text }]}>{currentStreak}</Text>
+          <Text style={[styles.streakSub, { color: colors.accent }]}>days of prayer rhythm</Text>
+        </View>
+        <View style={[styles.streakIconLarge, { backgroundColor: colors.accent }]}>
+          <Ionicons name="flame" size={25} color="#fff" />
+        </View>
+      </View>
+      <View style={styles.daysRow}>
+        {dayLabels.map((day, i) => (
+          <View key={`${day}-${i}`} style={styles.dayCol}>
+            <View
+              style={[
+                styles.dayDot,
+                { borderColor: completed[i] ? colors.accent : colors.border },
+                completed[i] && { backgroundColor: colors.accent },
+              ]}
+            >
+              <Text style={{ color: completed[i] ? '#fff' : colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 11 }}>
+                {completed[i] ? '✓' : day}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+      {longestStreak !== undefined && (
+        <Text style={[styles.streakMeta, { color: colors.textSecondary }]}>Best: {longestStreak} days</Text>
+      )}
+    </Pressable>
+  );
+};
+
+export const LiftActionRow: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  destructive?: boolean;
+  style?: StyleProp<ViewStyle>;
+}> = ({ icon, title, subtitle, onPress, destructive, style }) => {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionRow, pressed && { backgroundColor: colors.surfaceSecondary }, style]}>
+      <View style={[styles.actionIconWrap, { backgroundColor: destructive ? colors.dangerLight : colors.accentLight }]}>
+        <Ionicons name={icon} size={18} color={destructive ? colors.danger : colors.accent} />
+      </View>
+      <View style={styles.actionText}>
+        <Text style={[styles.actionTitle, { color: destructive ? colors.danger : colors.text }]}>{title}</Text>
+        {subtitle ? <Text style={[styles.actionSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+    </Pressable>
+  );
+};
+
+export const LiftFormSection: React.FC<{
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}> = ({ label, hint, children, style }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.formSection, style]}>
+      <View style={styles.formSectionHeader}>
+        <Text style={[styles.formSectionLabel, { color: colors.text }]}>{label}</Text>
+        {hint ? <Text style={[styles.formSectionHint, { color: colors.textSecondary }]}>{hint}</Text> : null}
+      </View>
+      <View style={[styles.formSectionBody, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
+        {children}
+      </View>
+    </View>
+  );
+};
+
+export const LiftToggleRow: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle?: string;
+  enabled: boolean;
+  onToggle: () => void;
+  style?: StyleProp<ViewStyle>;
+}> = ({ icon, title, subtitle, enabled, onToggle, style }) => {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onToggle} style={({ pressed }) => [styles.toggleRow, pressed && { backgroundColor: colors.surfaceSecondary }, style]}>
+      <View style={styles.toggleRowLeft}>
+        <View style={[styles.toggleRowIcon, { backgroundColor: colors.accentLight }]}>
+          <Ionicons name={icon} size={18} color={colors.accent} />
+        </View>
+        <View style={styles.toggleRowText}>
+          <Text style={[styles.toggleRowTitle, { color: colors.text }]}>{title}</Text>
+          {subtitle ? <Text style={[styles.toggleRowSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
+        </View>
+      </View>
+      <View style={[styles.toggleTrack, { backgroundColor: enabled ? colors.accent : colors.border }]}>
+        <View style={[styles.toggleThumb, enabled && styles.toggleThumbActive]} />
+      </View>
+    </Pressable>
+  );
+};
+
+export const LiftPrayerRhythmCard: React.FC<{
+  prayersCount?: number;
+  supportedCount?: number;
+  answeredCount?: number;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+}> = ({ prayersCount = 0, supportedCount = 0, answeredCount = 0, onPress, style }) => {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.rhythmCard, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.md, pressed && styles.pressed, style]}>
+      <View style={styles.rhythmHeader}>
+        <View>
+          <Text style={[styles.rhythmLabel, { color: colors.textSecondary }]}>TODAY&apos;S RHYTHM</Text>
+          <Text style={[styles.rhythmTitle, { color: colors.text }]}>Prayer activity</Text>
+        </View>
+        <View style={[styles.rhythmIcon, { backgroundColor: colors.accent }]}>
+          <Ionicons name="flame" size={22} color="#fff" />
+        </View>
+      </View>
+      <View style={styles.rhythmStats}>
+        <LiftMiniStat label="Prayers" value={prayersCount} icon="heart" />
+        <LiftMiniStat label="Supported" value={supportedCount} icon="people" />
+        <LiftMiniStat label="Answered" value={answeredCount} icon="checkmark" />
+      </View>
+    </Pressable>
+  );
+};
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { flex: 1, paddingHorizontal: mediumLayout.screenPadding },
@@ -599,4 +784,46 @@ const styles = StyleSheet.create({
   prayerRowLabel: { fontFamily: fonts.bodyMedium, fontSize: 13 },
   prayerRowBody: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   prayerRowCount: { flex: 1, fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
+  miniStat: { flex: 1, borderRadius: radius.lg, borderWidth: 1, padding: 12 },
+  miniStatHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  miniStatLabel: { fontFamily: fonts.bodyMedium, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  miniStatValue: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 26 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, marginBottom: 12 },
+  sectionHeaderTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionHeaderAction: { fontFamily: fonts.bodyMedium, fontSize: 12 },
+  streakCard: { borderRadius: radius.xxl, borderWidth: 1, padding: 20 },
+  streakHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
+  streakLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+  streakValue: { fontFamily: fonts.heading, fontSize: 48, lineHeight: 52, marginTop: 4 },
+  streakSub: { fontFamily: fonts.bodyMedium, fontSize: 14, marginTop: 2 },
+  streakIconLarge: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  daysRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  dayCol: { alignItems: 'center', gap: 6 },
+  dayDot: { width: 32, height: 32, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  streakMeta: { fontFamily: fonts.body, fontSize: 12, marginTop: 12 },
+  actionRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: radius.lg },
+  actionIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionText: { flex: 1 },
+  actionTitle: { fontFamily: fonts.bodyMedium, fontSize: 15 },
+  actionSubtitle: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17, marginTop: 2 },
+  formSection: { marginBottom: 16 },
+  formSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  formSectionLabel: { fontFamily: fonts.bodyMedium, fontSize: 14 },
+  formSectionHint: { fontFamily: fonts.body, fontSize: 12 },
+  formSectionBody: { borderRadius: radius.lg, borderWidth: 1, padding: 14 },
+  toggleRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: radius.lg },
+  toggleRowLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  toggleRowIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  toggleRowText: { flex: 1 },
+  toggleRowTitle: { fontFamily: fonts.bodyMedium, fontSize: 15 },
+  toggleRowSubtitle: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, marginTop: 2 },
+  toggleTrack: { width: 44, height: 24, borderRadius: 12, padding: 2 },
+  toggleThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff' },
+  toggleThumbActive: { marginLeft: 20 },
+  rhythmCard: { borderRadius: radius.xxl, borderWidth: 1, padding: 20 },
+  rhythmHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
+  rhythmLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+  rhythmTitle: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 28, marginTop: 4 },
+  rhythmIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  rhythmStats: { flexDirection: 'row', gap: 10 },
 });

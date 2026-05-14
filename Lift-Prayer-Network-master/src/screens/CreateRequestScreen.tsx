@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  Switch,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -21,7 +20,7 @@ import { submitFeedItem } from '../hooks/useFeed';
 import { queuePendingRequest } from '../services/offlineCache';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, radius, spacing } from '../theme/colors';
-import { LiftScreen } from '../components/LiftLayout';
+import { LiftFormSection, LiftScreen, LiftToggleRow, LiftTopBar } from '../components/LiftLayout';
 import { PRAYER_CATEGORIES, PrayerCategory, SupportPreference } from '../types';
 import { validateContent, checkRateLimit, checkDailyLimit, CONTENT_LIMITS } from '../utils/security';
 import { checkUserBlockedFromPosting } from '../services/moderation';
@@ -239,18 +238,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <LiftScreen scroll>
-      {/* === HEADER SECTION === */}
-      <View style={styles.headerSection}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.heading, { color: colors.text }]}>
-            New Prayer Request
-          </Text>
-        </View>
-        <View style={{ width: 44 }} />
-      </View>
+      <LiftTopBar title="New Prayer Request" onBack={() => navigation.goBack()} />
 
       {/* === MAIN CONTENT === */}
       <View style={styles.mainContent}>
@@ -276,8 +264,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
             )}
 
             {/* Content Input */}
-            <View style={[styles.card, { borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.text }]}>Short Summary</Text>
+            <LiftFormSection label="Short Summary" hint={`${title.length}/90`}>
               <TextInput
                 style={[styles.titleInput, { color: colors.text, borderColor: colors.border }]}
                 placeholder="A short title for this prayer"
@@ -286,11 +273,9 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 onChangeText={setTitle}
                 maxLength={90}
               />
-              <Text style={[styles.charCount, { color: colors.muted }]}>{title.length}/90</Text>
-            </View>
+            </LiftFormSection>
 
-            <View style={[styles.card, { borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.text }]}>Prayer Details</Text>
+            <LiftFormSection label="Prayer Details" hint={`${content.length}/1000`}>
               <TextInput
                 style={[styles.textArea, { color: colors.text, borderColor: colors.border }]}
                 placeholder="What do you need prayer for?"
@@ -302,12 +287,10 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                 onChangeText={setContent}
                 maxLength={1000}
               />
-              <Text style={[styles.charCount, { color: colors.muted }]}>{content.length}/1000</Text>
-            </View>
+            </LiftFormSection>
 
             {/* Category Selection */}
-            <View style={[styles.card, { borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.text }]}>Category</Text>
+            <LiftFormSection label="Category" hint="Helps match prayer partners">
               <View style={styles.categoryGrid}>
                 {PRAYER_CATEGORIES.map((cat) => (
                   <TouchableOpacity
@@ -337,63 +320,37 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                   </TouchableOpacity>
                 ))}
               </View>
-            </View>
+            </LiftFormSection>
 
             {/* Options */}
-            <View style={[styles.card, { borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.text }]}>Options</Text>
+            <LiftFormSection label="Options">
               {groupName && (
                 <View style={styles.groupNotice}>
                   <Ionicons name="people-outline" size={16} color="#7c3aed" />
                   <Text style={styles.groupNoticeText}>Sharing with {groupName}</Text>
                 </View>
               )}
-
-              {/* Urgent Toggle */}
-              <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.optionInfo}>
-                  <Text style={styles.optionEmoji}>🚨</Text>
-                  <View>
-                    <Text style={[styles.optionTitle, { color: colors.text }]}>Urgent</Text>
-                    <Text style={[styles.optionHint, { color: colors.muted }]}>Critical need</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={isUrgent}
-                  onValueChange={(value) => {
-                    setIsUrgent(value);
-                    if (Platform.OS !== 'web') {
-                      Haptics.selectionAsync();
-                    }
-                  }}
-                  trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isUrgent ? '#4A5D4E' : '#f4f4f5'}
-                />
-              </View>
-
-              {/* Private Toggle */}
-              <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.optionInfo}>
-                  <Text style={styles.optionEmoji}>🔒</Text>
-                  <View>
-                    <Text style={[styles.optionTitle, { color: colors.text }]}>Private</Text>
-                    <Text style={[styles.optionHint, { color: colors.muted }]}>Groups only</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={isPrivate}
-                  onValueChange={(value) => {
-                    if (groupId) return;
-                    setIsPrivate(value);
-                    if (Platform.OS !== 'web') {
-                      Haptics.selectionAsync();
-                    }
-                  }}
-                  trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isPrivate ? '#4A5D4E' : '#f4f4f5'}
-                />
-              </View>
-
+              <LiftToggleRow
+                icon="warning-outline"
+                title="Urgent"
+                subtitle="Critical need"
+                enabled={isUrgent}
+                onToggle={() => {
+                  setIsUrgent((v) => !v);
+                  if (Platform.OS !== 'web') { Haptics.selectionAsync(); }
+                }}
+              />
+              <LiftToggleRow
+                icon="lock-closed-outline"
+                title="Private"
+                subtitle="Groups only"
+                enabled={isPrivate}
+                onToggle={() => {
+                  if (groupId) return;
+                  setIsPrivate((v) => !v);
+                  if (Platform.OS !== 'web') { Haptics.selectionAsync(); }
+                }}
+              />
               <View style={styles.supportBox}>
                 <Text style={[styles.supportLabel, { color: colors.muted }]}>Support Preference</Text>
                 {([
@@ -422,51 +379,27 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
                   </TouchableOpacity>
                 ))}
               </View>
-
-              {/* Anonymous Toggle */}
-              <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.optionInfo}>
-                  <Text style={styles.optionEmoji}>🎭</Text>
-                  <View>
-                    <Text style={[styles.optionTitle, { color: colors.text }]}>Anonymous</Text>
-                    <Text style={[styles.optionHint, { color: colors.muted }]}>Hide name</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={isAnonymous}
-                  onValueChange={(value) => {
-                    setIsAnonymous(value);
-                    if (Platform.OS !== 'web') {
-                      Haptics.selectionAsync();
-                    }
-                  }}
-                  trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isAnonymous ? '#4A5D4E' : '#f4f4f5'}
-                />
-              </View>
-
-              {/* Shareable Toggle */}
-              <View style={[styles.optionRow, styles.optionRowLast]}>
-                <View style={styles.optionInfo}>
-                  <Text style={styles.optionEmoji}>📤</Text>
-                  <View>
-                    <Text style={styles.optionTitle}>Shareable</Text>
-                    <Text style={styles.optionHint}>Allow sharing</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={isShareable}
-                  onValueChange={(value) => {
-                    setIsShareable(value);
-                    if (Platform.OS !== 'web') {
-                      Haptics.selectionAsync();
-                    }
-                  }}
-                  trackColor={{ false: '#e2e8f0', true: '#fcd34d' }}
-                  thumbColor={isShareable ? '#4A5D4E' : '#f4f4f5'}
-                />
-              </View>
-            </View>
+              <LiftToggleRow
+                icon="eye-off-outline"
+                title="Anonymous"
+                subtitle="Hide your name"
+                enabled={isAnonymous}
+                onToggle={() => {
+                  setIsAnonymous((v) => !v);
+                  if (Platform.OS !== 'web') { Haptics.selectionAsync(); }
+                }}
+              />
+              <LiftToggleRow
+                icon="share-outline"
+                title="Shareable"
+                subtitle="Allow sharing"
+                enabled={isShareable}
+                onToggle={() => {
+                  setIsShareable((v) => !v);
+                  if (Platform.OS !== 'web') { Haptics.selectionAsync(); }
+                }}
+              />
+            </LiftFormSection>
 
             {/* Preview */}
             {(title.trim().length > 0 || content.trim().length > 0) && (

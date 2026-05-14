@@ -23,7 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { fonts, radius, spacing } from '../theme/colors';
-import { LiftJourneyList, LiftScreen, LiftStatsRow, LiftVerseCard } from '../components/LiftLayout';
+import { LiftActionRow, LiftJourneyList, LiftListGroup, LiftMiniStat, LiftScreen, LiftSectionHeader, LiftVerseCard } from '../components/LiftLayout';
 import { db, firebaseEnabled } from '../services/firebase';
 import { registerForPushNotifications, setupNotificationHandler, storePushToken } from '../services/notifications';
 import { updateUserSettings, updateUserProfile } from '../services/userProfile';
@@ -355,15 +355,13 @@ export const ProfileScreen: React.FC = () => {
 
         {user && (
           <>
-            <LiftStatsRow
-              style={styles.profileStats}
-              stats={[
-                { label: 'Prayers Shared', value: '-' },
-                { label: 'Answered Prayers', value: '-' },
-                { label: 'Day Streak', value: streakData.currentStreak },
-              ]}
-            />
-            <Text style={[styles.sectionLabel, { color: colors.muted }]}>Continue Your Journey</Text>
+            <View style={styles.profileStats}>
+              <LiftMiniStat label="Prayers" value="-" icon="heart" />
+              <LiftMiniStat label="Supported" value="-" icon="people" />
+              <LiftMiniStat label="Streak" value={streakData.currentStreak} icon="flame" />
+              <LiftMiniStat label="Answered" value="-" icon="checkmark" />
+            </View>
+            <LiftSectionHeader title="Continue Your Journey" />
             <LiftJourneyList
               style={styles.journeyList}
               items={[
@@ -540,184 +538,76 @@ export const ProfileScreen: React.FC = () => {
 
       {/* Feature Menu */}
       {user && (
-        <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.menuHeading, { color: colors.muted }]}>Features</Text>
-          
-          <TouchableOpacity
-            style={styles.menuItem}
+        <LiftListGroup style={styles.menuCard}>
+          <LiftActionRow
+            icon="bookmark-outline"
+            title="My Prayers"
+            subtitle="View your requests & testimonies"
             onPress={() => navigation.navigate('MyPrayers')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
-              <Ionicons name="bookmark" size={20} color="#4A5D4E" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>My Prayers</Text>
-              <Text style={[styles.menuSubtitle, { color: colors.muted }]}>View your requests & testimonies</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-          
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="heart-outline"
+            title="People I Prayed For"
+            subtitle="Track your prayer connections"
             onPress={() => navigation.navigate('People')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#dcfce7' }]}>
-              <Ionicons name="heart" size={20} color="#22c55e" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>People I Prayed For</Text>
-              <Text style={styles.menuSubtitle}>Track your prayer connections</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="people-outline"
+            title="Following"
+            subtitle="Manage users you follow"
             onPress={() => navigation.navigate('Following')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#ede9fe' }]}>
-              <Ionicons name="people" size={20} color="#8b5cf6" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Following</Text>
-              <Text style={styles.menuSubtitle}>Manage users you follow</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="time-outline"
+            title="Prayer History"
+            subtitle="View all your prayers"
             onPress={() => navigation.navigate('History')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#e0f2fe' }]}>
-              <Ionicons name="time-outline" size={20} color="#0ea5e9" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Prayer History</Text>
-              <Text style={styles.menuSubtitle}>View all your prayers</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="trophy-outline"
+            title="Achievements"
+            subtitle="View your badges and progress"
             onPress={() => navigation.navigate('Achievements')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
-              <Ionicons name="trophy" size={20} color="#4A5D4E" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Achievements</Text>
-              <Text style={styles.menuSubtitle}>View your badges and progress</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="alarm-outline"
+            title="Prayer Reminders"
+            subtitle="Set daily prayer notifications"
             onPress={() => navigation.navigate('Reminders')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#dbeafe' }]}>
-              <Ionicons name="alarm" size={20} color="#3b82f6" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Prayer Reminders</Text>
-              <Text style={styles.menuSubtitle}>Set daily prayer notifications</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="notifications-outline"
+            title="Notification Settings"
+            subtitle="Customize your alerts"
             onPress={() => navigation.navigate('NotificationsSettings')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
-              <Ionicons name="notifications" size={20} color="#4A5D4E" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Notification Settings</Text>
-              <Text style={styles.menuSubtitle}>Customize your alerts</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="settings-outline"
+            title="Settings & Privacy"
+            subtitle="Account, blocked users, data"
             onPress={() => navigation.navigate('Settings')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#f1f5f9' }]}>
-              <Ionicons name="settings-outline" size={20} color="#6B756E" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Settings & Privacy</Text>
-              <Text style={styles.menuSubtitle}>Account, blocked users, data</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
+          />
           {isAdminUser && (
-            <>
-              <View style={styles.menuDivider} />
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => navigation.navigate('AdminReports')}
-              >
-                <View style={[styles.menuIcon, { backgroundColor: '#e0f2fe' }]}>
-                  <Ionicons name="shield-checkmark" size={20} color="#2563eb" />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={styles.menuTitle}>Moderation Reports</Text>
-                  <Text style={styles.menuSubtitle}>Review community flags</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-              </TouchableOpacity>
-            </>
+            <LiftActionRow
+              icon="shield-checkmark-outline"
+              title="Moderation Reports"
+              subtitle="Review community flags"
+              onPress={() => navigation.navigate('AdminReports')}
+            />
           )}
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          <LiftActionRow
+            icon="help-circle-outline"
+            title="Help & Tutorial"
+            subtitle="Learn how to use Lift"
             onPress={() => navigation.navigate('Help')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#F7F1E8' }]}>
-              <Ionicons name="help-circle" size={20} color="#4A5D4E" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Help & Tutorial</Text>
-              <Text style={styles.menuSubtitle}>Learn how to use Lift</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
+          />
+          <LiftActionRow
+            icon="heart-outline"
+            title="Support Lift"
+            subtitle="Help keep the app running"
             onPress={() => navigation.navigate('Donation')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#fce7f3' }]}>
-              <Ionicons name="heart" size={20} color="#ec4899" />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>Support Lift</Text>
-              <Text style={styles.menuSubtitle}>Help keep the app running</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </TouchableOpacity>
-        </View>
+          />
+        </LiftListGroup>
       )}
 
       {user && (
@@ -878,7 +768,10 @@ const styles = StyleSheet.create({
     color: '#2C332E',
   },
   profileStats: {
-    marginTop: -spacing.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   sectionLabel: {
     fontSize: 11,
