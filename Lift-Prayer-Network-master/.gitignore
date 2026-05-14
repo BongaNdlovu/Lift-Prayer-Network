@@ -2,6 +2,8 @@ node_modules
 .expo
 .expo-shared
 .eas
+.gradle-user/
+.gradle-user-*/
 dist
 dist-check
 build
