@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -234,11 +234,11 @@ export const SettingsScreen: React.FC = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       
-      const result = await syncPendingActions(user.uid);
+      const result = await syncPendingActions(user);
       await loadPendingCounts();
       
       const totalSynced = result.synced.prayers + result.synced.requests + 
-                          result.synced.comments + result.synced.reactions;
+                          result.synced.comments + result.synced.reactions + result.synced.promises;
       
       if (result.success && totalSynced > 0) {
         if (Platform.OS !== 'web') {
@@ -280,7 +280,7 @@ export const SettingsScreen: React.FC = () => {
   };
 
   // Dynamic styles based on theme
-  const dynamicStyles = {
+  const dynamicStyles = useMemo(() => ({
     container: { backgroundColor: colors.background },
     header: { borderBottomColor: colors.border },
     backButton: { backgroundColor: isDark ? colors.surface : '#f1f5f9' },
@@ -305,7 +305,7 @@ export const SettingsScreen: React.FC = () => {
     exitButtonText: { color: colors.muted },
     infoSection: { backgroundColor: isDark ? colors.accentLight : '#F7F1E8' },
     infoText: { color: isDark ? colors.accent : '#92400e' },
-  };
+  }), [colors, isDark]);
 
   return (
     <>

@@ -120,7 +120,6 @@ export const useFeed = (
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<FeedErrorType>(null);
   const [isOffline, setIsOffline] = useState(false);
-  const [refreshKey] = useState(0);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const isMounted = useRef(true);
@@ -395,7 +394,7 @@ export const useFeed = (
     };
 
     fetchData();
-  }, [mode, refreshKey, manualFetch, loadCachedData]);
+  }, [mode, manualFetch, loadCachedData]);
 
   return { items, loading, error, errorType, isOffline, refresh, loadMore, hasMore, loadingMore };
 };

@@ -91,7 +91,6 @@ export const logPrayer = async (
   const peopleRef = doc(db, 'userPrayedFor', actorUid, 'people', safeTargetOwnerUid);
 
   let prayerCount = 0;
-  let prayerNotificationId: string | undefined;
 
   try {
     await runTransaction(db, async (txn) => {
@@ -175,7 +174,6 @@ export const logPrayer = async (
       // Create a notification document for the request owner
       if (safeTargetOwnerUid !== 'anon' && db) {
         const notificationRef = doc(collection(db, 'notifications'));
-        prayerNotificationId = notificationRef.id;
         txn.set(notificationRef, {
           type: NOTIFICATION_TYPES.PRAYER,
           recipientUid: safeTargetOwnerUid,
@@ -200,21 +198,8 @@ export const logPrayer = async (
       console.warn('[Prayers] Non-critical: Could not update streak/achievements:', err);
     }
 
-    if (safeTargetOwnerUid !== 'anon' && prayerNotificationId) {
-      await sendPushViaRelay({
-        recipientUid: safeTargetOwnerUid,
-        title: 'Someone prayed for you',
-        body: `${actorDisplayName || 'Someone'} prayed for your request`,
-        settingKey: 'notificationsPrayers',
-        notificationId: prayerNotificationId,
-        data: {
-          type: NOTIFICATION_TYPES.PRAYER,
-          actorUid,
-          targetRequestId,
-          notificationId: prayerNotificationId,
-        },
-      });
-    }
+    // Push for prayer notifications is handled by the onPrayerCreated Cloud Function.
+    // The client only creates the notification document in the transaction above.
 
     return { success: true, isSelfPrayer: false };
   } catch (err: unknown) {

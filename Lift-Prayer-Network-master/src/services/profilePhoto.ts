@@ -6,7 +6,7 @@ import { updateUserProfile } from './userProfile';
 
 const MAX_IMAGE_SIZE = 1024; // Max dimension for compression
 const JPEG_QUALITY = 0.8; // Compression quality (0-1)
-const PROFILE_PHOTO_PATH = 'profile-photos';
+const PROFILE_PHOTO_PATH = 'profile-pictures';
 
 export interface PhotoUploadResult {
   success: boolean;

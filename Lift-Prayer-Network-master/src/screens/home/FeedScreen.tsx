@@ -91,7 +91,6 @@ export const FeedScreen: React.FC = () => {
   const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const refreshingRef = useRef(false);
-  const [searchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PrayerCategory | 'all'>('all');
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
   const netInfo = useNetInfo();
@@ -113,16 +112,6 @@ export const FeedScreen: React.FC = () => {
       result = result.filter((item) => followingUids.includes(item.ownerUid));
     }
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.content.toLowerCase().includes(query) ||
-          item.userDisplayName.toLowerCase().includes(query)
-      );
-    }
-
     // Category filter
     if (selectedCategory !== 'all') {
       result = result.filter((item) => (item as any).category === selectedCategory);
@@ -136,7 +125,7 @@ export const FeedScreen: React.FC = () => {
     }
 
     return result;
-  }, [items, searchQuery, selectedCategory, showUrgentOnly, mode, activeTab, followingUids]);
+  }, [items, selectedCategory, showUrgentOnly, mode, activeTab, followingUids]);
 
   const headerCounts = useMemo(() => {
     const totalPrayers = filteredItems.reduce((sum, item) => sum + (item.type === 'REQUEST' ? item.prayers ?? 0 : 0), 0);
@@ -595,7 +584,7 @@ export const FeedScreen: React.FC = () => {
                     ? followingUids.length === 0
                       ? 'Not following anyone yet'
                       : 'No posts from people you follow'
-                    : searchQuery || selectedCategory !== 'all'
+                    : selectedCategory !== 'all'
                       ? 'No matching prayers found'
                       : mode === 'REQUEST'
                         ? 'No prayer requests yet'
@@ -606,7 +595,7 @@ export const FeedScreen: React.FC = () => {
                     ? followingUids.length === 0
                       ? 'Follow users from the feed to see their posts here'
                       : 'Check back later for new posts'
-                    : searchQuery || selectedCategory !== 'all'
+                    : selectedCategory !== 'all'
                       ? 'Try adjusting your filters'
                       : mode === 'REQUEST'
                         ? 'Be the first to share a prayer request!'

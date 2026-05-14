@@ -26,6 +26,7 @@ import { cleanupUserData } from '../services/userCleanup';
 import { deleteProfilePhoto } from '../services/profilePhotos';
 import { checkUserBanned } from '../services/moderation';
 import { registerForPushNotifications, storePushToken } from '../services/notifications';
+import { setUser as setSentryUser } from '../services/sentry';
 
 const ONBOARDING_ANSWERS_KEY = '@lift_onboarding_answers';
 
@@ -168,6 +169,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
             setBannedReason(banStatus.reason || 'You have been banned from this app for violating community guidelines.');
             // Sign out the banned user
             if (auth) await firebaseSignOut(auth);
+            setSentryUser(null);
             setUser(null);
             setInitializing(false);
             return; // Don't proceed further
@@ -181,6 +183,15 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       }
       
       setUser(nextUser);
+      setSentryUser(
+        nextUser
+          ? {
+              id: nextUser.uid,
+              email: nextUser.email || undefined,
+              username: nextUser.displayName || undefined,
+            }
+          : null
+      );
       if (nextUser) {
         const shouldEnsureProfile = !justSignedUp.current;
         justSignedUp.current = false;
@@ -313,6 +324,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       console.log('[Auth] Cleared offline cache');
       
       await firebaseSignOut(auth);
+      setSentryUser(null);
       console.log('[Auth] Sign out successful');
     } catch (error: any) {
       console.error('[Auth] Sign out error:', error);
@@ -427,6 +439,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
       await deleteUser(currentUser);
       await clearAllCache();
+      setSentryUser(null);
       console.log('[Auth] Account deleted successfully');
     } catch (error) {
       console.error('[Auth] Delete account error:', error);

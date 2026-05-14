@@ -1,22 +1,53 @@
 import NetInfo from '@react-native-community/netinfo';
 import type { User } from 'firebase/auth';
-import { logPrayer } from './prayers';
+import { logPrayer, logReaction } from './prayers';
 import {
   getPendingPrayers,
   getPendingRequests,
   getPendingPrayerPromises,
+  getPendingComments,
+  getPendingReactions,
   setPendingPrayers,
   setPendingRequests,
   setPendingPrayerPromises,
+  setPendingComments,
+  setPendingReactions,
   type PendingRequest,
 } from './offlineCache';
 import { submitFeedItem } from '../hooks/useFeed';
 import { createOrUpdatePrayerPromise } from './prayerPromises';
 import { firebaseEnabled } from './firebase';
 import { normalizePrivacyFields } from '../utils/contentPrivacy';
+import { addComment } from './comments';
 
 const BACKOFF_DELAYS = [1000, 5000, 15000, 30000, 60000];
 const MAX_RETRIES = 5;
+
+export type SyncResult = {
+  success: boolean;
+  synced: {
+    prayers: number;
+    requests: number;
+    comments: number;
+    reactions: number;
+    promises: number;
+  };
+  failed: {
+    prayers: number;
+    requests: number;
+    comments: number;
+    reactions: number;
+    promises: number;
+  };
+  errors: string[];
+};
+
+const createSyncResult = (): SyncResult => ({
+  success: true,
+  synced: { prayers: 0, requests: 0, comments: 0, reactions: 0, promises: 0 },
+  failed: { prayers: 0, requests: 0, comments: 0, reactions: 0, promises: 0 },
+  errors: [],
+});
 
 type SyncErrorClass = 'retryable' | 'permanent' | 'permission' | 'auth' | 'blocked' | 'malformed';
 
@@ -170,12 +201,110 @@ const syncPrayerPromises = async (user: User): Promise<boolean> => {
   return !hadError;
 };
 
+const syncComments = async (user: User): Promise<boolean> => {
+  const pending = await getPendingComments();
+  const retained: typeof pending = [];
+  let hadError = false;
+
+  for (const item of pending) {
+    if (item.authorUid !== user.uid) {
+      retained.push(item);
+      continue;
+    }
+
+    try {
+      await addComment(item.targetId, item.targetType, item.authorUid, item.authorDisplayName, item.content);
+      console.log('[OfflineSync] Successfully synced comment for target:', item.targetId);
+    } catch (err) {
+      console.warn('[OfflineSync] Could not sync comment', err);
+      retained.push(item);
+      hadError = true;
+    }
+  }
+
+  await setPendingComments(retained);
+  return !hadError;
+};
+
+const syncReactions = async (user: User): Promise<boolean> => {
+  const pending = await getPendingReactions();
+  const retained: typeof pending = [];
+  let hadError = false;
+
+  for (const item of pending) {
+    if (item.actorUid !== user.uid) {
+      retained.push(item);
+      continue;
+    }
+
+    try {
+      await logReaction(item.actorUid, item.targetId, item.targetType, item.reactionType as any);
+      console.log('[OfflineSync] Successfully synced reaction for target:', item.targetId);
+    } catch (err) {
+      console.warn('[OfflineSync] Could not sync reaction', err);
+      retained.push(item);
+      hadError = true;
+    }
+  }
+
+  await setPendingReactions(retained);
+  return !hadError;
+};
+
+export const syncPendingActions = async (user: User | null): Promise<SyncResult> => {
+  const result = createSyncResult();
+
+  if (!user || !firebaseEnabled) return result;
+
+  const before = await Promise.all([
+    getPendingPrayers(),
+    getPendingRequests(),
+    getPendingComments(),
+    getPendingReactions(),
+    getPendingPrayerPromises(),
+  ]);
+
+  const ok = await syncPendingOfflineActions(user);
+
+  const after = await Promise.all([
+    getPendingPrayers(),
+    getPendingRequests(),
+    getPendingComments(),
+    getPendingReactions(),
+    getPendingPrayerPromises(),
+  ]);
+
+  const keys = ['prayers', 'requests', 'comments', 'reactions', 'promises'] as const;
+  keys.forEach((key, index) => {
+    const beforeForUser = before[index].filter((item: any) =>
+      item.actorUid === user.uid ||
+      item.ownerUid === user.uid ||
+      item.authorUid === user.uid ||
+      item.userId === user.uid
+    ).length;
+    const afterForUser = after[index].filter((item: any) =>
+      item.actorUid === user.uid ||
+      item.ownerUid === user.uid ||
+      item.authorUid === user.uid ||
+      item.userId === user.uid
+    ).length;
+    result.synced[key] = Math.max(0, beforeForUser - afterForUser);
+    result.failed[key] = ok ? 0 : afterForUser;
+  });
+
+  result.success = ok;
+  if (!ok) result.errors.push('Some pending actions could not be synced and were retained.');
+  return result;
+};
+
 export const syncPendingOfflineActions = async (user: User | null): Promise<boolean> => {
   if (!user || !firebaseEnabled) return true;
   const requestsOk = await syncRequests(user);
   const prayersOk = await syncPrayers(user);
   const promisesOk = await syncPrayerPromises(user);
-  return requestsOk && prayersOk && promisesOk;
+  const commentsOk = await syncComments(user);
+  const reactionsOk = await syncReactions(user);
+  return requestsOk && prayersOk && promisesOk && commentsOk && reactionsOk;
 };
 
 export const startOfflineSyncListener = (user: User | null) => {

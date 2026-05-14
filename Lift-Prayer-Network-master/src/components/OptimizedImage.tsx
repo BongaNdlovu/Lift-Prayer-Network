@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { Image, ImageContentFit, ImageSource } from 'expo-image';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -110,16 +110,13 @@ export const OptimizedAvatar: React.FC<AvatarProps> = ({
     return colors[Math.abs(hash) % colors.length];
   };
 
-  const bgColor = fallbackColor || getAvatarColor(fallbackText);
+  const initials = fallbackText.trim().slice(0, 2).toUpperCase() || '?';
+  const bgColor = fallbackColor || getAvatarColor(initials);
 
   if (!source || hasError) {
     return (
       <View style={[styles.avatarFallback, avatarStyle, { backgroundColor: bgColor }]}>
-        <View style={styles.avatarTextContainer}>
-          <View style={[styles.avatarInitials, { width: size, height: size }]}>
-            {/* Text would be rendered by parent component */}
-          </View>
-        </View>
+        <Text style={[styles.avatarInitials, { fontSize: Math.max(12, size * 0.38) }]}>{initials}</Text>
       </View>
     );
   }
@@ -196,14 +193,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   avatarInitials: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    color: '#fff',
+    fontWeight: '700',
   },
 });
 

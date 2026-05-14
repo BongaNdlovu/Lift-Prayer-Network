@@ -15,6 +15,9 @@ let testEnv: RulesTestEnvironment;
 const authedDb = (uid: string, token: Record<string, unknown> = {}) =>
   testEnv.authenticatedContext(uid, token).firestore();
 
+const verifiedDb = (uid: string, token: Record<string, unknown> = {}) =>
+  authedDb(uid, { email_verified: true, ...token });
+
 const anonDb = () => testEnv.unauthenticatedContext().firestore();
 
 const seedDoc = async (path: string, data: Record<string, unknown>) => {
@@ -42,7 +45,7 @@ afterAll(async () => {
 
 describe('Firestore request privacy rules', () => {
   it('allows valid private requests and denies private requests with groupIds', async () => {
-    const db = authedDb('owner');
+    const db = verifiedDb('owner');
 
     await assertSucceeds(
       setDoc(doc(db, 'requests/private-valid'), {
@@ -74,7 +77,7 @@ describe('Firestore request privacy rules', () => {
 
     await assertSucceeds(getDoc(doc(authedDb('owner'), 'requests/private-request')));
     await assertSucceeds(
-      getDoc(doc(authedDb('admin', { email: 'fanelesibonge50@gmail.com' }), 'requests/private-request'))
+      getDoc(doc(authedDb('admin', { admin: true }), 'requests/private-request'))
     );
     await assertFails(getDoc(doc(authedDb('other'), 'requests/private-request')));
   });
@@ -91,6 +94,54 @@ describe('Firestore request privacy rules', () => {
 
     await assertSucceeds(getDoc(doc(authedDb('member'), 'requests/group-request')));
     await assertFails(getDoc(doc(authedDb('outsider'), 'requests/group-request')));
+  });
+
+  it('requires custom admin claim instead of admin email', async () => {
+    await seedDoc('requests/private-request', {
+      ownerUid: 'owner',
+      visibility: 'PRIVATE',
+      isPrivate: true,
+      content: 'Private request',
+    });
+
+    await assertFails(
+      getDoc(doc(authedDb('email-admin', { email: 'fanelesibonge50@gmail.com' }), 'requests/private-request'))
+    );
+    await assertSucceeds(getDoc(doc(authedDb('claim-admin', { admin: true }), 'requests/private-request')));
+  });
+
+  it('blocks banned users and posting-blocked users from creating content', async () => {
+    await seedDoc('users/banned', { isBanned: true });
+    await seedDoc('users/post-blocked', { isBlockedFromPosting: true });
+
+    await assertFails(
+      setDoc(doc(verifiedDb('banned'), 'requests/banned-request'), {
+        ownerUid: 'banned',
+        visibility: 'PUBLIC',
+        isPrivate: false,
+        content: 'Should not be allowed',
+      })
+    );
+
+    await assertFails(
+      setDoc(doc(verifiedDb('post-blocked'), 'testimonies/blocked-testimony'), {
+        ownerUid: 'post-blocked',
+        visibility: 'PUBLIC',
+        isPrivate: false,
+        content: 'Should not be allowed',
+      })
+    );
+  });
+
+  it('requires verified email for request creation', async () => {
+    await assertFails(
+      setDoc(doc(authedDb('owner'), 'requests/unverified'), {
+        ownerUid: 'owner',
+        visibility: 'PUBLIC',
+        isPrivate: false,
+        content: 'Unverified users cannot create requests',
+      })
+    );
   });
 });
 
@@ -138,6 +189,31 @@ describe('Firestore notification rules', () => {
 
     await assertSucceeds(updateDoc(doc(authedDb('recipient'), 'notifications/existing'), { read: true }));
     await assertFails(updateDoc(doc(authedDb('actor'), 'notifications/existing'), { read: true }));
+  });
+});
+
+describe('Firestore onboarding analytics rules', () => {
+  it('rejects anonymous writes and requires matching user id', async () => {
+    await assertFails(
+      setDoc(doc(anonDb(), 'onboarding_analytics/anon'), {
+        userId: 'anonymous',
+        completedAt: new Date(),
+      })
+    );
+
+    await assertFails(
+      setDoc(doc(authedDb('user-a'), 'onboarding_analytics/spoof'), {
+        userId: 'user-b',
+        completedAt: new Date(),
+      })
+    );
+
+    await assertSucceeds(
+      setDoc(doc(authedDb('user-a'), 'onboarding_analytics/own'), {
+        userId: 'user-a',
+        completedAt: new Date(),
+      })
+    );
   });
 });
 

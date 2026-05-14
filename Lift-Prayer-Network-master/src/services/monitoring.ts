@@ -420,17 +420,10 @@ class MonitoringManager {
    */
   async initialize(sentryDsn?: string): Promise<void> {
     if (this.initialized) return;
+    void sentryDsn;
 
-    // Initialize Sentry
-    if (this.config.sentryEnabled && sentryDsn) {
-      Sentry.init({
-        dsn: sentryDsn,
-        tracesSampleRate: this.config.performanceSampleRate,
-        sampleRate: this.config.errorSampleRate,
-        environment: __DEV__ ? 'development' : 'production',
-        enabled: !__DEV__,
-      });
-    }
+    // Sentry is initialized centrally in services/sentry.ts from App.tsx.
+    // Monitoring reports to Sentry but must not initialize it a second time.
 
     this.initialized = true;
 

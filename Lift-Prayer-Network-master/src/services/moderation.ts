@@ -9,7 +9,7 @@ import {
   arrayRemove,
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db, firebaseEnabled } from './firebase';
+import { auth, db, firebaseEnabled } from './firebase';
 import { checkActionRateLimit, formatRateLimitError } from '../utils/security';
 
 const BLOCKED_USERS_KEY = '@lift_blocked_users';
@@ -178,6 +178,19 @@ export type BanResult =
   | { success: true }
   | { success: false; error: string };
 
+const currentUserCanModerate = async (): Promise<boolean> => {
+  const currentUser = auth?.currentUser;
+  if (!currentUser) return false;
+
+  try {
+    const token = await currentUser.getIdTokenResult();
+    return token.claims.admin === true || token.claims.moderator === true;
+  } catch (err) {
+    console.warn('[Moderation] Could not read custom claims:', err);
+    return false;
+  }
+};
+
 /**
  * Admin: Ban a user from the app entirely
  * Sets isBanned=true on the user's document
@@ -188,6 +201,9 @@ export const banUser = async (
 ): Promise<BanResult> => {
   if (!firebaseEnabled || !db) {
     return { success: false, error: 'Service unavailable' };
+  }
+  if (!(await currentUserCanModerate())) {
+    return { success: false, error: 'Not authorized to ban users' };
   }
 
   try {
@@ -210,6 +226,9 @@ export const banUser = async (
 export const unbanUser = async (targetUserId: string): Promise<BanResult> => {
   if (!firebaseEnabled || !db) {
     return { success: false, error: 'Service unavailable' };
+  }
+  if (!(await currentUserCanModerate())) {
+    return { success: false, error: 'Not authorized to unban users' };
   }
 
   try {
@@ -236,6 +255,9 @@ export const blockUserFromPosting = async (
   if (!firebaseEnabled || !db) {
     return { success: false, error: 'Service unavailable' };
   }
+  if (!(await currentUserCanModerate())) {
+    return { success: false, error: 'Not authorized to block posting' };
+  }
 
   try {
     const userRef = doc(db, 'users', targetUserId);
@@ -257,6 +279,9 @@ export const blockUserFromPosting = async (
 export const unblockUserFromPosting = async (targetUserId: string): Promise<BanResult> => {
   if (!firebaseEnabled || !db) {
     return { success: false, error: 'Service unavailable' };
+  }
+  if (!(await currentUserCanModerate())) {
+    return { success: false, error: 'Not authorized to unblock posting' };
   }
 
   try {
@@ -321,4 +346,3 @@ export const checkUserBanned = async (userId: string): Promise<{ isBanned: boole
     return { isBanned: false };
   }
 };
-
