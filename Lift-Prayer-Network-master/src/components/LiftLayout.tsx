@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Image,
   Modal,
   Pressable,
@@ -701,6 +702,56 @@ export const LiftPrayerRhythmCard: React.FC<{
   );
 };
 
+export const LiftScrollView: React.FC<{
+  children: React.ReactNode;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+}> = ({ children, contentContainerStyle }) => {
+  const { colors } = useTheme();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  const scrollEnabled = contentHeight > containerHeight && containerHeight > 0;
+  const thumbHeight = scrollEnabled
+    ? Math.max((containerHeight / contentHeight) * containerHeight, 28)
+    : 0;
+  const thumbMaxTravel = Math.max(containerHeight - thumbHeight, 0);
+
+  const thumbTranslate = scrollY.interpolate({
+    inputRange: [0, Math.max(contentHeight - containerHeight, 1)],
+    outputRange: [0, thumbMaxTravel],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <View style={styles.scrollViewWrap} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={contentContainerStyle}
+        onContentSizeChange={(_w, h) => setContentHeight(h)}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
+      >
+        {children}
+      </ScrollView>
+      {scrollEnabled && (
+        <View style={[styles.scrollTrack, { backgroundColor: colors.border }]}>
+          <Animated.View
+            style={[
+              styles.scrollThumb,
+              {
+                height: thumbHeight,
+                backgroundColor: colors.accent,
+                transform: [{ translateY: thumbTranslate }],
+              },
+            ]}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { flex: 1, paddingHorizontal: mediumLayout.screenPadding },
@@ -826,4 +877,7 @@ const styles = StyleSheet.create({
   rhythmTitle: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 28, marginTop: 4 },
   rhythmIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   rhythmStats: { flexDirection: 'row', gap: 10 },
+  scrollViewWrap: { flex: 1 },
+  scrollTrack: { position: 'absolute', right: 3, top: 8, bottom: 8, width: 3, borderRadius: 2, overflow: 'hidden' },
+  scrollThumb: { width: 3, borderRadius: 2 },
 });
