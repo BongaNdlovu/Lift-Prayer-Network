@@ -393,11 +393,6 @@ export const AppNavigator: React.FC = () => {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="People"
-              component={PeopleScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
               name="History"
               component={HistoryScreen}
               options={{ headerShown: false }}

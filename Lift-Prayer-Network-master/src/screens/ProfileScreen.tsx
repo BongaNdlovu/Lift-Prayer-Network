@@ -618,7 +618,7 @@ export const ProfileScreen: React.FC = () => {
             icon="heart-outline"
             title="People I Prayed For"
             subtitle="Track your prayer connections"
-            onPress={() => navigation.navigate('People')}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'People' })}
           />
           <LiftActionRow
             icon="people-outline"

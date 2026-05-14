@@ -265,6 +265,11 @@ const isExpoPushToken = (token) =>
   (token.startsWith('ExponentPushToken[') || token.startsWith('ExpoPushToken['));
 
 const sendExpoPush = async (env, messages) => {
+  const isProduction = env.ENVIRONMENT === 'production' || env.WORKER_ENV === 'production' || env.NODE_ENV === 'production';
+  if (isProduction && !env.EXPO_ACCESS_TOKEN) {
+    throw new Error('EXPO_ACCESS_TOKEN is required for production push relay sends.');
+  }
+
   const headers = {
     accept: 'application/json',
     'accept-encoding': 'gzip, deflate',

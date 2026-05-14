@@ -1,10 +1,11 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { FeedItem } from '../types';
 
 export type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
-  MainTabs: undefined;
+  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   RequestDetail: {
     id: string;
     type: 'REQUEST' | 'TESTIMONY';

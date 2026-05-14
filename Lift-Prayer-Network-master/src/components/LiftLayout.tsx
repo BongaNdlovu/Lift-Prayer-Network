@@ -100,9 +100,10 @@ type CardProps = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
+  accessibilityLabel?: string;
 };
 
-export const LiftCard: React.FC<CardProps> = ({ children, style, onPress }) => {
+export const LiftCard: React.FC<CardProps> = ({ children, style, onPress, accessibilityLabel }) => {
   const { colors } = useTheme();
   const body = (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.md, style]}>
@@ -110,17 +111,17 @@ export const LiftCard: React.FC<CardProps> = ({ children, style, onPress }) => {
     </View>
   );
 
-  return onPress ? <Pressable onPress={onPress}>{body}</Pressable> : body;
+  return onPress ? <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>{body}</Pressable> : body;
 };
 
-export const LiftFlatCard: React.FC<CardProps> = ({ children, style, onPress }) => {
+export const LiftFlatCard: React.FC<CardProps> = ({ children, style, onPress, accessibilityLabel }) => {
   const { colors } = useTheme();
   const body = (
     <View style={[styles.flatCard, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
       {children}
     </View>
   );
-  return onPress ? <Pressable onPress={onPress}>{body}</Pressable> : body;
+  return onPress ? <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>{body}</Pressable> : body;
 };
 
 type ButtonProps = {
@@ -129,9 +130,10 @@ type ButtonProps = {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 };
 
-export const LiftButton: React.FC<ButtonProps> = ({ children, onPress, variant = 'primary', disabled, style }) => {
+export const LiftButton: React.FC<ButtonProps> = ({ children, onPress, variant = 'primary', disabled, style, accessibilityLabel }) => {
   const { colors } = useTheme();
   const buttonStyle = [
     styles.button,
@@ -150,16 +152,23 @@ export const LiftButton: React.FC<ButtonProps> = ({ children, onPress, variant =
     variant === 'danger' && { color: colors.danger },
   ];
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [buttonStyle, pressed && styles.pressed]}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
+      accessibilityState={{ disabled: !!disabled }}
+      style={({ pressed }) => [buttonStyle, pressed && styles.pressed]}
+    >
       <Text style={textStyle}>{children}</Text>
     </Pressable>
   );
 };
 
-export const LiftTextButton: React.FC<{ children: React.ReactNode; onPress?: () => void; destructive?: boolean; style?: StyleProp<ViewStyle> }> = ({ children, onPress, destructive, style }) => {
+export const LiftTextButton: React.FC<{ children: React.ReactNode; onPress?: () => void; destructive?: boolean; style?: StyleProp<ViewStyle>; accessibilityLabel?: string }> = ({ children, onPress, destructive, style, accessibilityLabel }) => {
   const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={[styles.textButton, style]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)} style={[styles.textButton, style]}>
       <Text style={[styles.textButtonLabel, { color: destructive ? colors.danger : colors.textSecondary }]}>{children}</Text>
     </Pressable>
   );
@@ -214,7 +223,15 @@ export const LiftSwitchRow: React.FC<{ title: string; subtitle?: string; value: 
         <Text style={[styles.switchTitle, { color: colors.text }]}>{title}</Text>
         {subtitle ? <Text style={[styles.switchSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onValueChange} trackColor={{ false: colors.border, true: colors.accent }} thumbColor="#fff" />
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        accessibilityRole="switch"
+        accessibilityLabel={title}
+        accessibilityState={{ checked: value }}
+        trackColor={{ false: colors.border, true: colors.accent }}
+        thumbColor="#fff"
+      />
     </View>
   );
 };
@@ -236,7 +253,12 @@ type ListItemProps = {
 export const LiftListItem: React.FC<ListItemProps> = ({ icon, title, subtitle, right, onPress, destructive }) => {
   const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: colors.surfaceSecondary }]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
+      style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: colors.surfaceSecondary }]}
+    >
       {icon ? <View style={[styles.listIcon, { backgroundColor: colors.surfaceSecondary }]}>{icon}</View> : null}
       <View style={styles.listText}>
         <Text style={[styles.listTitle, { color: destructive ? colors.danger : colors.text }]}>{title}</Text>
@@ -256,7 +278,14 @@ export const LiftTabs: React.FC<{ tabs: { value: string; label: string }[]; acti
       {tabs.map((tab) => {
         const selected = tab.value === active;
         return (
-          <Pressable key={tab.value} onPress={() => onChange(tab.value)} style={styles.tab}>
+          <Pressable
+            key={tab.value}
+            onPress={() => onChange(tab.value)}
+            accessibilityRole="tab"
+            accessibilityLabel={tab.label}
+            accessibilityState={{ selected }}
+            style={styles.tab}
+          >
             <Text style={[styles.tabLabel, { color: selected ? colors.text : colors.muted }]}>{tab.label}</Text>
             {selected ? <View style={[styles.tabLine, { backgroundColor: colors.text }]} /> : null}
           </Pressable>
@@ -278,6 +307,9 @@ export const LiftChips: React.FC<{ chips: { value: string; label: string }[]; ac
           <Pressable
             key={chip.value}
             onPress={() => onChange?.(chip.value)}
+            accessibilityRole="button"
+            accessibilityLabel={chip.label}
+            accessibilityState={{ selected }}
             style={[styles.chip, { backgroundColor: selected ? colors.accent : colors.surface, borderColor: selected ? colors.accent : colors.border }]}
           >
             <Text style={[styles.chipText, { color: selected ? '#fff' : colors.textSecondary }]}>{chip.label}</Text>
@@ -328,8 +360,8 @@ export const LiftBottomSheet: React.FC<{ visible: boolean; onClose: () => void; 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.sheetOverlay} onPress={onClose}>
-        <Pressable style={[styles.sheet, { backgroundColor: colors.surface }, shadows.lg]}>
-          <Pressable onPress={onClose} style={[styles.sheetClose, { backgroundColor: colors.surfaceSecondary }]}>
+        <Pressable style={[styles.sheet, { backgroundColor: colors.surface }, shadows.lg]} accessibilityViewIsModal>
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" style={[styles.sheetClose, { backgroundColor: colors.surfaceSecondary }]}>
             <Ionicons name="close" size={20} color={colors.text} />
           </Pressable>
           {children}
@@ -385,12 +417,18 @@ type IconButtonProps = {
   size?: number;
   color?: string;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 };
 
-export const LiftIconButton: React.FC<IconButtonProps> = ({ icon, onPress, size = 22, color, style }) => {
+export const LiftIconButton: React.FC<IconButtonProps> = ({ icon, onPress, size = 22, color, style, accessibilityLabel }) => {
   const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.liftIconButton, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm, pressed && styles.pressed, style]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || icon.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())}
+      style={({ pressed }) => [styles.liftIconButton, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm, pressed && styles.pressed, style]}
+    >
       <Ionicons name={icon} size={size} color={color || colors.text} />
     </Pressable>
   );

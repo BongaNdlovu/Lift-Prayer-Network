@@ -1,6 +1,7 @@
 const { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 // const { onUserDeleted } = require('firebase-functions/v2/identity'); // Requires Identity extension - enable in Firebase Console first
+const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const Filter = require('bad-words');
 
@@ -1689,10 +1690,11 @@ exports.sendWeeklyRecap = onSchedule('0 9 * * 0', async (event) => {
 });
 
 // ============================================================================
-// USER DELETION CLEANUP (DISABLED - Requires Identity Extension)
+// USER DELETION CLEANUP
 // ============================================================================
 // 
-// STATUS: COMMENTED OUT - Requires Firebase Identity Platform
+// The v2 Identity Platform version is kept below as reference only.
+// The active cleanup function uses the v1 Auth onDelete trigger after this block.
 // 
 // To enable this function:
 // 1. Go to Firebase Console > Authentication > Settings
@@ -1838,3 +1840,101 @@ exports.onUserDeleted = onUserDeleted(async (event) => {
   }
 });
 */
+
+const commitUserDeletionWrites = async (ops) => {
+  for (const chunk of chunkArray(ops, FIRESTORE_BATCH_LIMIT)) {
+    const batch = db.batch();
+    for (const op of chunk) {
+      if (op.type === 'delete') {
+        batch.delete(op.ref);
+      } else {
+        batch.update(op.ref, op.data);
+      }
+    }
+    await batch.commit();
+  }
+};
+
+const queueUserDeletionCleanup = async (uid) => {
+  const writeOps = [];
+
+  const prayers = await db.collection('prayers').where('actorUid', '==', uid).get();
+  prayers.forEach((docSnap) => writeOps.push({ type: 'delete', ref: docSnap.ref }));
+
+  const anonymizedAuthor = {
+    ownerUid: 'deleted_user',
+    userDisplayName: 'Deleted User',
+    displayName: 'Deleted User',
+    userEmail: null,
+    userPhotoURL: null,
+  };
+
+  const requests = await db.collection('requests').where('ownerUid', '==', uid).get();
+  requests.forEach((docSnap) => writeOps.push({ type: 'update', ref: docSnap.ref, data: anonymizedAuthor }));
+
+  const testimonies = await db.collection('testimonies').where('ownerUid', '==', uid).get();
+  testimonies.forEach((docSnap) => writeOps.push({ type: 'update', ref: docSnap.ref, data: anonymizedAuthor }));
+
+  const comments = await db.collection('comments').where('authorUid', '==', uid).get();
+  comments.forEach((docSnap) => writeOps.push({ type: 'delete', ref: docSnap.ref }));
+
+  const reports = await db.collection('reports').where('actorUid', '==', uid).get();
+  reports.forEach((docSnap) => writeOps.push({ type: 'delete', ref: docSnap.ref }));
+
+  const memberGroups = await db.collection('groups').where('memberUids', 'array-contains', uid).get();
+  memberGroups.forEach((docSnap) => {
+    writeOps.push({
+      type: 'update',
+      ref: docSnap.ref,
+      data: {
+        memberUids: admin.firestore.FieldValue.arrayRemove(uid),
+        pendingRequests: admin.firestore.FieldValue.arrayRemove(uid),
+      },
+    });
+  });
+
+  const pendingGroups = await db.collection('groups').where('pendingRequests', 'array-contains', uid).get();
+  pendingGroups.forEach((docSnap) => {
+    if (!memberGroups.docs.some((memberDoc) => memberDoc.id === docSnap.id)) {
+      writeOps.push({
+        type: 'update',
+        ref: docSnap.ref,
+        data: { pendingRequests: admin.firestore.FieldValue.arrayRemove(uid) },
+      });
+    }
+  });
+
+  const notifications = await db.collection('notifications').where('recipientUid', '==', uid).get();
+  notifications.forEach((docSnap) => writeOps.push({ type: 'delete', ref: docSnap.ref }));
+
+  const actorNotifications = await db.collection('notifications').where('actorUid', '==', uid).get();
+  actorNotifications.forEach((docSnap) => writeOps.push({ type: 'delete', ref: docSnap.ref }));
+
+  const tokens = await db.collection(`users/${uid}/pushTokens`).get();
+  tokens.forEach((docSnap) => writeOps.push({ type: 'delete', ref: docSnap.ref }));
+
+  writeOps.push({ type: 'delete', ref: db.doc(`users/${uid}`) });
+
+  await commitUserDeletionWrites(writeOps);
+  return writeOps.length;
+};
+
+exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
+  const uid = user?.uid;
+  if (!uid) {
+    console.warn('onUserDeleted fired without uid');
+    return;
+  }
+
+  try {
+    const operationCount = await queueUserDeletionCleanup(uid);
+    console.log(`Successfully cleaned up data for deleted user ${uid} (${operationCount} operations)`);
+  } catch (error) {
+    console.error(`Error cleaning up user data for ${uid}:`, error);
+    await db.collection('deletionErrors').add({
+      uid,
+      error: error.message || String(error),
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+});

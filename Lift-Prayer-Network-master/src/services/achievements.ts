@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { arrayUnion, doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { db, firebaseEnabled } from './firebase';
@@ -241,45 +241,48 @@ export const unlockAchievement = async (
 
   try {
     const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
+    let userSettings: Record<string, any> = {};
 
-    if (snap.exists()) {
+    const unlocked = await runTransaction(db, async (txn) => {
+      const snap = await txn.get(userRef);
+      if (!snap.exists()) return false;
+
       const data = snap.data();
       const currentIds = data.achievements?.unlockedIds || [];
+      if (currentIds.includes(achievementId)) return false;
 
-      if (currentIds.includes(achievementId)) {
-        return false;
-      }
-
-      await updateDoc(userRef, {
-        'achievements.unlockedIds': [...currentIds, achievementId],
+      userSettings = data.settings || {};
+      txn.update(userRef, {
+        'achievements.unlockedIds': arrayUnion(achievementId),
         [`achievements.unlockedAt.${achievementId}`]: serverTimestamp(),
       });
-
-      // Send local push notification for achievement
-      const achievement = getAchievementById(achievementId);
-      const userSettings = data.settings || {};
-      const notificationsEnabled = userSettings.notifications ?? false;
-      const achievementNotificationsEnabled = userSettings.notificationsAchievements ?? true;
-
-      if (achievement && notificationsEnabled && achievementNotificationsEnabled && Platform.OS !== 'web') {
-        try {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: `${achievement.emoji} Achievement Unlocked!`,
-              body: `${achievement.title}: ${achievement.description}`,
-              sound: true,
-              data: { type: 'achievement', achievementId },
-            },
-            trigger: null, // Send immediately
-          });
-        } catch (notifErr) {
-          console.warn('[Achievements] Could not send notification:', notifErr);
-        }
-      }
-
       return true;
+    });
+
+    if (!unlocked) return false;
+
+    // Send local push notification for achievement
+    const achievement = getAchievementById(achievementId);
+    const notificationsEnabled = userSettings.notifications ?? false;
+    const achievementNotificationsEnabled = userSettings.notificationsAchievements ?? true;
+
+    if (achievement && notificationsEnabled && achievementNotificationsEnabled && Platform.OS !== 'web') {
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `${achievement.emoji} Achievement Unlocked!`,
+            body: `${achievement.title}: ${achievement.description}`,
+            sound: true,
+            data: { type: 'achievement', achievementId },
+          },
+          trigger: null, // Send immediately
+        });
+      } catch (notifErr) {
+        console.warn('[Achievements] Could not send notification:', notifErr);
+      }
     }
+
+    return true;
   } catch (err) {
     console.warn('Error unlocking achievement:', err);
   }

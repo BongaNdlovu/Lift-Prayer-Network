@@ -5,7 +5,6 @@ import {
   getDocs,
   query,
   where,
-  updateDoc,
   serverTimestamp,
   Timestamp,
   runTransaction,
@@ -115,43 +114,43 @@ export const updateStreak = async (userId: string): Promise<number> => {
   if (!firebaseEnabled || !db) return 0;
 
   try {
-    const userRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userRef);
-    
-    if (!userDoc.exists()) return 0;
-
-    const profile = userDoc.data() as UserProfile;
     const today = getDateString();
     const yesterday = getDateString(new Date(Date.now() - 86400000));
-    
-    let streakDays = profile.stats?.streakDays || 0;
-    let longestStreak = profile.stats?.longestStreak || 0;
-    const lastDate = profile.stats?.streakLastDate;
 
-    if (lastDate === today) {
-      // Already prayed today, no change
+    return await runTransaction(db, async (txn) => {
+      const userRef = doc(db!, 'users', userId);
+      const userDoc = await txn.get(userRef);
+
+      if (!userDoc.exists()) return 0;
+
+      const profile = userDoc.data() as UserProfile;
+      let streakDays = profile.stats?.streakDays || 0;
+      let longestStreak = profile.stats?.longestStreak || 0;
+      const lastDate = profile.stats?.streakLastDate;
+
+      if (lastDate === today) {
+        return streakDays;
+      }
+
+      if (lastDate === yesterday) {
+        streakDays += 1;
+      } else {
+        streakDays = 1;
+      }
+
+      if (streakDays > longestStreak) {
+        longestStreak = streakDays;
+      }
+
+      txn.update(userRef, {
+        'stats.streakDays': streakDays,
+        'stats.streakLastDate': today,
+        'stats.longestStreak': longestStreak,
+        lastPrayedAt: serverTimestamp(),
+      });
+
       return streakDays;
-    } else if (lastDate === yesterday) {
-      // Continuing streak
-      streakDays += 1;
-    } else {
-      // Streak broken, start new
-      streakDays = 1;
-    }
-
-    // Update longest streak if current is higher
-    if (streakDays > longestStreak) {
-      longestStreak = streakDays;
-    }
-
-    await updateDoc(userRef, {
-      'stats.streakDays': streakDays,
-      'stats.streakLastDate': today,
-      'stats.longestStreak': longestStreak,
-      lastPrayedAt: serverTimestamp(),
     });
-
-    return streakDays;
   } catch (err) {
     console.warn('Error updating streak:', err);
     return 0;
@@ -216,4 +215,3 @@ export const incrementUserTestimonyCount = async (userId: string): Promise<numbe
     return 0;
   }
 };
-

@@ -15,6 +15,7 @@ import {
   onSnapshot,
   Unsubscribe,
   writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, firebaseEnabled, storage } from './firebase';
@@ -215,42 +216,45 @@ export const joinGroup = async (groupId: string, userId: string): Promise<JoinGr
   }
 
   try {
-    // First, get the group to check if it's private
-    const group = await getGroup(groupId);
-    if (!group) {
-      return { success: false, error: 'Group not found' };
-    }
+    return await runTransaction(db, async (txn) => {
+      const groupRef = doc(db!, 'groups', groupId);
+      const userRef = doc(db!, 'users', userId);
+      const groupSnap = await txn.get(groupRef);
 
-    if (group.memberUids.includes(userId)) {
-      return { success: false, error: 'Already a member' };
-    }
-
-    const groupRef = doc(db, 'groups', groupId);
-
-    if (group.isPrivate) {
-      // Private group: add to pending requests
-      if (group.pendingRequests?.includes(userId)) {
-        return { success: false, error: 'Join request already pending' };
+      if (!groupSnap.exists()) {
+        return { success: false, error: 'Group not found' } as JoinGroupResult;
       }
-      
-      await updateDoc(groupRef, {
-        pendingRequests: arrayUnion(userId),
-      });
-      
-      return { success: true, status: 'pending' };
-    } else {
-      // Public group: add directly to members
-      await updateDoc(groupRef, {
+
+      const group = { id: groupSnap.id, ...groupSnap.data() } as PrayerGroup;
+      if (group.memberUids.includes(userId)) {
+        return { success: false, error: 'Already a member' } as JoinGroupResult;
+      }
+
+      if (group.isPrivate) {
+        if (group.pendingRequests?.includes(userId)) {
+          return { success: false, error: 'Join request already pending' } as JoinGroupResult;
+        }
+
+        txn.update(groupRef, {
+          pendingRequests: arrayUnion(userId),
+        });
+
+        return { success: true, status: 'pending' } as JoinGroupResult;
+      }
+
+      txn.update(groupRef, {
         memberUids: arrayUnion(userId),
       });
+      txn.set(
+        userRef,
+        {
+          groupIds: arrayUnion(groupId),
+        },
+        { merge: true },
+      );
 
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        groupIds: arrayUnion(groupId),
-      });
-
-      return { success: true, status: 'joined' };
-    }
+      return { success: true, status: 'joined' } as JoinGroupResult;
+    });
   } catch (err) {
     const appError = classifyError(err);
     console.warn('[Groups] Error joining group:', appError.message);
