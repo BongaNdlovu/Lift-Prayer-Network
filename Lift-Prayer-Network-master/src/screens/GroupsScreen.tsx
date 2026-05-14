@@ -1,41 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  FlatList,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Share,
-} from 'react-native';
+import { Alert, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { collection, doc, limit, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import {
   createGroup,
-  subscribeToUserGroups,
-  leaveGroup,
   deleteGroup,
-  joinGroup,
   findGroupByInviteCode,
   getInviteCode,
+  joinGroup,
+  leaveGroup,
+  subscribeToUserGroups,
 } from '../services/groups';
-import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, fontSizes, radius, spacing, shadows } from '../theme/colors';
-import { SkeletonGroups } from '../components/SkeletonCard';
-import { LiftScreen } from '../components/LiftLayout';
+import { fonts, shadows, spacing } from '../theme/colors';
+import {
+  LiftBadge,
+  LiftBottomSheet,
+  LiftButton,
+  LiftCard,
+  LiftChips,
+  LiftEmptyState,
+  LiftFormSection,
+  LiftHeader,
+  LiftIconButton,
+  LiftInput,
+  LiftLoadingState,
+  LiftScreen,
+  LiftTextArea,
+} from '../components/LiftLayout';
 import type { PrayerGroup } from '../types';
 import type { RootStackParamList } from '../navigation/types';
 import { NOTIFICATION_TYPES } from '../types/notifications';
 
-const GROUP_ITEM_HEIGHT = 220;
 const GROUP_EMOJIS = ['🙏', '⛪', '👨‍👩‍👧‍👦', '❤️', '✝️', '🕊️', '📖', '🌟', '💒', '🤝'];
 
 type GroupNotification = {
@@ -49,7 +50,7 @@ type GroupNotification = {
 
 export const GroupsScreen: React.FC = () => {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [groups, setGroups] = useState<PrayerGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,17 +63,6 @@ export const GroupsScreen: React.FC = () => {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [notifications, setNotifications] = useState<GroupNotification[]>([]);
-
-  const handleGroupPress = (group: PrayerGroup) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate('GroupDetail', {
-      groupId: group.id,
-      groupName: group.name,
-      groupEmoji: group.emoji,
-    });
-  };
 
   useEffect(() => {
     if (!user) {
@@ -88,12 +78,9 @@ export const GroupsScreen: React.FC = () => {
     return () => unsub();
   }, [user]);
 
-  // Public groups discovery disabled - requires moderation features
-
-  // Subscribe to group-related notifications
   useEffect(() => {
     if (!user || !db) return;
-    
+
     const notifQuery = query(
       collection(db, 'notifications'),
       where('recipientUid', '==', user.uid),
@@ -102,26 +89,40 @@ export const GroupsScreen: React.FC = () => {
       orderBy('createdAt', 'desc'),
       limit(5)
     );
-    
-    const unsub = onSnapshot(notifQuery, (snapshot) => {
-      const notifs = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      })) as GroupNotification[];
-      setNotifications(notifs);
-    }, (err) => {
-      console.warn('[GroupsScreen] Notification subscription error:', err);
-    });
-    
+
+    const unsub = onSnapshot(
+      notifQuery,
+      (snapshot) => {
+        const notifs = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        })) as GroupNotification[];
+        setNotifications(notifs);
+      },
+      (err) => {
+        console.warn('[GroupsScreen] Notification subscription error:', err);
+      }
+    );
+
     return () => unsub();
   }, [user]);
 
-  // Dismiss a notification
+  const handleGroupPress = (group: PrayerGroup) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.navigate('GroupDetail', {
+      groupId: group.id,
+      groupName: group.name,
+      groupEmoji: group.emoji,
+    });
+  };
+
   const dismissNotification = async (notifId: string) => {
     if (!db) return;
     try {
       await updateDoc(doc(db, 'notifications', notifId), { read: true });
-      setNotifications(prev => prev?.filter(n => n.id !== notifId) || []);
+      setNotifications((prev) => prev.filter((n) => n.id !== notifId));
     } catch (err) {
       console.warn('[GroupsScreen] Error dismissing notification:', err);
     }
@@ -136,18 +137,9 @@ export const GroupsScreen: React.FC = () => {
 
     setCreating(true);
     try {
-      console.log('[GroupsScreen] Creating group:', newGroupName.trim());
-      
-      const groupId = await createGroup(
-        newGroupName.trim(),
-        user.uid,
-        newGroupDesc.trim(),
-        newGroupEmoji,
-        true
-      );
+      const groupId = await createGroup(newGroupName.trim(), user.uid, newGroupDesc.trim(), newGroupEmoji, true);
 
       if (groupId) {
-        console.log('[GroupsScreen] Group created successfully:', groupId);
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
@@ -155,14 +147,12 @@ export const GroupsScreen: React.FC = () => {
         setNewGroupName('');
         setNewGroupDesc('');
         setNewGroupEmoji('🙏');
-        Alert.alert('Success', 'Prayer group created! 🙏');
+        Alert.alert('Success', 'Prayer group created.');
       } else {
         Alert.alert('Error', 'Could not create group. Please try again.');
       }
     } catch (err: any) {
-      console.error('[GroupsScreen] Create group error:', err);
-      const message = err?.message || 'Could not create group. Please try again.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', err?.message || 'Could not create group. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -174,35 +164,31 @@ export const GroupsScreen: React.FC = () => {
     setJoining(true);
     try {
       const group = await findGroupByInviteCode(inviteCode.trim());
-      
+
       if (!group) {
-        Alert.alert('Not Found', 'No group found with that invite code');
-        setJoining(false);
+        Alert.alert('Not Found', 'No group found with that invite code.');
         return;
       }
 
       const result = await joinGroup(group.id, user.uid);
-      
+
       if (result.success) {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
         setShowJoinModal(false);
         setInviteCode('');
-        
+
         if (result.status === 'joined') {
-          Alert.alert('Joined!', `You've joined ${group.name}`);
+          Alert.alert('Joined', `You've joined ${group.name}.`);
         } else if (result.status === 'pending') {
-          Alert.alert(
-            'Request Sent',
-            `Your request to join "${group.name}" has been sent. The group owner will review it.`
-          );
+          Alert.alert('Request Sent', `Your request to join "${group.name}" has been sent.`);
         }
       } else {
-        Alert.alert('Error', result.error || 'Could not join group');
+        Alert.alert('Error', result.error || 'Could not join group.');
       }
     } catch {
-      Alert.alert('Error', 'Could not join group');
+      Alert.alert('Error', 'Could not join group.');
     } finally {
       setJoining(false);
     }
@@ -215,527 +201,204 @@ export const GroupsScreen: React.FC = () => {
         message: `Join my prayer group "${group.name}" on Lift!\n\nInvite code: ${code}`,
       });
     } catch {
-      // User cancelled
+      // User cancelled the share sheet.
     }
   };
-
-  // Public group joining disabled - requires moderation features
-  // const handleJoinPublicGroup = async (group: PrayerGroup) => { ... };
 
   const handleLeaveGroup = (group: PrayerGroup) => {
     if (!user) return;
 
-    Alert.alert(
-      'Leave Group',
-      `Are you sure you want to leave "${group.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: async () => {
-            if (group.ownerUid === user.uid) {
-              // Owner leaving = delete group
-              await deleteGroup(group.id, user.uid);
-            } else {
-              await leaveGroup(group.id, user.uid);
-            }
-          },
+    Alert.alert('Leave Group', `Are you sure you want to leave "${group.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: group.ownerUid === user.uid ? 'Delete' : 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          if (group.ownerUid === user.uid) {
+            await deleteGroup(group.id, user.uid);
+          } else {
+            await leaveGroup(group.id, user.uid);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (!user) {
     return (
       <LiftScreen>
-        <View style={styles.center}>
-          <Text style={styles.emptyEmoji}>👥</Text>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to join groups</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Create prayer circles with family & friends</Text>
-        </View>
+        <LiftEmptyState
+          icon="people-outline"
+          title="Sign in to join groups"
+          message="Create prayer circles with family and friends."
+        />
       </LiftScreen>
     );
   }
 
-  const renderGroup = ({ item }: { item: PrayerGroup }) => (
-    <TouchableOpacity 
-      onPress={() => handleGroupPress(item)}
-      style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-    >
-      <View style={styles.groupHeader}>
-        <View style={[styles.groupEmoji, { backgroundColor: isDark ? colors.surface : colors.accentLight }]}>
-          <Text style={styles.groupEmojiText}>{item.emoji || '🙏'}</Text>
-        </View>
-        <View style={styles.groupInfo}>
-          <Text style={[styles.groupName, { color: colors.text }]}>{item.name}</Text>
-          <Text style={[styles.groupMembers, { color: colors.muted }]}>
-            {item.memberUids.length} member{item.memberUids.length !== 1 ? 's' : ''}
-          </Text>
-        </View>
-        <View style={styles.groupRightSection}>
-          {item.ownerUid === user?.uid && (
-            <View style={[styles.ownerBadge, { backgroundColor: colors.amber100 }]}>
-              <Text style={[styles.ownerBadgeText, { color: colors.amber600 }]}>Owner</Text>
-            </View>
-          )}
-          <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-        </View>
-      </View>
-      
-      {item.description && (
-        <Text style={[styles.groupDesc, { color: colors.muted }]}>{item.description}</Text>
-      )}
-
-      <View style={[styles.groupActions, { borderTopColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: isDark ? colors.surface : colors.surfaceSecondary }]}
-          onPress={(e) => {
-            e.stopPropagation();
-            handleShareInvite(item);
-          }}
-        >
-          <Ionicons name="share-outline" size={18} color={colors.text} />
-          <Text style={[styles.actionBtnText, { color: colors.text }]}>Invite</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.leaveBtn, { backgroundColor: colors.rose100 }]}
-          onPress={(e) => {
-            e.stopPropagation();
-            handleLeaveGroup(item);
-          }}
-        >
-          <Ionicons name="exit-outline" size={18} color={colors.rose600} />
-          <Text style={[styles.leaveBtnText, { color: colors.rose600 }]}>
-            {item.ownerUid === user?.uid ? 'Delete' : 'Leave'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <LiftScreen scroll>
-      <View style={styles.headerSection}>
-        <View style={styles.header}>
-          <Text style={[styles.kicker, { color: colors.muted }]}>YOUR CIRCLES</Text>
-          <Text style={styles.heading}>
-            Groups
-          </Text>
-        </View>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            onPress={() => setShowJoinModal(true)}
-            style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          >
-            <Ionicons name="enter-outline" size={22} color={colors.muted} strokeWidth={1.5} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCreateModal(true)}
-            style={[styles.iconButton, { backgroundColor: colors.amber100, borderColor: colors.amber200 }]}
-          >
-            <Ionicons name="add" size={24} color={colors.amber700} strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <LiftHeader
+        title="Groups"
+        subtitle="Your prayer circles"
+        right={
+          <View style={styles.headerActions}>
+            <LiftIconButton icon="enter-outline" onPress={() => setShowJoinModal(true)} />
+            <LiftIconButton icon="add" onPress={() => setShowCreateModal(true)} color={colors.accent} />
+          </View>
+        }
+      />
 
-      <View style={styles.mainContent}>
-        {/* Notification Banner */}
-        {notifications.map((notif) => (
-          <View key={notif.id} style={styles.notificationBanner}>
-            <View style={styles.notificationContent}>
-              <Text style={styles.notificationEmoji}>{notif.groupEmoji || '🙏'}</Text>
-              <View style={styles.notificationText}>
-                <Text style={[styles.notificationTitle, { color: colors.text }]}>Welcome!</Text>
-                <Text style={[styles.notificationMessage, { color: colors.muted }]}>
-                  You&apos;ve been added to &quot;{notif.groupName}&quot;
-                </Text>
-              </View>
+      {notifications.map((notif) => (
+        <LiftCard key={notif.id} style={[styles.notificationCard, { backgroundColor: colors.successLight }]}>
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationEmoji}>{notif.groupEmoji || '🙏'}</Text>
+            <View style={styles.notificationText}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>Welcome</Text>
+              <Text style={[styles.notificationMessage, { color: colors.textSecondary }]}>
+                You have been added to &quot;{notif.groupName}&quot;.
+              </Text>
             </View>
-            <TouchableOpacity
-              style={styles.notificationDismiss}
-              onPress={() => dismissNotification(notif.id)}
-            >
+            <Pressable onPress={() => dismissNotification(notif.id)} hitSlop={10}>
               <Ionicons name="close" size={18} color={colors.muted} />
-            </TouchableOpacity>
-            </View>
-          ))}
+            </Pressable>
+          </View>
+        </LiftCard>
+      ))}
 
-          {loading ? (
-            <View style={styles.list}>
-              <SkeletonGroups count={4} />
+      {loading ? (
+        <LiftLoadingState label="Loading groups..." />
+      ) : groups.length === 0 ? (
+        <LiftEmptyState
+          icon="people-outline"
+          title="No groups yet"
+          message="Create a prayer circle or join one with an invite code."
+          action={
+            <View style={styles.emptyActions}>
+              <LiftButton onPress={() => setShowCreateModal(true)}>Create Group</LiftButton>
+              <LiftButton variant="secondary" onPress={() => setShowJoinModal(true)}>
+                Join with Code
+              </LiftButton>
             </View>
-          ) : groups.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🤝</Text>
-              <Text style={[styles.emptyTitle, { color: colors.stone900 }]}>No groups yet</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.stone500 }]}>
-                Create a prayer circle or join one with an invite code
-              </Text>
-              <View style={styles.emptyActions}>
-                <TouchableOpacity
-                  style={[styles.emptyBtn, { backgroundColor: colors.amber100 }]}
-                  onPress={() => setShowCreateModal(true)}
-                >
-                  <Ionicons name="add-circle-outline" size={20} color={colors.amber700} />
-                  <Text style={[styles.emptyBtnText, { color: colors.amber700 }]}>Create Group</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.emptyBtn, { backgroundColor: colors.stone100 }]}
-                  onPress={() => setShowJoinModal(true)}
-                >
-                  <Ionicons name="enter-outline" size={20} color={colors.stone700} />
-                  <Text style={[styles.emptyBtnText, { color: colors.stone700 }]}>Join with Code</Text>
-                </TouchableOpacity>
+          }
+        />
+      ) : (
+        <View style={styles.groupList}>
+          {groups.map((group) => (
+            <LiftCard key={group.id} onPress={() => handleGroupPress(group)}>
+              <View style={styles.groupHeader}>
+                <View style={[styles.groupEmoji, { backgroundColor: colors.accentLight }]}>
+                  <Text style={styles.groupEmojiText}>{group.emoji || '🙏'}</Text>
+                </View>
+                <View style={styles.groupInfo}>
+                  <Text style={[styles.groupName, { color: colors.text }]} numberOfLines={1}>
+                    {group.name}
+                  </Text>
+                  <Text style={[styles.groupMembers, { color: colors.textSecondary }]}>
+                    {group.memberUids.length} member{group.memberUids.length !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+                {group.ownerUid === user.uid ? <LiftBadge label="Owner" tone="warning" /> : null}
               </View>
-            </View>
-          ) : (
-            <FlatList
-              data={groups}
-              keyExtractor={(item) => item.id}
-              renderItem={renderGroup}
-              contentContainerStyle={styles.list}
-              showsVerticalScrollIndicator={false}
-              initialNumToRender={8}
-              windowSize={5}
-              maxToRenderPerBatch={8}
-              updateCellsBatchingPeriod={50}
-              removeClippedSubviews={Platform.OS !== 'web'}
-              ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
-              getItemLayout={(_, index) => ({
-                length: GROUP_ITEM_HEIGHT,
-                offset: GROUP_ITEM_HEIGHT * index,
-                index,
-              })}
-            />
-          )}
-        </View>
 
-      {/* Create Group Modal */}
-      <Modal
-        visible={showCreateModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowCreateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Create Prayer Group</Text>
-              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-                <Ionicons name="close" size={24} color={colors.muted} />
-              </TouchableOpacity>
-            </View>
+              {group.description ? (
+                <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>{group.description}</Text>
+              ) : null}
 
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>Group Name</Text>
-            <TextInput
-              style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
-              placeholder="e.g., Family Prayers"
-              placeholderTextColor={colors.muted}
-              value={newGroupName}
-              onChangeText={setNewGroupName}
-              maxLength={50}
-            />
-
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>Description (optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
-              placeholder="What is this group for?"
-              placeholderTextColor={colors.muted}
-              value={newGroupDesc}
-              onChangeText={setNewGroupDesc}
-              multiline
-              maxLength={200}
-            />
-
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>Choose an Emoji</Text>
-            <View style={styles.emojiPicker}>
-              {GROUP_EMOJIS.map((emoji) => (
-                <TouchableOpacity
-                  key={emoji}
-                  style={[
-                    styles.emojiOption,
-                    { backgroundColor: colors.surface },
-                    newGroupEmoji === emoji && [styles.emojiOptionActive, { backgroundColor: colors.accentLight, borderColor: colors.accent }],
-                  ]}
-                  onPress={() => setNewGroupEmoji(emoji)}
+              <View style={[styles.groupActions, { borderTopColor: colors.border }]}>
+                <Pressable
+                  style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.surfaceSecondary }, pressed && styles.pressed]}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleShareInvite(group);
+                  }}
                 >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: colors.accent }, !newGroupName.trim() && styles.buttonDisabled]}
-              onPress={handleCreateGroup}
-              disabled={!newGroupName.trim() || creating}
-            >
-              <Text style={[styles.createButtonText, { color: '#fff' }]}>
-                {creating ? 'Creating...' : 'Create Group'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+                  <Ionicons name="share-outline" size={17} color={colors.text} />
+                  <Text style={[styles.actionButtonText, { color: colors.text }]}>Invite</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.dangerLight }, pressed && styles.pressed]}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleLeaveGroup(group);
+                  }}
+                >
+                  <Ionicons name="exit-outline" size={17} color={colors.danger} />
+                  <Text style={[styles.actionButtonText, { color: colors.danger }]}>
+                    {group.ownerUid === user.uid ? 'Delete' : 'Leave'}
+                  </Text>
+                </Pressable>
+              </View>
+            </LiftCard>
+          ))}
         </View>
-      </Modal>
+      )}
 
-      {/* Join Group Modal */}
-      <Modal
-        visible={showJoinModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowJoinModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Join Prayer Group</Text>
-              <TouchableOpacity onPress={() => setShowJoinModal(false)}>
-                <Ionicons name="close" size={24} color={colors.muted} />
-              </TouchableOpacity>
-            </View>
+      <LiftBottomSheet visible={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <Text style={[styles.sheetTitle, { color: colors.text }]}>Create Prayer Group</Text>
+        <LiftFormSection label="Group Name" hint={`${newGroupName.length}/50`}>
+          <LiftInput
+            value={newGroupName}
+            onChangeText={setNewGroupName}
+            placeholder="e.g., Family Prayers"
+            maxLength={50}
+            style={styles.embeddedInput}
+          />
+        </LiftFormSection>
+        <LiftFormSection label="Description" hint={`${newGroupDesc.length}/200`}>
+          <LiftTextArea
+            value={newGroupDesc}
+            onChangeText={setNewGroupDesc}
+            placeholder="What is this group for?"
+            maxLength={200}
+            style={styles.embeddedInput}
+          />
+        </LiftFormSection>
+        <LiftFormSection label="Group Icon">
+          <LiftChips
+            chips={GROUP_EMOJIS.map((emoji) => ({ value: emoji, label: emoji }))}
+            active={newGroupEmoji}
+            onChange={setNewGroupEmoji}
+          />
+        </LiftFormSection>
+        <LiftButton onPress={handleCreateGroup} disabled={!newGroupName.trim() || creating} style={styles.sheetButton}>
+          {creating ? 'Creating...' : 'Create Group'}
+        </LiftButton>
+      </LiftBottomSheet>
 
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>Enter Invite Code</Text>
-            <TextInput
-              style={[styles.input, styles.codeInput, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
-              placeholder="ABCD1234"
-              placeholderTextColor={colors.muted}
-              value={inviteCode}
-              onChangeText={(text) => setInviteCode(text.toUpperCase())}
-              maxLength={8}
-              autoCapitalize="characters"
-            />
-
-            <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: colors.accent }, !inviteCode.trim() && styles.buttonDisabled]}
-              onPress={handleJoinGroup}
-              disabled={!inviteCode.trim() || joining}
-            >
-              <Text style={[styles.createButtonText, { color: '#fff' }]}>
-                {joining ? 'Joining...' : 'Join Group'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <LiftBottomSheet visible={showJoinModal} onClose={() => setShowJoinModal(false)}>
+        <Text style={[styles.sheetTitle, { color: colors.text }]}>Join Prayer Group</Text>
+        <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>Enter the invite code shared by a group member.</Text>
+        <LiftFormSection label="Invite Code">
+          <LiftInput
+            value={inviteCode}
+            onChangeText={(text) => setInviteCode(text.toUpperCase())}
+            placeholder="ABCD1234"
+            maxLength={8}
+            style={styles.embeddedInput}
+            inputStyle={styles.codeInput}
+          />
+        </LiftFormSection>
+        <LiftButton onPress={handleJoinGroup} disabled={!inviteCode.trim() || joining} style={styles.sheetButton}>
+          {joining ? 'Joining...' : 'Join Group'}
+        </LiftButton>
+      </LiftBottomSheet>
     </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  
-  // Header styles
-  headerSection: {
+  headerActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    zIndex: 20,
+    gap: 8,
   },
-  header: {
-    flex: 1,
-  },
-  kicker: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.xs,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.xs,
-    opacity: 0.8,
-  },
-  heading: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.xxxl,
-    fontWeight: '500',
-    letterSpacing: -1.5,
-    lineHeight: 34,
-    color: '#2C332E',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: 4,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  
-  // Content styles
-  mainContent: {
-    flex: 1,
-    zIndex: 10,
-  },
-  list: {
-    padding: spacing.lg,
-    paddingBottom: 140,
-    paddingTop: spacing.md,
-  },
-  
-  // Group Card styles
-  groupCard: {
-    marginBottom: 0, // Managed by ItemSeparatorComponent
-  },
-  groupHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  notificationCard: {
     marginBottom: spacing.md,
-  },
-  groupEmoji: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  groupEmojiText: {
-    fontSize: 28,
-  },
-  groupInfo: {
-    flex: 1,
-  },
-  groupName: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.lg,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  groupMembers: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
-    fontWeight: '500',
-  },
-  groupRightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  ownerBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  ownerBadgeText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.xs,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  groupDesc: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
-    lineHeight: 22,
-    marginBottom: spacing.md,
-  },
-  groupActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    borderTopWidth: 1,
-    paddingTop: spacing.md,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: 10,
-    borderRadius: radius.full,
-  },
-  actionBtnText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.sm,
-    fontWeight: '600',
-  },
-  leaveBtn: {
-    // Custom bg set inline
-  },
-  leaveBtnText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.sm,
-    fontWeight: '600',
-  },
-  
-  // Empty State
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: spacing.md,
-  },
-  emptyTitle: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.xl,
-    fontWeight: '600',
-    marginBottom: spacing.sm,
-  },
-  emptySubtitle: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.md,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    lineHeight: 22,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  emptyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 12,
-    borderRadius: radius.full,
-  },
-  emptyBtnText: {
-    fontFamily: fonts.bodyBold,
-    fontWeight: '700',
-    fontSize: fontSizes.sm,
-  },
-  
-  // Notifications
-  notificationBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f0fdf4',
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
   },
   notificationContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    gap: spacing.sm,
+    gap: 12,
   },
   notificationEmoji: {
     fontSize: 24,
@@ -744,107 +407,110 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificationTitle: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.sm,
-    fontWeight: '700',
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
   },
   notificationMessage: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
+    fontSize: 13,
+    lineHeight: 18,
     marginTop: 2,
   },
-  notificationDismiss: {
-    padding: spacing.xs,
+  emptyActions: {
+    gap: 10,
+    marginTop: 16,
+    alignSelf: 'stretch',
   },
-  
-  // Modals (keep existing styles but tidy up)
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: spacing.lg,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  modalTitle: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.xxl,
-    fontWeight: '700',
-  },
-  inputLabel: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.xs,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  input: {
-    fontFamily: fonts.body,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: fontSizes.md,
-    borderWidth: 1,
-    marginBottom: spacing.lg,
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-    paddingTop: spacing.md,
-  },
-  codeInput: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.xxl,
-    fontWeight: '800',
-    letterSpacing: 4,
-    textAlign: 'center',
-  },
-  emojiPicker: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  groupList: {
     gap: spacing.md,
-    marginBottom: spacing.xl,
-    marginTop: spacing.sm,
+    paddingBottom: spacing.xl,
   },
-  emojiOption: {
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  groupEmoji: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emojiOptionActive: {
-    borderWidth: 2,
+  groupEmojiText: {
+    fontSize: 26,
   },
-  emojiText: {
-    fontSize: 24,
+  groupInfo: {
+    flex: 1,
   },
-  createButton: {
-    paddingVertical: 16,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.full,
+  groupName: {
+    fontFamily: fonts.heading,
+    fontSize: 20,
+    lineHeight: 25,
+  },
+  groupMembers: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    marginTop: 3,
+  },
+  groupDesc: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 14,
+  },
+  groupActions: {
+    flexDirection: 'row',
+    gap: 10,
+    borderTopWidth: 1,
+    marginTop: 16,
+    paddingTop: 14,
+  },
+  actionButton: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  actionButtonText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
+  pressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.98 }],
+  },
+  sheetTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 26,
+    lineHeight: 32,
+    marginBottom: 6,
+  },
+  sheetSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  embeddedInput: {
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  codeInput: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 22,
+    textAlign: 'center',
+    letterSpacing: 3,
+  },
+  sheetButton: {
     marginTop: spacing.md,
-    ...shadows.glow,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-    
-  },
-  createButtonText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.md,
-    fontWeight: '700',
+    ...shadows.md,
   },
 });
+
+export default GroupsScreen;

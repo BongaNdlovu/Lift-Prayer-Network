@@ -1,68 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  ActivityIndicator,
-  Animated,
-  TouchableOpacity,
-  } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { getUserStats, type UserStats } from '../services/stats';
 import { useTheme } from '../contexts/ThemeContext';
-import { fonts, palette, radius, spacing } from '../theme/colors';
+import { fonts, shadows, spacing } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
-import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
-import { LiftScreen, LiftHeader } from '../components/LiftLayout';
-
-type StatCardProps = {
-  emoji: string;
-  value: number;
-  label: string;
-  color: string;
-  delay?: number;
-};
-
-const StatCard: React.FC<StatCardProps> = ({ emoji, value, label, color, delay = 0 }) => {
-  const scaleAnim = React.useRef(new Animated.Value(0)).current;
-  const opacityAnim = React.useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        delay,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 300,
-        delay,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <Animated.View
-      style={[
-        styles.statCard,
-        { backgroundColor: color, transform: [{ scale: scaleAnim }], opacity: opacityAnim },
-      ]}
-    >
-      <Text style={styles.statEmoji}>{emoji}</Text>
-      <Text style={styles.statValue}>{value.toLocaleString()}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </Animated.View>
-  );
-};
+import {
+  LiftButton,
+  LiftEmptyState,
+  LiftFlatCard,
+  LiftHeader,
+  LiftMiniStat,
+  LiftPrayerRhythmCard,
+  LiftScreen,
+  LiftSectionHeader,
+  LiftStreakCard,
+} from '../components/LiftLayout';
 
 export const StatsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -86,11 +42,11 @@ export const StatsScreen: React.FC = () => {
   if (!user) {
     return (
       <LiftScreen>
-        <View style={styles.center}>
-          <Text style={styles.emoji}>📊</Text>
-          <Text style={[styles.title, { color: colors.text }]}>Sign in to view your stats</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>Track your prayer journey</Text>
-        </View>
+        <LiftEmptyState
+          icon="stats-chart-outline"
+          title="Sign in to view your stats"
+          message="Track your prayer rhythm, answered prayers, and the people you support."
+        />
       </LiftScreen>
     );
   }
@@ -99,268 +55,103 @@ export const StatsScreen: React.FC = () => {
     return (
       <LiftScreen>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.accentDark} />
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading prayer stats...</Text>
         </View>
       </LiftScreen>
     );
   }
 
-  const streakMessage = stats?.streakDays === 0
-    ? 'Start your streak today!'
-    : stats?.streakDays === 1
-    ? 'Great start! Keep it up!'
-    : `${stats?.streakDays} days strong! 💪`;
+  const streakDays = stats?.streakDays || 0;
+  const encouragement =
+    (stats?.prayerCount || 0) === 0
+      ? 'Every journey begins with one faithful prayer. Start by lifting someone today.'
+      : (stats?.prayerCount || 0) >= 100
+      ? 'Your steady intercession is becoming a meaningful rhythm.'
+      : 'Keep going. Every prayer counts and brings hope to someone.';
 
   return (
     <LiftScreen scroll>
-      <LiftHeader title="Stats" subtitle="Prayer statistics & streaks" />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <LiftHeader title="Stats" subtitle="Prayer statistics and streaks" />
 
-          <PrayerStreakWidget
-            currentStreak={stats?.streakDays || 0}
-            longestStreak={stats?.longestStreak || 0}
-            lastPrayedDate={stats?.streakLastDate}
-            onPress={() => navigation.navigate('History')}
-          />
+      <LiftPrayerRhythmCard
+        prayersCount={stats?.prayerCount || 0}
+        supportedCount={stats?.peopleSupported || 0}
+        answeredCount={stats?.testimonyCount || 0}
+      />
 
-          {/* Streak Banner */}
-          <View style={styles.streakBanner}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-            <View style={styles.streakInfo}>
-              <Text style={styles.streakCount}>{stats?.streakDays || 0} Day Streak</Text>
-              <Text style={styles.streakMessage}>{streakMessage}</Text>
-            </View>
-            <View style={styles.longestStreak}>
-              <Text style={styles.longestLabel}>Best</Text>
-              <Text style={styles.longestValue}>{stats?.longestStreak || 0}</Text>
-            </View>
+      <LiftSectionHeader title="Prayer Streak" />
+      <LiftStreakCard
+        currentStreak={streakDays}
+        longestStreak={stats?.longestStreak || 0}
+        onPress={() => navigation.navigate('History')}
+      />
+
+      <LiftSectionHeader title="Lifetime Activity" />
+      <View style={styles.statsGrid}>
+        <LiftMiniStat label="Prayers" value={stats?.prayerCount || 0} icon="heart" />
+        <LiftMiniStat label="Supported" value={stats?.peopleSupported || 0} icon="people" />
+        <LiftMiniStat label="Requests" value={stats?.requestCount || 0} icon="send" />
+        <LiftMiniStat label="Answered" value={stats?.testimonyCount || 0} icon="sparkles" />
+      </View>
+
+      <LiftSectionHeader title="Recent Activity" />
+      <LiftFlatCard>
+        <View style={styles.periodRow}>
+          <View style={styles.periodCard}>
+            <Text style={[styles.periodValue, { color: colors.text }]}>{stats?.prayersThisWeek || 0}</Text>
+            <Text style={[styles.periodLabel, { color: colors.textSecondary }]}>This week</Text>
           </View>
-
-          {/* Main Stats Grid */}
-          <View style={styles.statsGrid}>
-            <StatCard
-              emoji="🙏"
-              value={stats?.prayerCount || 0}
-              label="Total Prayers"
-              color="#F7F1E8"
-              delay={0}
-            />
-            <StatCard
-              emoji="👥"
-              value={stats?.peopleSupported || 0}
-              label="People Supported"
-              color="#dbeafe"
-              delay={100}
-            />
-            <StatCard
-              emoji="📡"
-              value={stats?.requestCount || 0}
-              label="Requests Sent"
-              color="#dcfce7"
-              delay={200}
-            />
-            <StatCard
-              emoji="✨"
-              value={stats?.testimonyCount || 0}
-              label="Testimonies"
-              color="#fce7f3"
-              delay={300}
-            />
+          <View style={[styles.periodDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.periodCard}>
+            <Text style={[styles.periodValue, { color: colors.text }]}>{stats?.prayersThisMonth || 0}</Text>
+            <Text style={[styles.periodLabel, { color: colors.textSecondary }]}>This month</Text>
           </View>
+        </View>
+      </LiftFlatCard>
 
-          {/* Period Stats */}
-          <View style={styles.periodSection}>
-            <Text style={styles.periodTitle}>Recent Activity</Text>
-            <View style={styles.periodRow}>
-              <View style={styles.periodCard}>
-                <Text style={styles.periodValue}>{stats?.prayersThisWeek || 0}</Text>
-                <Text style={styles.periodLabel}>This Week</Text>
-              </View>
-              <View style={styles.periodDivider} />
-              <View style={styles.periodCard}>
-                <Text style={styles.periodValue}>{stats?.prayersThisMonth || 0}</Text>
-                <Text style={styles.periodLabel}>This Month</Text>
-              </View>
-            </View>
-          </View>
+      <LiftFlatCard style={[styles.encouragement, { backgroundColor: colors.successLight, borderColor: colors.successLight }]}>
+        <Text style={[styles.encouragementText, { color: colors.success }]}>{encouragement}</Text>
+      </LiftFlatCard>
 
-          {/* Encouragement */}
-          <View style={styles.encouragement}>
-            <Text style={styles.encouragementText}>
-              {stats?.prayerCount === 0
-                ? '🌱 Every journey begins with a single step. Start praying for others today!'
-                : stats?.prayerCount && stats.prayerCount >= 100
-                ? '🌟 You\'re a prayer warrior! Your intercession makes a difference.'
-                : '💫 Keep going! Every prayer counts and brings hope to someone.'}
-            </Text>
-          </View>
+      <Pressable
+        onPress={() => navigation.navigate('AnsweredPrayers')}
+        style={({ pressed }) => [
+          styles.galleryLink,
+          { backgroundColor: colors.accent },
+          shadows.md,
+          pressed && styles.pressed,
+        ]}
+      >
+        <View style={styles.galleryText}>
+          <Text style={styles.galleryTitle}>Answered Prayers Gallery</Text>
+          <Text style={styles.gallerySubtitle}>Celebrate God&apos;s faithfulness</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={22} color="#fff" />
+      </Pressable>
 
-          {/* Answered Prayers Gallery Link */}
-          <TouchableOpacity
-            style={styles.galleryLink}
-            onPress={() => navigation.navigate('AnsweredPrayers')}
-          >
-            <View style={[styles.galleryGradient, { backgroundColor: colors.accentDark }]}>
-              <View style={styles.galleryContent}>
-                <Text style={styles.galleryEmoji}>🎉</Text>
-                <View style={styles.galleryText}>
-                  <Text style={styles.galleryTitle}>Answered Prayers Gallery</Text>
-                  <Text style={styles.gallerySubtitle}>Celebrate God&apos;s faithfulness</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color="#fff" />
-            </View>
-          </TouchableOpacity>
-          </ScrollView>
+      <LiftButton variant="secondary" onPress={() => navigation.navigate('History')} style={styles.historyButton}>
+        View Prayer History
+      </LiftButton>
     </LiftScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  
-  // Header styles
-  headerSection: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    zIndex: 20,
-  },
-  kicker: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.xs,
-    opacity: 0.8,
-  },
-  heading: {
-    fontFamily: fonts.heading,
-    fontSize: 32,
-    fontWeight: '500',
-    letterSpacing: -1.5,
-    lineHeight: 34,
-    color: '#2C332E',
-  },
-  subheading: {
-    fontSize: 14,
-    marginTop: spacing.xs,
-  },
-  
-  // Content styles
-  mainContent: {
-    flex: 1,
-    zIndex: 10,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: 140,
-  },
-  
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.lg,
+    gap: 12,
   },
-  emoji: {
-    fontSize: 48,
-    marginBottom: spacing.md,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    fontFamily: fonts.heading,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
+  loadingText: {
+    fontFamily: fonts.body,
     fontSize: 14,
-  },
-  streakBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: '#F7F1E8',
-  },
-  streakEmoji: {
-    fontSize: 48,
-    marginRight: spacing.md,
-  },
-  streakInfo: {
-    flex: 1,
-  },
-  streakCount: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: palette.text,
-  },
-  streakMessage: {
-    fontSize: 14,
-    color: palette.muted,
-  },
-  longestStreak: {
-    alignItems: 'center',
-    backgroundColor: '#F7F1E8',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-  },
-  longestLabel: {
-    fontSize: 11,
-    color: '#92400e',
-    fontWeight: '600',
-  },
-  longestValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#92400e',
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  statCard: {
-    width: '47%',
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-  },
-  statEmoji: {
-    fontSize: 32,
-    marginBottom: spacing.sm,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: palette.text,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: palette.muted,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  periodSection: {
-    backgroundColor: '#fff',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: palette.border,
-  },
-  periodTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: palette.text,
-    marginBottom: spacing.md,
+    gap: 10,
   },
   periodRow: {
     flexDirection: 'row',
@@ -369,64 +160,62 @@ const styles = StyleSheet.create({
   periodCard: {
     flex: 1,
     alignItems: 'center',
+    paddingVertical: 8,
   },
   periodDivider: {
     width: 1,
-    height: 40,
-    backgroundColor: palette.border,
+    height: 46,
   },
   periodValue: {
+    fontFamily: fonts.heading,
     fontSize: 32,
-    fontWeight: '900',
-    color: palette.accent,
+    lineHeight: 38,
   },
   periodLabel: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    color: palette.muted,
-    fontWeight: '600',
+    marginTop: 4,
   },
   encouragement: {
-    backgroundColor: '#f0fdf4',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
+    marginTop: spacing.lg,
   },
   encouragementText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 14,
-    color: '#166534',
-    lineHeight: 22,
+    lineHeight: 21,
     textAlign: 'center',
   },
   galleryLink: {
+    minHeight: 74,
+    borderRadius: 20,
+    padding: 16,
     marginTop: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  galleryGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-  },
-  galleryContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  galleryEmoji: {
-    fontSize: 32,
+    gap: 12,
   },
   galleryText: {
-    gap: 2,
+    flex: 1,
   },
   galleryTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bodyMedium,
     color: '#fff',
+    fontSize: 16,
   },
   gallerySubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
+    fontFamily: fonts.body,
+    color: 'rgba(255,255,255,0.82)',
+    fontSize: 13,
+    marginTop: 3,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  historyButton: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
   },
 });
+
+export default StatsScreen;
