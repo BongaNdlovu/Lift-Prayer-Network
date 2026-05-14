@@ -163,7 +163,20 @@ async function resetAdminDoc(db, keepUser) {
 
   console.log(`[Firestore] ${DRY_RUN ? 'Would reset' : 'Resetting'} users/${keepUser.uid}`);
   if (!DRY_RUN) {
-    await adminRef.set(payload, { merge: true });
+    await adminRef.set(payload);
+  }
+}
+
+async function resetKeptAuthUser(auth, keepUser) {
+  const payload = {
+    displayName: 'Fanele Sibonge',
+    photoURL: null,
+    disabled: false,
+  };
+
+  console.log(`[Auth] ${DRY_RUN ? 'Would reset' : 'Resetting'} kept Auth user ${keepUser.uid}`);
+  if (!DRY_RUN) {
+    await auth.updateUser(keepUser.uid, payload);
   }
 }
 
@@ -203,6 +216,7 @@ async function main() {
 
   await clearFirestore(db, keepUser.uid);
   await resetAdminDoc(db, keepUser);
+  await resetKeptAuthUser(auth, keepUser);
   await clearStorage(storage, keepUser.uid);
   await deleteOtherAuthUsers(auth, keepUser.uid);
 

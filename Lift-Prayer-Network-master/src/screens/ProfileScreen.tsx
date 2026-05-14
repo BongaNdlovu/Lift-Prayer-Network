@@ -53,6 +53,7 @@ export const ProfileScreen: React.FC = () => {
   
   // Profile picture state
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const isAdminUser = hasAdminPermission(user?.email);
   const verseOfDay = getVerseOfDay();
@@ -77,6 +78,8 @@ export const ProfileScreen: React.FC = () => {
   useEffect(() => {
     if (user?.photoURL) {
       setProfileImage(user.photoURL);
+    } else {
+      setProfileImage(null);
     }
   }, [user?.photoURL]);
 
@@ -208,10 +211,13 @@ export const ProfileScreen: React.FC = () => {
       if (!isMountedRef.current) return;
       if (snap.exists()) {
         const settings = (snap.data() as any).settings;
+        const profileData = snap.data() as any;
+        setProfileDisplayName(profileData.displayName || null);
+        setProfileImage(profileData.photoURL ?? null);
         if (settings?.notificationsCritical !== undefined) {
           setPushEnabled(!!settings.notificationsCritical);
         }
-        const stats = (snap.data() as any).stats || {};
+        const stats = profileData.stats || {};
         setStreakData({
           currentStreak: stats.streakDays || 0,
           longestStreak: stats.longestStreak || 0,
@@ -251,7 +257,7 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleEditProfile = () => {
-    setEditName(user?.displayName || '');
+    setEditName(profileDisplayName || user?.displayName || '');
     setShowEditModal(true);
   };
 
@@ -303,10 +309,11 @@ export const ProfileScreen: React.FC = () => {
         throw new Error('Profile updated but sync incomplete. Please try again.');
       }
 
-      if (isMountedRef.current) {
-        setShowEditModal(false);
-        Alert.alert('Success', 'Profile updated!');
-      }
+        if (isMountedRef.current) {
+          setShowEditModal(false);
+          setProfileDisplayName(sanitizedName);
+          Alert.alert('Success', 'Profile updated!');
+        }
     } catch (err: any) {
       if (isMountedRef.current) {
         Alert.alert('Error', err.message || 'Could not update profile');
@@ -370,7 +377,7 @@ export const ProfileScreen: React.FC = () => {
               ) : (
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
-                    {(user.displayName || 'G')[0].toUpperCase()}
+                    {(profileDisplayName || user.displayName || 'G')[0].toUpperCase()}
                   </Text>
                 </View>
               )}
@@ -386,7 +393,7 @@ export const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
             
             <View style={styles.nameRowProfile}>
-              <Text style={[styles.displayName, { color: colors.text }]}>{user.displayName || 'Guest'}</Text>
+              <Text style={[styles.displayName, { color: colors.text }]}>{profileDisplayName || user.displayName || 'Guest'}</Text>
               {(() => {
                 const badge = getVerifiedBadge(user.email);
                 const badgeStyle = badge ? BADGE_STYLES[badge.badgeType] : null;
@@ -453,7 +460,7 @@ export const ProfileScreen: React.FC = () => {
             <Ionicons name="person-outline" size={20} color={colors.muted} />
             <View style={styles.infoContent}>
               <Text style={[styles.label, { color: colors.muted }]}>Display Name</Text>
-              <Text style={[styles.value, { color: colors.text }]}>{user?.displayName || 'Guest'}</Text>
+              <Text style={[styles.value, { color: colors.text }]}>{profileDisplayName || user?.displayName || 'Guest'}</Text>
             </View>
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
