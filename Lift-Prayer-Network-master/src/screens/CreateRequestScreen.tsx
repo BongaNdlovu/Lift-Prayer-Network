@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -50,6 +50,12 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const offline = netInfo.isConnected === false;
+  const isMountedRef = useRef(true);
+
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   const handleSubmit = async () => {
     setErrorMessage(null);
@@ -65,13 +71,18 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
 
     // Security check: Check if user is blocked from posting
     if (user) {
-      const blockStatus = await checkUserBlockedFromPosting(user.uid);
-      if (blockStatus.isBlocked) {
-        Alert.alert(
-          'Posting Restricted',
-          blockStatus.reason || 'Your posting privileges have been suspended.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
+      try {
+        const blockStatus = await checkUserBlockedFromPosting(user.uid);
+        if (blockStatus.isBlocked) {
+          Alert.alert(
+            'Posting Restricted',
+            blockStatus.reason || 'Your posting privileges have been suspended.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+          return;
+        }
+      } catch {
+        Alert.alert('Error', 'Could not verify posting status. Please try again.');
         return;
       }
     }
@@ -125,7 +136,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
     if (validation.warnings && validation.warnings.length > 0) {
       Alert.alert('Notice', validation.warnings.join('\n'), [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Submit Anyway', onPress: () => proceedWithSubmit(validation.sanitized || content.trim()) },
+        { text: 'Submit Anyway', onPress: () => proceedWithSubmit(validation.sanitized || content.trim(), titleValidation.sanitized || title.trim()) },
       ]);
       return;
     }
@@ -179,7 +190,7 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
       const requestDisplayName = isAnonymous ? 'Anonymous' : (user.displayName || 'Anonymous');
 
       if (offline) {
-        // Queue for later sync
+        // Queue for later sync — preserve all online fields
         await queuePendingRequest({
           content: sanitizedContent,
           ownerUid: user.uid,
@@ -188,6 +199,14 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
           isUrgent,
           isPrivate: privacy.isPrivate,
           isAnonymous,
+          title: sanitizedTitle,
+          userEmail: isAnonymous ? undefined : (user.email || undefined),
+          userPhotoURL: isAnonymous ? null : (user.photoURL || null),
+          isShareable,
+          supportPreference,
+          isEmailVerified: !isAnonymous && user.emailVerified,
+          visibility: privacy.visibility,
+          groupIds: privacy.groupIds,
         });
         
         if (Platform.OS !== 'web') {
@@ -225,10 +244,12 @@ export const CreateRequestScreen: React.FC<Props> = ({ route, navigation }) => {
         );
       }
     } catch (error: any) {
-      setErrorMessage(error.message || 'Could not submit your request. Please try again.');
-      Alert.alert('Error', error.message || 'Could not submit your request. Please try again.');
+      if (isMountedRef.current) {
+        setErrorMessage(error.message || 'Could not submit your request. Please try again.');
+        Alert.alert('Error', error.message || 'Could not submit your request. Please try again.');
+      }
     } finally {
-      setSubmitting(false);
+      if (isMountedRef.current) setSubmitting(false);
     }
   };
 

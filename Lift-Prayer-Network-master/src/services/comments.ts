@@ -85,7 +85,7 @@ export const addComment = async (
     checkProfanity: true,
     checkSuspicious: true,
     checkMoneySolicitation: true,
-    contentType: 'REQUEST',
+    contentType: parentType,
   });
 
   if (!validation.isValid) {
@@ -211,7 +211,8 @@ export const deleteComment = async (
 
 export const updateComment = async (
   commentId: string,
-  newContent: string
+  newContent: string,
+  parentType: 'REQUEST' | 'TESTIMONY' = 'REQUEST'
 ): Promise<boolean> => {
   if (!firebaseEnabled || !db) return false;
 
@@ -222,7 +223,7 @@ export const updateComment = async (
       checkProfanity: true,
       checkSuspicious: true,
       checkMoneySolicitation: true,
-      contentType: 'REQUEST',
+      contentType: parentType,
     });
 
     if (!validation.isValid) {

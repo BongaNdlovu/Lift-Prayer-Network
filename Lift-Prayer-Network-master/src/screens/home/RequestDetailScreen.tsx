@@ -177,7 +177,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!editingCommentId || !editingCommentText.trim()) return;
     
     try {
-      const success = await updateComment(editingCommentId, editingCommentText.trim());
+      const success = await updateComment(editingCommentId, editingCommentText.trim(), type);
       if (success) {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

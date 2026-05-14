@@ -295,11 +295,11 @@ export const checkAndUnlockAchievements = async (
     peopleCount?: number;
     commentCount?: number;
     hasGroup?: boolean;
-    hour?: number;
   }
 ): Promise<AchievementId[]> => {
   const newAchievements: AchievementId[] = [];
   const userAchievements = await getUserAchievements(userId);
+  const currentHour = new Date().getHours();
 
   if (stats.prayerCount !== undefined) {
     if (stats.prayerCount >= 1 && !userAchievements.unlockedIds.includes('first_prayer')) {
@@ -346,11 +346,11 @@ export const checkAndUnlockAchievements = async (
     }
   }
 
-  if (stats.hour !== undefined) {
-    if (stats.hour < 6 && !userAchievements.unlockedIds.includes('early_bird')) {
+  if (stats.prayerCount !== undefined) {
+    if (currentHour < 6 && !userAchievements.unlockedIds.includes('early_bird')) {
       if (await unlockAchievement(userId, 'early_bird')) newAchievements.push('early_bird');
     }
-    if (stats.hour >= 23 && !userAchievements.unlockedIds.includes('night_owl')) {
+    if (currentHour >= 23 && !userAchievements.unlockedIds.includes('night_owl')) {
       if (await unlockAchievement(userId, 'night_owl')) newAchievements.push('night_owl');
     }
   }

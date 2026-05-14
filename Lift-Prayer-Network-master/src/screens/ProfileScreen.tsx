@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -32,6 +32,7 @@ import { RootStackParamList } from '../navigation/types';
 import { getVerifiedBadge, BADGE_STYLES, hasAdminPermission } from '../config/admins';
 import { validateDisplayName, validateEmail } from '../utils/security';
 import { PrayerStreakWidget } from '../components/PrayerStreakWidget';
+import { getUserStats } from '../services/stats';
 import { getVerseOfDay } from '../services/verseOfDay';
 
 export const ProfileScreen: React.FC = () => {
@@ -60,6 +61,13 @@ export const ProfileScreen: React.FC = () => {
     longestStreak: 0,
     lastPrayedDate: undefined as string | undefined,
   });
+  const [profileStats, setProfileStats] = useState({ prayers: 0, supported: 0, answered: 0 });
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     setupNotificationHandler();
@@ -94,7 +102,7 @@ export const ProfileScreen: React.FC = () => {
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1, // Keep quality, we'll resize
+      quality: 0.8, // Upload service already resizes to 400x400
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -107,25 +115,35 @@ export const ProfileScreen: React.FC = () => {
         }
 
         const photoURL = await uploadProfilePhoto(user.uid, asset.uri);
-        
-        // Update Firebase Auth profile
-        await updateProfile(user, { photoURL });
-        
-        // Update Firestore user profile
+        const previousPhotoURL = user.photoURL;
+
+        // Update Firestore first (source of truth for feed/profile display)
         await updateUserProfile(user.uid, { photoURL });
-        
-        setProfileImage(photoURL);
-        
-        if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // Update Firebase Auth profile
+        try {
+          await updateProfile(user, { photoURL });
+        } catch (authErr) {
+          // Auth failed — rollback Firestore to previous URL
+          console.warn('[Profile] Auth update failed, rolling back Firestore:', authErr);
+          await updateUserProfile(user.uid, { photoURL: previousPhotoURL || null }).catch(() => {});
+          throw new Error('Profile photo updated but sync incomplete. Please try again.');
         }
-        
-        Alert.alert('Success', 'Profile picture updated! 📸');
+
+        if (isMountedRef.current) {
+          setProfileImage(photoURL);
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+          Alert.alert('Success', 'Profile picture updated! 📸');
+        }
       } catch (err: any) {
         console.error('[Profile] Error updating photo:', err);
-        Alert.alert('Error', err.message || 'Could not update profile picture. Please try again.');
+        if (isMountedRef.current) {
+          Alert.alert('Error', err.message || 'Could not update profile picture. Please try again.');
+        }
       } finally {
-        setUploadingImage(false);
+        if (isMountedRef.current) setUploadingImage(false);
       }
     }
   };
@@ -142,17 +160,40 @@ export const ProfileScreen: React.FC = () => {
           text: 'Remove',
           style: 'destructive',
           onPress: async () => {
+            if (!user) return;
+            const previousPhotoURL = user.photoURL;
             setUploadingImage(true);
             try {
-              await deleteProfilePhoto(user.uid);
-              await updateProfile(user, { photoURL: null });
+              // Update Firestore first (source of truth)
               await updateUserProfile(user.uid, { photoURL: null });
-              setProfileImage(null);
-              Alert.alert('Removed', 'Profile picture removed.');
-            } catch {
-              Alert.alert('Error', 'Could not remove profile picture.');
+
+              // Update Firebase Auth
+              try {
+                await updateProfile(user, { photoURL: null });
+              } catch (authErr) {
+                // Auth failed — rollback Firestore
+                console.warn('[Profile] Auth update failed during remove, rolling back:', authErr);
+                await updateUserProfile(user.uid, { photoURL: previousPhotoURL || null }).catch(() => {});
+                throw new Error('Profile update incomplete. Please try again.');
+              }
+
+              // Delete storage object (non-critical)
+              try {
+                await deleteProfilePhoto(user.uid);
+              } catch (storageErr) {
+                console.warn('[Profile] Storage delete failed after profile update:', storageErr);
+              }
+
+              if (isMountedRef.current) {
+                setProfileImage(null);
+                Alert.alert('Removed', 'Profile picture removed.');
+              }
+            } catch (err: any) {
+              if (isMountedRef.current) {
+                Alert.alert('Error', err.message || 'Could not remove profile picture.');
+              }
             } finally {
-              setUploadingImage(false);
+              if (isMountedRef.current) setUploadingImage(false);
             }
           },
         },
@@ -164,6 +205,7 @@ export const ProfileScreen: React.FC = () => {
     const loadSettings = async () => {
       if (!user || !firebaseEnabled || !db) return;
       const snap = await getDoc(doc(db, 'users', user.uid));
+      if (!isMountedRef.current) return;
       if (snap.exists()) {
         const settings = (snap.data() as any).settings;
         if (settings?.notificationsCritical !== undefined) {
@@ -176,6 +218,14 @@ export const ProfileScreen: React.FC = () => {
           lastPrayedDate: stats.streakLastDate,
         });
       }
+      // Load detailed stats from prayers collection
+      const detailedStats = await getUserStats(user.uid);
+      if (!isMountedRef.current) return;
+      setProfileStats({
+        prayers: detailedStats.prayerCount,
+        supported: detailedStats.peopleSupported,
+        answered: 0, // answered count not tracked, keep 0 for now
+      });
     };
     loadSettings();
   }, [user]);
@@ -232,25 +282,37 @@ export const ProfileScreen: React.FC = () => {
       return;
     }
     const sanitizedName = nameValidation.sanitized || editName.trim();
-    
+    const previousDisplayName = user.displayName;
+
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    
+
     setSaving(true);
     try {
-      // Update Firebase Auth profile
-      await updateProfile(user, { displayName: sanitizedName });
-      
-      // Update Firestore user profile
+      // Update Firestore first (source of truth for feed/profile display)
       await updateUserProfile(user.uid, { displayName: sanitizedName });
-      
-      setShowEditModal(false);
-      Alert.alert('Success', 'Profile updated!');
+
+      // Update Firebase Auth profile
+      try {
+        await updateProfile(user, { displayName: sanitizedName });
+      } catch (authErr) {
+        // Auth failed — rollback Firestore to previous name
+        console.warn('[Profile] Auth update failed, rolling back Firestore:', authErr);
+        await updateUserProfile(user.uid, { displayName: previousDisplayName || 'Anonymous' }).catch(() => {});
+        throw new Error('Profile updated but sync incomplete. Please try again.');
+      }
+
+      if (isMountedRef.current) {
+        setShowEditModal(false);
+        Alert.alert('Success', 'Profile updated!');
+      }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Could not update profile');
+      if (isMountedRef.current) {
+        Alert.alert('Error', err.message || 'Could not update profile');
+      }
     } finally {
-      setSaving(false);
+      if (isMountedRef.current) setSaving(false);
     }
   };
 
@@ -356,10 +418,10 @@ export const ProfileScreen: React.FC = () => {
         {user && (
           <>
             <View style={styles.profileStats}>
-              <LiftMiniStat label="Prayers" value="-" icon="heart" />
-              <LiftMiniStat label="Supported" value="-" icon="people" />
+              <LiftMiniStat label="Prayers" value={profileStats.prayers} icon="heart" />
+              <LiftMiniStat label="Supported" value={profileStats.supported} icon="people" />
               <LiftMiniStat label="Streak" value={streakData.currentStreak} icon="flame" />
-              <LiftMiniStat label="Answered" value="-" icon="checkmark" />
+              <LiftMiniStat label="Answered" value={profileStats.answered} icon="checkmark" />
             </View>
             <LiftSectionHeader title="Continue Your Journey" />
             <LiftJourneyList

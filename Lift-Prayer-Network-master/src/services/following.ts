@@ -16,6 +16,7 @@ import {
   onSnapshot,
   query,
   orderBy,
+  limit,
   addDoc,
   Unsubscribe,
 } from 'firebase/firestore';
@@ -23,6 +24,14 @@ import { db, firebaseEnabled } from './firebase';
 import type { FollowRecord } from '../types';
 import { NOTIFICATION_TYPES } from '../types/notifications';
 import { sendPushViaRelay } from './pushRelay';
+import { validateDisplayName } from '../utils/security';
+import { FOLLOWING_UID_PAGE_SIZE } from '../config/queryLimits';
+
+const sanitizeActorName = (name?: string | null): string => {
+  if (!name) return 'Someone';
+  const result = validateDisplayName(name);
+  return result.isValid ? (result.sanitized || name) : 'Someone';
+};
 
 export type FollowResult = {
   success: boolean;
@@ -69,7 +78,7 @@ export const followUser = async (
         type: NOTIFICATION_TYPES.FOLLOW,
         recipientUid: targetUid,
         actorUid,
-        actorDisplayName: actorDisplayName || 'Someone',
+        actorDisplayName: sanitizeActorName(actorDisplayName),
         actorPhotoURL: actorPhotoURL || null,
         createdAt: serverTimestamp(),
         read: false,
@@ -79,7 +88,7 @@ export const followUser = async (
       await sendPushViaRelay({
         recipientUid: targetUid,
         title: 'New follower',
-        body: `${actorDisplayName || 'Someone'} followed you`,
+        body: `${sanitizeActorName(actorDisplayName)} followed you`,
         settingKey: 'notifications',
         notificationId: notificationRef.id,
         data: {
@@ -179,7 +188,8 @@ export const getFollowingUids = async (uid: string): Promise<string[]> => {
 
   try {
     const followingRef = collection(db, 'following', uid, 'users');
-    const snapshot = await getDocs(followingRef);
+    const q = query(followingRef, orderBy('followedAt', 'desc'), limit(FOLLOWING_UID_PAGE_SIZE));
+    const snapshot = await getDocs(q);
     return snapshot.docs.map((docSnap) => docSnap.id);
   } catch (err) {
     console.error('[Following] Error getting following UIDs:', err);
@@ -231,9 +241,10 @@ export const subscribeToFollowingUids = (
   }
 
   const followingRef = collection(db, 'following', uid, 'users');
+  const q = query(followingRef, orderBy('followedAt', 'desc'), limit(FOLLOWING_UID_PAGE_SIZE));
 
   return onSnapshot(
-    followingRef,
+    q,
     (snapshot) => {
       const uids = snapshot.docs.map((docSnap) => docSnap.id);
       callback(uids);

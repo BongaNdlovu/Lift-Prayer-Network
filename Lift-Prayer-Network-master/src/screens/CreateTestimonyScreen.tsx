@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -49,6 +49,16 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
   const [userGroups, setUserGroups] = useState<PrayerGroup[]>([]);
 
   const offline = netInfo.isConnected === false;
+  const alertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
+
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+    };
+  }, []);
   
   // Load user's groups
   React.useEffect(() => {
@@ -86,13 +96,18 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
 
     // Security check: Check if user is blocked from posting
     if (user) {
-      const blockStatus = await checkUserBlockedFromPosting(user.uid);
-      if (blockStatus.isBlocked) {
-        Alert.alert(
-          'Posting Restricted',
-          blockStatus.reason || 'Your posting privileges have been suspended. You can still view and pray for others.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
+      try {
+        const blockStatus = await checkUserBlockedFromPosting(user.uid);
+        if (blockStatus.isBlocked) {
+          Alert.alert(
+            'Posting Restricted',
+            blockStatus.reason || 'Your posting privileges have been suspended. You can still view and pray for others.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+          return;
+        }
+      } catch {
+        Alert.alert('Error', 'Could not verify posting status. Please try again.');
         return;
       }
     }
@@ -198,16 +213,19 @@ export const CreateTestimonyScreen: React.FC<Props> = ({ navigation }) => {
 
       setShowConfetti(true);
 
-      setTimeout(() => {
+      alertTimeoutRef.current = setTimeout(() => {
+        if (!isMountedRef.current) return;
         Alert.alert(
           '🎉 Testimony Shared!',
           'Your testimony has been shared with the community. Praise God for answered prayers!',
-          [{ text: 'Amen!', onPress: () => navigation.goBack() }]
+          [{ text: 'Amen!', onPress: () => { if (isMountedRef.current) navigation.goBack(); } }]
         );
       }, 1500);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Could not share your testimony. Please try again.', [{ text: 'OK' }]);
-      setSubmitting(false);
+      if (isMountedRef.current) {
+        Alert.alert('Error', error.message || 'Could not share your testimony. Please try again.', [{ text: 'OK' }]);
+        setSubmitting(false);
+      }
     }
   };
 

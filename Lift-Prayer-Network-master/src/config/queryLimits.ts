@@ -5,3 +5,4 @@ export const SEARCH_LIMIT = 20;
 export const SEARCH_COLLECTION_LIMIT = 10;
 export const MY_PRAYERS_LIMIT = 30;
 export const ANSWERED_LIMIT = 20;
+export const FOLLOWING_UID_PAGE_SIZE = 500;

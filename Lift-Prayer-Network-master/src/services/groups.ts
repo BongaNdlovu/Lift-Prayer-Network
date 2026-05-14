@@ -375,6 +375,33 @@ export const deleteGroup = async (groupId: string, ownerUid: string): Promise<bo
     const group = await getGroup(groupId);
     if (!group || group.ownerUid !== ownerUid) return false;
 
+    // Resume in-progress deletion
+    if ((group as any).deleting) {
+      return finishGroupDeletion(group as any);
+    }
+
+    // Mark group as deleting before starting member cleanup
+    const groupRef = doc(db, 'groups', groupId);
+    await updateDoc(groupRef, {
+      deleting: true,
+      deleteStartedAt: serverTimestamp(),
+      deleteOwnerUid: ownerUid,
+    });
+
+    return finishGroupDeletion({ ...group, deleting: true, deleteOwnerUid: ownerUid });
+  } catch (err) {
+    const appError = classifyError(err);
+    console.warn('[Groups] Error deleting group:', appError.message);
+    return false;
+  }
+};
+
+const finishGroupDeletion = async (group: PrayerGroup & { deleting: true; deleteOwnerUid?: string; deleteError?: string }): Promise<boolean> => {
+  if (!db) return false;
+
+  const groupRef = doc(db, 'groups', group.id);
+
+  try {
     // Batch remove group from all members (Firestore batch limit is 500)
     const FIRESTORE_BATCH_LIMIT = 500;
     for (let i = 0; i < group.memberUids.length; i += FIRESTORE_BATCH_LIMIT) {
@@ -384,18 +411,26 @@ export const deleteGroup = async (groupId: string, ownerUid: string): Promise<bo
       for (const memberId of chunk) {
         const userRef = doc(db, 'users', memberId);
         batch.update(userRef, {
-          groupIds: arrayRemove(groupId),
+          groupIds: arrayRemove(group.id),
         });
       }
 
-      await batch.commit();
+      try {
+        await batch.commit();
+      } catch (batchErr) {
+        // Record error and stop — can resume later
+        await updateDoc(groupRef, { deleteError: (batchErr as Error)?.message || 'Batch commit failed' }).catch(() => {});
+        return false;
+      }
     }
 
-    await deleteDoc(doc(db, 'groups', groupId));
+    // All members cleaned up — delete group document
+    await deleteDoc(groupRef);
     return true;
   } catch (err) {
     const appError = classifyError(err);
-    console.warn('[Groups] Error deleting group:', appError.message);
+    console.warn('[Groups] Error during group deletion:', appError.message);
+    await updateDoc(groupRef, { deleteError: appError.message }).catch(() => {});
     return false;
   }
 };

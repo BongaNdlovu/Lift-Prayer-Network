@@ -479,21 +479,34 @@ export type RateLimitAction = keyof typeof RATE_LIMIT_CONFIG;
 
 /**
  * Check rate limit for a specific action type
- * Returns detailed info about the rate limit status
+ * Returns detailed info about the rate limit status.
+ * Enforces all configured windows (per-minute, per-hour, per-day).
  */
 export const checkActionRateLimit = (
   userId: string,
   action: RateLimitAction
 ): RateLimitResult => {
   const config = RATE_LIMIT_CONFIG[action];
-  const key = `${action}_${userId}`;
-  
-  // Use the most restrictive limit (usually per-minute or per-hour)
-  const maxRequests = 'maxPerMinute' in config 
-    ? config.maxPerMinute 
-    : config.maxPerHour;
-  
-  return checkRateLimitWithInfo(key, maxRequests, config.windowMs);
+
+  if ('maxPerMinute' in config) {
+    const key = `${action}_${userId}_minute`;
+    const minuteResult = checkRateLimitWithInfo(key, config.maxPerMinute, 60 * 1000);
+    if (!minuteResult.allowed) return minuteResult;
+  }
+
+  if ('maxPerHour' in config) {
+    const key = `${action}_${userId}_hour`;
+    const hourResult = checkRateLimitWithInfo(key, config.maxPerHour, 60 * 60 * 1000);
+    if (!hourResult.allowed) return hourResult;
+  }
+
+  if ('maxPerDay' in config) {
+    const key = `${action}_${userId}_day`;
+    const dayResult = checkRateLimitWithInfo(key, config.maxPerDay, 24 * 60 * 60 * 1000);
+    if (!dayResult.allowed) return dayResult;
+  }
+
+  return { allowed: true, remaining: 1, resetInMs: 0, resetInSeconds: 0 };
 };
 
 /**

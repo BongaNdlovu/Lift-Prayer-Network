@@ -90,9 +90,6 @@ export const logPrayer = async (
   const safeTargetOwnerUid = targetOwnerUid || 'anon';
   const peopleRef = doc(db, 'userPrayedFor', actorUid, 'people', safeTargetOwnerUid);
 
-  // Check if this is a self-prayer (user praying on their own request)
-  const isSelfPrayer = actorUid === safeTargetOwnerUid;
-
   let prayerCount = 0;
   let prayerNotificationId: string | undefined;
 
@@ -139,7 +136,7 @@ export const logPrayer = async (
         targetSummary: targetSummary || '',
         prayedAt: serverTimestamp(),
         status: 'PRAYED',
-        isSelfPrayer,
+        isSelfPrayer: false,
       });
 
       // Auto-status progression: PENDING → ACTIVE after threshold
@@ -176,7 +173,7 @@ export const logPrayer = async (
       );
 
       // Create a notification document for the request owner
-      if (!isSelfPrayer && safeTargetOwnerUid !== 'anon' && db) {
+      if (safeTargetOwnerUid !== 'anon' && db) {
         const notificationRef = doc(collection(db, 'notifications'));
         prayerNotificationId = notificationRef.id;
         txn.set(notificationRef, {
@@ -203,7 +200,7 @@ export const logPrayer = async (
       console.warn('[Prayers] Non-critical: Could not update streak/achievements:', err);
     }
 
-    if (!isSelfPrayer && safeTargetOwnerUid !== 'anon' && prayerNotificationId) {
+    if (safeTargetOwnerUid !== 'anon' && prayerNotificationId) {
       await sendPushViaRelay({
         recipientUid: safeTargetOwnerUid,
         title: 'Someone prayed for you',
@@ -219,7 +216,7 @@ export const logPrayer = async (
       });
     }
 
-    return { success: true, isSelfPrayer };
+    return { success: true, isSelfPrayer: false };
   } catch (err: unknown) {
     if (err instanceof Error && err.message === 'ALREADY_PRAYED') {
       return {

@@ -228,9 +228,6 @@ export const sendTestNotification = async (): Promise<boolean> => {
 };
 
 /**
- * Get the current push token status for debugging
- */
-/**
  * Send a local notification for a new announcement
  */
 export const sendAnnouncementNotification = async (

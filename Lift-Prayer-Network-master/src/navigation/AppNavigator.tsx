@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, InteractionManager, View, Text } from 'react-native';
-import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, Theme, LinkingOptions, getStateFromPath } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,6 +53,38 @@ const HAS_EVER_SIGNED_IN_KEY = '@lift_has_ever_signed_in';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+const linkingConfig: LinkingOptions<RootStackParamList> = {
+  prefixes: ['lift://'],
+  config: {
+    screens: {
+      RequestDetail: 'request/:id',
+      NotificationsInbox: 'notifications',
+      Groups: 'groups',
+      GroupDetail: 'groups/:groupId',
+    },
+  },
+  getStateFromPath(path, options) {
+    const cleanPath = path.replace(/^\//, '').split('?')[0];
+    const [kind, rawId] = cleanPath.split('/');
+
+    if ((kind === 'request' || kind === 'testimony') && rawId) {
+      return {
+        routes: [
+          {
+            name: 'RequestDetail',
+            params: {
+              id: decodeURIComponent(rawId),
+              type: kind === 'testimony' ? 'TESTIMONY' : 'REQUEST',
+            },
+          },
+        ],
+      };
+    }
+
+    return getStateFromPath(path, options);
+  },
+};
 
 const CreateTabPlaceholder = () => null;
 
@@ -210,7 +242,7 @@ export const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer theme={navigationTheme} linking={linkingConfig}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>

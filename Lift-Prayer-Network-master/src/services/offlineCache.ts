@@ -43,6 +43,18 @@ export type PendingRequest = {
   isUrgent: boolean;
   isPrivate: boolean;
   timestamp: number;
+  title?: string;
+  userEmail?: string | null;
+  userPhotoURL?: string | null;
+  isShareable?: boolean;
+  supportPreference?: string;
+  isEmailVerified?: boolean;
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'GROUP';
+  groupIds?: string[];
+  syncStatus?: 'pending' | 'failed';
+  syncError?: string;
+  lastAttemptAt?: number;
+  attemptCount?: number;
 };
 
 export type PendingComment = {

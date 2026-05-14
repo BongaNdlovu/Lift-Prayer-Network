@@ -13,7 +13,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { FeedCard } from '../../components/FeedCard';
 import { SkeletonCard } from '../../components/SkeletonCard';
-import { Confetti } from '../../components/Confetti';
 import {
   LiftButton,
   LiftChips,
@@ -91,7 +90,7 @@ export const FeedScreen: React.FC = () => {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const refreshingRef = useRef(false);
   const [searchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PrayerCategory | 'all'>('all');
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
@@ -380,7 +379,10 @@ export const FeedScreen: React.FC = () => {
   }, [items, offline, user]);
 
   const onRefresh = useCallback(async () => {
-    // Haptic feedback on pull-to-refresh
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    setRefreshing(true);
+
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -388,14 +390,15 @@ export const FeedScreen: React.FC = () => {
         // Haptics not available
       }
     }
-    
-    setRefreshing(true);
-    
-    // Refresh the data
-    refresh();
-    
-    // Add a small delay for UX feedback
-    setTimeout(() => setRefreshing(false), 800);
+
+    try {
+      await refresh();
+    } catch {
+      // refresh swallows errors internally; keep current feed
+    } finally {
+      refreshingRef.current = false;
+      setRefreshing(false);
+    }
   }, [refresh]);
 
   const navigateToCreate = useCallback(() => {
@@ -468,7 +471,6 @@ export const FeedScreen: React.FC = () => {
 
   return (
     <LiftScreen>
-      <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
         <View style={styles.headerSection}>
           {offline && (
             <View style={styles.offlineBanner}>

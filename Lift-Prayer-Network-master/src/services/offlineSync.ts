@@ -8,13 +8,43 @@ import {
   setPendingPrayers,
   setPendingRequests,
   setPendingPrayerPromises,
+  type PendingRequest,
 } from './offlineCache';
 import { submitFeedItem } from '../hooks/useFeed';
 import { createOrUpdatePrayerPromise } from './prayerPromises';
 import { firebaseEnabled } from './firebase';
+import { normalizePrivacyFields } from '../utils/contentPrivacy';
 
 const BACKOFF_DELAYS = [1000, 5000, 15000, 30000, 60000];
 const MAX_RETRIES = 5;
+
+type SyncErrorClass = 'retryable' | 'permanent' | 'permission' | 'auth' | 'blocked' | 'malformed';
+
+const classifyOfflineSyncError = (err: unknown): SyncErrorClass => {
+  const code = (err as { code?: string } | undefined)?.code || '';
+  const message = ((err as { message?: string } | undefined)?.message || '').toLowerCase();
+
+  if (code === 'unavailable' || code === 'deadline-exceeded' || code === 'aborted') return 'retryable';
+  if (message.includes('network') || message.includes('offline') || message.includes('internet') || message.includes('connection') || message.includes('timeout')) return 'retryable';
+
+  if (code === 'permission-denied') return 'permission';
+  if (code === 'unauthenticated' || message.includes('unauthenticated')) return 'auth';
+  if (message.includes('banned') || message.includes('blocked') || message.includes('posting restricted')) return 'blocked';
+  if (message.includes('invalid') || message.includes('malformed') || message.includes('required')) return 'malformed';
+
+  return 'retryable';
+};
+
+const retainFailed = (item: PendingRequest, err: unknown, classification: SyncErrorClass): PendingRequest => {
+  const isRetryable = classification === 'retryable';
+  return {
+    ...item,
+    syncStatus: isRetryable ? 'pending' : 'failed',
+    syncError: isRetryable ? undefined : ((err as { message?: string } | undefined)?.message || 'Sync failed'),
+    lastAttemptAt: Date.now(),
+    attemptCount: (item.attemptCount || 0) + 1,
+  };
+};
 
 const syncRequests = async (user: User): Promise<boolean> => {
   const pending = await getPendingRequests();
@@ -27,17 +57,44 @@ const syncRequests = async (user: User): Promise<boolean> => {
       continue;
     }
 
+    if (item.syncStatus === 'failed') {
+      retained.push(item);
+      continue;
+    }
+
     try {
       const displayName = item.isAnonymous ? 'Anonymous' : (item.displayName || user.displayName || 'Anonymous');
+
+      const privacy = normalizePrivacyFields({
+        visibility: item.visibility,
+        isPrivate: item.isPrivate,
+        groupIds: item.groupIds,
+      });
+
+      if (privacy.visibility === 'GROUP' && (!privacy.groupIds || privacy.groupIds.length === 0)) {
+        retained.push(retainFailed(item, new Error('Group visibility requires groupIds'), 'malformed'));
+        hadError = true;
+        continue;
+      }
+
       await submitFeedItem('REQUEST', item.content, user.uid, displayName, {
         category: item.category,
+        title: item.title || item.content.slice(0, 80),
         isUrgent: item.isUrgent,
-        isPrivate: item.isPrivate,
+        isPrivate: privacy.isPrivate,
         isAnonymous: !!item.isAnonymous,
+        visibility: privacy.visibility,
+        groupIds: privacy.visibility === 'GROUP' ? privacy.groupIds : undefined,
+        supportPreference: item.supportPreference || 'ENCOURAGEMENT_WELCOME',
+        isShareable: item.isShareable !== false,
+        userEmail: item.isAnonymous ? undefined : (item.userEmail || user.email || undefined),
+        userPhotoURL: item.isAnonymous ? null : ((item.userPhotoURL ?? user.photoURL) || null),
+        isEmailVerified: item.isAnonymous ? false : (item.isEmailVerified ?? user.emailVerified),
       });
     } catch (err) {
       console.warn('[OfflineSync] Could not sync request', err);
-      retained.push(item);
+      const classification = classifyOfflineSyncError(err);
+      retained.push(retainFailed(item, err, classification));
       hadError = true;
     }
   }
